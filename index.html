@@ -1,505 +1,2104 @@
-﻿```html
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>업무용 시설/안전 점검 시스템</title>
-  
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>대형 에어돔 전기·가스 사용량 및 운영비용 시뮬레이션 시스템</title>
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  
-  <!-- Firebase (버전 10 호환 스크립트) -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-  
+  <!-- Chart.js for dynamic visualization -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- SheetJS (xlsx) for direct in-browser Excel file generation with full formulas -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   
   <style>
-    @keyframes bounce{0%,100%{transform:translateY(-10%);animation-timing-function:cubic-bezier(.8,0,1,1)}50%{transform:none;animation-timing-function:cubic-bezier(0,0,.2,1)}}
-    .animate-bounce{animation:bounce 1s infinite}
-    @keyframes pulse{50%{opacity:.5}}
-    .animate-pulse{animation:pulse 2s cubic-bezier(.4,0,.6,1) infinite}
-    body { background-color: #f8fafc; }
+    body {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+    }
+    input[type=range] {
+      accent-color: #2563eb;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    .formula-badge {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
   </style>
 </head>
-<body>
-  <div id="root"></div>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen">
 
-
-<script>
-  // 1. Firebase 초기화 설정 (요청하신 정보 반영)
-  const firebaseConfig = {
-    apiKey: "AIzaSyAoVGRAKKfCr-IEh7s4HVCc8r5wpeWUv0Q",
-    authDomain: "check-calendar-app-2fd92.firebaseapp.com",
-    projectId: "check-calendar-app-2fd92",
-    storageBucket: "check-calendar-app-2fd92.firebasestorage.app",
-    messagingSenderId: "762125584592",
-    appId: "1:762125584592:web:ed057de6598f8e9bb476d5",
-    measurementId: "G-CK69NSE8TX"
-  };
-  
-  if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-  }
-  window.__fbAuth = firebase.auth();
-  window.__fbDb = firebase.firestore();
-</script>
-
-
-<script type="text/babel" data-presets="react">
-const { useState, useEffect, useRef } = React;
-
-
-const auth = window.__fbAuth;
-const db   = window.__fbDb;
-
-
-// 데이터베이스 경로를 최상위(Root)로 깔끔하게 정리했습니다.
-const reportsPath = 'reports';
-const logsPath = 'dailyLogs';
-const usersPath = 'users';
-
-
-const CATEGORIES = ['경기 중 시설 VOC', '일일 화재점검', '일일 안전 및 시설 점검'];
-const TRADES = ['전기', '소방', '기계', '건축', '안전'];
-const STATUSES = ['조치 예정', '조치 중', '조치 완료'];
-const LOG_CATEGORIES = ['일일 시설안전 점검', '일일 화재점검'];
-
-
-// --- 아이콘 컴포넌트 ---
-function Icon({ name, size = 24, className = '' }) {
-  const ref = useRef(null);
-  useEffect(() => {
-    if (ref.current && window.lucide) {
-      window.lucide.createIcons({ root: ref.current });
-    }
-  }, [name, size, className]);
-  return <span ref={ref} className={`inline-flex items-center justify-center ${className}`}><i data-lucide={name} style={{width: size, height: size}}></i></span>;
-}
-
-
-// --- 공용 컴포넌트 ---
-function ConfirmModal({ title, message, onConfirm, onCancel }) {
-  return (
-    <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center z-[100] p-4">
-      <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl p-8 text-center border border-gray-100">
-        <div className="bg-red-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-5">
-          <Icon name="trash-2" size={40} className="text-red-500" />
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-500/20">
+          <i data-lucide="layers" class="w-6 h-6"></i>
         </div>
-        <h3 className="text-xl font-black text-gray-900 mb-3">{title}</h3>
-        <p className="text-sm text-gray-500 mb-8 font-bold leading-relaxed break-keep">{message}</p>
-        <div className="flex gap-3">
-          <button onClick={onCancel} className="flex-1 py-3.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-black rounded-xl">취소</button>
-          <button onClick={onConfirm} className="flex-1 py-3.5 bg-red-600 hover:bg-red-700 text-white font-black rounded-xl shadow-md">삭제하기</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-
-function GoogleImageMap({ location, onChange }) {
-  return (
-    <div className="relative w-full h-[400px] bg-[#e5e5e5] rounded-xl overflow-hidden shadow-inner group select-none cursor-crosshair border border-gray-300">
-      <iframe src="https://maps.google.com/maps?q=인천+문학경기장&t=k&z=15&output=embed" width="100%" height="100%" frameBorder="0" style={{ border: 0, pointerEvents: 'none' }} allowFullScreen aria-hidden="false" tabIndex="-1"></iframe>
-      <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors z-10" onClick={(e) => {
-          if (!onChange) return;
-          const rect = e.currentTarget.getBoundingClientRect();
-          onChange({ x: ((e.clientX - rect.left) / rect.width) * 100, y: ((e.clientY - rect.top) / rect.height) * 100 });
-        }}>
-        {location && (
-          <span className="absolute -translate-x-1/2 -translate-y-full pointer-events-none" style={{ left: `${location.x}%`, top: `${location.y}%` }}>
-            <Icon name="map-pin" size={42} className="text-red-500 drop-shadow-md" />
-          </span>
-        )}
-        {!location && onChange && (
-          <div className="absolute top-4 left-4 bg-black/80 text-white text-sm font-bold px-4 py-2.5 rounded-lg shadow-md opacity-0 group-hover:opacity-100 pointer-events-none">
-            지도의 원하는 위치를 클릭하여 핀을 꽂아주세요.
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-
-function StatusCard({ title, count, color, iconName }) {
-  return (
-    <div className={`p-5 rounded-2xl border ${color} flex items-center justify-between shadow-sm bg-white bg-opacity-60 transition-transform hover:scale-105`}>
-      <div>
-        <h3 className="text-sm font-bold opacity-80 mb-1">{title}</h3>
-        <p className="text-3xl font-black tracking-tight">{count}<span className="text-base font-bold ml-1">건</span></p>
-      </div>
-      <div className="p-3 rounded-full bg-white bg-opacity-50 shadow-sm"><Icon name={iconName} size={24} /></div>
-    </div>
-  );
-}
-
-
-// --- 기능 컴포넌트 ---
-function RegisterForm({ user, setProfile, setView, showToast }) {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [loading, setLoading] = useState(false);
-
-
-  const handleRegister = async (e) => {
-    e.preventDefault();
-    if (!name.trim() || !email.trim()) { showToast('이름과 이메일을 모두 입력해주세요.'); return; }
-    setLoading(true);
-    try {
-      const userData = { uid: user.uid, name, email, createdAt: Date.now() };
-      await db.collection(usersPath).doc(user.uid).set(userData);
-      setProfile(userData); setView('dashboard'); showToast('환영합니다!');
-    } catch (err) { showToast('가입 중 오류가 발생했습니다.'); console.error(err); }
-    finally { setLoading(false); }
-  };
-
-
-  return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md border border-gray-100">
-        <div className="flex justify-center mb-6"><div className="bg-blue-50 p-5 rounded-full"><Icon name="file-warning" size={48} className="text-blue-600" /></div></div>
-        <h2 className="text-2xl font-black text-center mb-3 text-slate-800">시설/안전 점검 시스템</h2>
-        <p className="text-gray-500 text-center mb-8 text-sm font-bold bg-gray-100 py-2 rounded-lg">업무 기록을 위해 최초 1회 프로필 설정이 필요합니다.</p>
-        <form onSubmit={handleRegister} className="flex flex-col gap-5">
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">이름 (점검자명) *</label>
-            <input type="text" required className="w-full p-3.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 bg-gray-50 font-bold" value={name} onChange={e => setName(e.target.value)} placeholder="홍길동" />
-          </div>
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">업무용 이메일 *</label>
-            <input type="email" required className="w-full p-3.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 bg-gray-50 font-bold" value={email} onChange={e => setEmail(e.target.value)} placeholder="work@company.com" />
-          </div>
-          <button type="submit" disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-xl mt-4 shadow-md">{loading ? '등록 중...' : '시스템 시작하기'}</button>
-        </form>
-      </div>
-    </div>
-  );
-}
-
-
-function CalendarView({ logs, userProfile, showToast }) {
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedDateStr, setSelectedDateStr] = useState('');
-  const [deleteTargetId, setDeleteTargetId] = useState(null);
-  const [category, setCategory] = useState(LOG_CATEGORIES[0]);
-  const [location, setLocation] = useState('');
-  const [inspectorName, setInspectorName] = useState(userProfile.name);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formError, setFormError] = useState('');
-
-
-  const year = currentDate.getFullYear(); const month = currentDate.getMonth();
-  const fmt = (y, m, d) => `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-  const todayStr = fmt(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
-
-
-  const cells = [];
-  for (let i = 0; i < new Date(year, month, 1).getDay(); i++) cells.push(null);
-  for (let i = 1; i <= new Date(year, month+1, 0).getDate(); i++) cells.push(i);
-
-
-  const saveLog = async () => {
-    if (!location.trim() || !inspectorName.trim()) { setFormError('위치와 점검자를 입력해주세요.'); return; }
-    setIsSubmitting(true);
-    try {
-      await db.collection(logsPath).add({ date: selectedDateStr, category, location, inspectorName, inspectorUid: userProfile.uid, createdAt: Date.now() });
-      showToast('저장되었습니다.'); setIsModalOpen(false);
-    } catch { setFormError('저장 중 오류 발생'); }
-    finally { setIsSubmitting(false); }
-  };
-
-
-  const deleteLog = async () => {
-    try { await db.collection(logsPath).doc(deleteTargetId).delete(); showToast('삭제되었습니다.'); } catch { showToast('삭제 오류'); }
-    setDeleteTargetId(null);
-  };
-
-
-  return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 md:p-8 w-full">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
-          <button onClick={() => setCurrentDate(new Date(year, month-1, 1))} className="p-2 hover:bg-gray-100 rounded-full border shadow-sm"><Icon name="chevron-left" /></button>
-          <h2 className="text-xl md:text-3xl font-black text-slate-800">{year}년 {month+1}월</h2>
-          <button onClick={() => setCurrentDate(new Date(year, month+1, 1))} className="p-2 hover:bg-gray-100 rounded-full border shadow-sm"><Icon name="chevron-right" /></button>
-        </div>
-        <button onClick={() => setCurrentDate(new Date())} className="px-4 py-2.5 bg-slate-100 font-bold rounded-xl text-sm">오늘로 이동</button>
-      </div>
-
-
-      <div className="grid grid-cols-7 gap-px bg-gray-200 border rounded-t-xl overflow-hidden">
-        {['일','월','화','수','목','금','토'].map((d,i) => <div key={d} className={`bg-slate-50 py-3 text-center text-base font-black ${i===0?'text-red-600':i===6?'text-blue-600':'text-slate-700'}`}>{d}</div>)}
-      </div>
-      <div className="grid grid-cols-7 gap-px bg-gray-200 border-x border-b rounded-b-xl min-h-[700px]">
-        {cells.map((day, idx) => {
-          if (!day) return <div key={`e-${idx}`} className="bg-white/50 min-h-[160px]" />;
-          const dateStr = fmt(year, month, day); const isToday = dateStr === todayStr;
-          const dayLogs = logs.filter(l => l.date === dateStr);
-          return (
-            <div key={`d-${day}`} onClick={() => { setSelectedDateStr(dateStr); setCategory(LOG_CATEGORIES[0]); setLocation(''); setInspectorName(userProfile.name); setFormError(''); setIsModalOpen(true); }}
-              className={`bg-white cursor-pointer flex flex-col group relative overflow-hidden ${isToday ? 'min-h-[160px] border-[3px] border-blue-500 shadow-xl z-10 p-3' : 'min-h-[160px] p-2 hover:bg-blue-50/50'}`}>
-              <div className="flex justify-between items-start mb-2">
-                <span className={`text-base font-black flex items-center justify-center rounded-full ${isToday ? 'bg-blue-600 text-white w-8 h-8' : 'w-7 h-7 text-slate-700'}`}>{day}</span>
-                <span className="opacity-0 group-hover:opacity-100 text-blue-400"><Icon name="plus" size={16}/></span>
-              </div>
-              <div className="flex flex-col gap-1.5 flex-1 overflow-y-auto pr-1">
-                {dayLogs.map(log => (
-                  <div key={log.id} className={`relative group/log px-2 py-2.5 rounded-lg border-l-4 shadow-sm ${log.category==='일일 시설안전 점검'?'bg-slate-50 border-blue-400':'bg-slate-50 border-red-400'}`}>
-                    {log.inspectorUid === userProfile.uid && <button onClick={e => { e.stopPropagation(); setDeleteTargetId(log.id); }} className="absolute top-1.5 right-1.5 opacity-0 group-hover/log:opacity-100 bg-red-50 text-red-600 rounded p-1 hover:bg-red-600 hover:text-white z-20"><Icon name="trash-2" size={12}/></button>}
-                    <div className="flex flex-col gap-0.5 pr-5">
-                      <span className="text-[11px] font-black text-slate-800">{log.category}</span>
-                      <span className="text-[10px] font-bold text-slate-600">-{log.location}</span>
-                      <span className="text-[10px] font-bold text-slate-600">-{log.inspectorName}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden">
-            <div className="bg-slate-800 p-5 flex justify-between items-center text-white">
-              <h3 className="font-black text-lg flex items-center gap-2"><Icon name="clipboard-list" className="text-blue-400"/> {selectedDateStr} 등록</h3>
-              <button onClick={() => setIsModalOpen(false)} className="hover:bg-white/20 p-1.5 rounded-full"><Icon name="x" size={20}/></button>
-            </div>
-            <div className="p-7 space-y-6">
-              {formError && <div className="text-red-600 text-sm font-bold bg-red-50 p-3 rounded-xl border border-red-200 flex items-center gap-2"><Icon name="alert-circle" size={16}/> {formError}</div>}
-              <div><label className="block text-sm font-bold mb-2">대분류 *</label><select value={category} onChange={e => setCategory(e.target.value)} className="w-full p-3.5 border rounded-xl bg-gray-50 font-bold">{LOG_CATEGORIES.map(c => <option key={c}>{c}</option>)}</select></div>
-              <div><label className="block text-sm font-bold mb-2">점검 위치 *</label><input value={location} onChange={e => setLocation(e.target.value)} className="w-full p-3.5 border rounded-xl bg-gray-50 font-bold" placeholder="예: 북문 출입구" /></div>
-              <div><label className="block text-sm font-bold mb-2">점검자 *</label><input value={inspectorName} onChange={e => setInspectorName(e.target.value)} className="w-full p-3.5 border rounded-xl bg-gray-50 font-bold" placeholder="점검자 이름" /></div>
-              <div className="flex gap-3"><button onClick={() => setIsModalOpen(false)} className="flex-1 py-4 bg-gray-100 font-black rounded-xl">취소</button><button onClick={handleSaveLog} disabled={isSubmitting} className="flex-[2] py-4 bg-blue-600 text-white font-black rounded-xl">{isSubmitting ? '저장 중...' : '저장하기'}</button></div>
-            </div>
-          </div>
-        </div>
-      )}
-      {deleteTargetId && <ConfirmModal title="점검일지 삭제" message="정말로 삭제하시겠습니까?" onConfirm={deleteLog} onCancel={() => setDeleteTargetId(null)} />}
-    </div>
-  );
-}
-
-
-function ReportForm({ userProfile, existingData, onSave, onCancel, showToast }) {
-  const [formData, setFormData] = useState(existingData || {
-    category: CATEGORIES[0], title: '', trade: TRADES[0], inspectorName: userProfile.name, inspectorEmail: userProfile.email, inspectorUid: userProfile.uid,
-    date: new Date().toISOString().split('T')[0], status: STATUSES[0], isEmergency: false, photoBase64: '', photoDesc: '', location: null, locationDesc: '', remarks: ''
-  });
-  const [error, setError] = useState(''); const [isSubmitting, setSubmit] = useState(false);
-  const set = (f, v) => { setFormData(p => ({...p, [f]: v})); if(error) setError(''); };
-
-
-  const uploadImage = (e) => {
-    const file = e.target.files[0]; if (!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => {
-      const img = new Image(); img.src = ev.target.result;
-      img.onload = () => {
-        const cvs = document.createElement('canvas'); const scale = img.width > 800 ? 800/img.width : 1;
-        cvs.width = img.width * scale; cvs.height = img.height * scale;
-        cvs.getContext('2d').drawImage(img, 0, 0, cvs.width, cvs.height);
-        set('photoBase64', cvs.toDataURL('image/jpeg', 0.7));
-      };
-    }; reader.readAsDataURL(file);
-  };
-
-
-  const submit = async () => {
-    if (!['title','date','photoBase64','photoDesc','locationDesc'].every(k => formData[k] && String(formData[k]).trim()) || !formData.location) { setError('모든 필수 항목을 입력하세요.'); return; }
-    setSubmit(true);
-    try {
-      const data = { ...formData, updatedAt: Date.now() };
-      if (existingData) { await db.collection(reportsPath).doc(existingData.id).update(data); }
-      else { data.createdAt = Date.now(); await db.collection(reportsPath).add(data); }
-      showToast('성공적으로 저장되었습니다.'); onSave();
-    } catch { setError('저장 중 오류 발생'); } finally { setSubmit(false); }
-  };
-
-
-  return (
-    <div className="bg-white rounded-2xl shadow-sm border p-6 md:p-8 w-full max-w-7xl mx-auto">
-      <h2 className="text-2xl font-black mb-6 border-b pb-4 flex items-center gap-2"><Icon name={existingData?'edit':'plus'} className="text-blue-600"/> {existingData?'점검 내역 수정':'신규 점검 기록 작성'}</h2>
-      {error && <div className="bg-red-50 text-red-700 p-4 rounded-xl mb-6 font-bold flex items-center gap-3"><Icon name="alert-circle"/> {error}</div>}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="space-y-6">
-          <div className="grid grid-cols-3 gap-4">
-            <div><label className="block text-sm font-bold mb-2">대분류 *</label><select className="w-full p-3 border rounded-xl bg-gray-50 font-bold" value={formData.category} onChange={e => set('category', e.target.value)}>{CATEGORIES.map(c => <option key={c}>{c}</option>)}</select></div>
-            <div className="col-span-2"><label className="block text-sm font-bold mb-2">공종 분류 *</label><select className="w-full p-3 border rounded-xl bg-gray-50 font-bold" value={formData.trade} onChange={e => set('trade', e.target.value)}>{TRADES.map(t => <option key={t}>{t}</option>)}</select></div>
-          </div>
-          <div><label className="block text-sm font-bold mb-2">제목 *</label><input className="w-full p-3.5 border rounded-xl bg-gray-50 font-bold" value={formData.title} onChange={e => set('title', e.target.value)} placeholder="제목 입력" /></div>
-          <div className="grid grid-cols-2 gap-4">
-            <div><label className="block text-sm font-bold mb-2">점검 날짜 *</label><input type="date" className="w-full p-3 border rounded-xl bg-gray-50 font-bold" value={formData.date} onChange={e => set('date', e.target.value)} /></div>
-            <div><label className="block text-sm font-bold mb-2">점검자</label><input disabled className="w-full p-3 border rounded-xl bg-gray-100 font-bold" value={formData.inspectorName} /></div>
-          </div>
-          <div className="bg-slate-50 p-5 rounded-xl border">
-            <label className="block text-sm font-bold mb-3">조치 결과 *</label>
-            <div className="flex flex-wrap gap-4">
-              {STATUSES.map(s => <label key={s} className={`flex items-center gap-2 p-3 rounded-lg border ${formData.status===s?'bg-blue-100 border-blue-300':'bg-white'}`}><input type="radio" checked={formData.status===s} onChange={e => set('status', e.target.value)} className="w-5 h-5" /><span className="font-black">{s}</span></label>)}
-            </div>
-          </div>
-          <label className={`flex items-center gap-3 p-4 border rounded-xl w-full ${formData.isEmergency?'bg-red-100 border-red-300 text-red-800':'bg-red-50 border-red-200 text-red-800'}`}><input type="checkbox" checked={formData.isEmergency} onChange={e => set('isEmergency', e.target.checked)} className="w-6 h-6 rounded" /><span className="font-black text-base">🚨 긴급 건으로 분류</span></label>
-        </div>
-        <div className="space-y-6 lg:pl-8 lg:border-l">
-          <div>
-            <label className="block text-sm font-bold mb-2 flex items-center gap-2"><Icon name="camera" className="text-blue-600"/> 사진 대지 첨부 *</label>
-            {formData.photoBase64 ? (
-              <div className="relative w-full rounded-xl overflow-hidden border flex justify-center group"><img src={formData.photoBase64} className="max-h-64 object-contain"/><button onClick={() => set('photoBase64','')} className="absolute top-3 right-3 bg-red-500 text-white p-2 rounded-full opacity-0 group-hover:opacity-100"><Icon name="x"/></button></div>
-            ) : (
-              <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-xl bg-gray-50 cursor-pointer"><Icon name="camera" size={48} className="mb-3 text-gray-400"/><span className="font-bold text-gray-500">사진 업로드</span><input type="file" className="hidden" accept="image/*" onChange={uploadImage}/></label>
-            )}
-          </div>
-          <div><label className="block text-sm font-bold mb-2">사진 상세 설명 *</label><textarea className="w-full p-3.5 border rounded-xl bg-gray-50 font-medium h-24 resize-none" value={formData.photoDesc} onChange={e => set('photoDesc', e.target.value)} /></div>
-          <div><label className="block text-sm font-bold mb-2 flex items-center gap-2"><Icon name="map-pin" className="text-blue-600"/> 위치 지정 *</label><GoogleImageMap location={formData.location} onChange={loc => set('location', loc)} /></div>
-          <div><label className="block text-sm font-bold mb-2">상세 위치 설명 *</label><input className="w-full p-3.5 border rounded-xl bg-gray-50 font-bold" value={formData.locationDesc} onChange={e => set('locationDesc', e.target.value)} /></div>
-          <div><label className="block text-sm font-bold mb-2">비고</label><textarea className="w-full p-3.5 border rounded-xl bg-gray-50 font-medium h-28 resize-none" value={formData.remarks} onChange={e => set('remarks', e.target.value)} /></div>
-        </div>
-      </div>
-      <div className="flex gap-4 mt-8 pt-6 border-t"><button onClick={onCancel} className="flex-1 py-4 bg-gray-100 font-black rounded-xl">취소</button><button onClick={submit} disabled={isSubmitting} className="flex-[2] py-4 bg-blue-600 text-white font-black rounded-xl">{isSubmitting?'저장 중...':'저장 완료하기'}</button></div>
-    </div>
-  );
-}
-
-
-function ReportDetail({ report, userProfile, onEdit, onDelete, showToast }) {
-  const isAuthor = report.inspectorUid === userProfile.uid;
-  const [showConfirm, setShowConfirm] = useState(false);
-  const doDelete = async () => { try { await db.collection(reportsPath).doc(report.id).delete(); showToast('삭제되었습니다.'); onDelete(); } catch { showToast('삭제 오류'); } };
-  return (
-    <div className="bg-white rounded-2xl shadow-sm border p-6 md:p-8 w-full max-w-7xl mx-auto relative">
-      {showConfirm && <ConfirmModal title="기록 삭제" message="정말로 이 기록을 삭제하시겠습니까?" onConfirm={doDelete} onCancel={() => setShowConfirm(false)} />}
-      <div className="flex flex-col md:flex-row justify-between items-start mb-8 border-b pb-6 gap-4">
         <div>
-          <div className="flex items-center gap-2 mb-3"><span className="text-sm font-black text-blue-700 bg-blue-50 px-3 py-1 rounded-full">{report.category}</span><span className="text-sm font-bold bg-gray-50 border px-3 py-1 rounded-full">{report.trade}</span>{report.isEmergency && <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-black flex items-center gap-1 animate-pulse"><Icon name="alert-circle" size={14}/> 긴급</span>}</div>
-          <h2 className="text-2xl md:text-3xl font-black text-gray-900">{report.title}</h2>
+          <h1 class="text-lg sm:text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+            에어돔 전기·가스비 정밀 시뮬레이터
+            <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">v3.0 엑셀 완전연동형</span>
+          </h1>
+          <p class="text-xs text-slate-500">경주 스마트에어돔 2024 실적 기반 ➔ 인천 영종도 야구장 에어돔 예측 모델</p>
         </div>
-        <div className="text-right"><span className="inline-block px-4 py-2 rounded-full text-sm font-black mb-3 bg-gray-100">{report.status}</span><p className="text-sm font-bold text-gray-500 flex items-center justify-end gap-1"><Icon name="clock" size={14}/> 점검일: {report.date}</p></div>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-        <div><h3 className="text-lg font-black mb-3 flex items-center gap-2"><Icon name="camera" className="text-blue-600"/> 현장 사진</h3>{report.photoBase64 ? <img src={report.photoBase64} className="rounded-xl border max-h-80 w-full object-contain bg-gray-100"/> : <div className="rounded-xl border bg-gray-50 h-80 flex items-center justify-center font-bold text-gray-400">사진 없음</div>}<div className="mt-4"><span className="text-xs font-bold text-gray-500 block mb-2">사진 설명</span><p className="text-sm bg-gray-50 p-4 rounded-xl border font-medium whitespace-pre-wrap">{report.photoDesc}</p></div></div>
-        <div><h3 className="text-lg font-black mb-3 flex items-center gap-2"><Icon name="map-pin" className="text-blue-600"/> 위치 정보</h3><GoogleImageMap location={report.location} /><div className="mt-4"><span className="text-xs font-bold text-gray-500 block mb-2">상세 위치</span><p className="text-sm font-black p-4 bg-blue-50 border-blue-100 rounded-xl flex items-start gap-2"><Icon name="map-pin" size={18} className="text-blue-600 mt-0.5"/>{report.locationDesc}</p></div></div>
+      
+      <div class="flex items-center flex-wrap gap-2">
+        <!-- Direct Excel File Download Button -->
+        <button id="btnDownloadExcel" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-md shadow-emerald-600/20">
+          <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+          <span>엑셀(.xlsx) 수식 통합본 다운로드</span>
+        </button>
+        <button id="btnToggleExcelGuide" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-300 bg-emerald-50 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 transition shadow-sm">
+          <i data-lucide="table-properties" class="w-3.5 h-3.5"></i> 엑셀 수식 매핑표
+        </button>
+        <button id="btnReset" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-100 transition shadow-sm">
+          <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> 초기화
+        </button>
+        <button id="btnToggleFormula" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 border border-blue-200 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition shadow-sm">
+          <i data-lucide="file-code-2" class="w-3.5 h-3.5"></i> 산출 공식 해설
+        </button>
       </div>
-      <div className="grid grid-cols-2 gap-4 mb-8 bg-slate-50 p-5 rounded-xl border">
-        <div><span className="text-xs font-bold text-gray-500 block mb-1">담당 점검자</span><span className="font-black">{report.inspectorName} <span className="text-xs font-medium text-gray-500">({report.inspectorEmail})</span></span></div>
-        <div><span className="text-xs font-bold text-gray-500 block mb-1">등록 일시</span><span className="font-black">{new Date(report.createdAt).toLocaleString()}</span></div>
-      </div>
-      {report.remarks && <div className="mb-8"><h3 className="text-sm font-black mb-2">비고</h3><p className="bg-white p-4 rounded-xl border font-medium whitespace-pre-wrap">{report.remarks}</p></div>}
-      {isAuthor && <div className="flex gap-3 pt-6 border-t justify-end"><button onClick={onEdit} className="px-6 py-3 bg-blue-50 text-blue-700 font-black rounded-xl flex gap-2"><Icon name="edit" size={18}/> 수정</button><button onClick={() => setShowConfirm(true)} className="px-6 py-3 bg-red-50 text-red-700 font-black rounded-xl flex gap-2"><Icon name="trash-2" size={18}/> 삭제</button></div>}
     </div>
-  );
-}
+  </header>
 
+  <div id="excelGuideModal" class="hidden bg-emerald-950/90 text-white fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="bg-slate-900 border border-emerald-500/40 rounded-2xl max-w-4xl w-full p-6 shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-700 mb-4">
+        <div class="flex items-center gap-2">
+          <i data-lucide="file-spreadsheet" class="w-6 h-6 text-emerald-400"></i>
+          <div>
+            <h3 class="text-base font-bold text-white">엑셀(.xlsx) 통합 수식 시트 구성 가이드</h3>
+            <p class="text-xs text-slate-400">우측 상단 '다운로드' 클릭 시 4개 시트로 구성된 수식 연동 통합 엑셀 파일이 즉시 생성됩니다.</p>
+          </div>
+        </div>
+        <button id="btnCloseExcelGuide" class="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
 
-// ── Main App Component ────────────────────────────────────────────────────────
-function App() {
-  const [user, setUser] = useState(null);
-  const [userProfile, setUserProfile] = useState(null);
-  const [reports, setReports] = useState([]);
-  const [dailyLogs, setDailyLogs] = useState([]);
-  const [activeTab, setActiveTab] = useState('voc');
-  const [view, setView] = useState('loading');
-  const [selectedReport, setSelected] = useState(null);
-  const [authError, setAuthError] = useState('');
-  const [toastMsg, setToastMsg] = useState('');
-  
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [emergencyFilter, setEmergencyFilter] = useState(false);
+      <div class="space-y-4 text-xs">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div class="bg-slate-800/80 p-3.5 rounded-xl border border-slate-700">
+            <span class="font-bold text-emerald-300 block mb-1">Sheet 1. 대시보드_비용요약</span>
+            <p class="text-slate-400 leading-relaxed">
+              경주 2024 결산 실적(고정)과 인천 예측치의 1:1 비교, 연간 총 에너지비용, 월평균 비용, 부문별 지출 도넛 데이터가 요약되어 보고서용으로 즉시 인쇄 가능합니다.
+            </p>
+          </div>
+          <div class="bg-slate-800/80 p-3.5 rounded-xl border border-slate-700">
+            <span class="font-bold text-emerald-300 block mb-1">Sheet 2. 시뮬레이션_계산엔진 (수식 연동)</span>
+            <p class="text-slate-400 leading-relaxed">
+              웹페이지의 10대 변수(체적, 혹한일, 기후, 조명, 도어, 장마일 등)가 입력 셀로 배치되며, <b>엑셀 내에서 숫자를 변경하면 엑셀 수식(=ROUND, =SUM 등)에 의해 모든 비용이 실시간 재계산</b>됩니다.
+            </p>
+          </div>
+          <div class="bg-slate-800/80 p-3.5 rounded-xl border border-slate-700">
+            <span class="font-bold text-emerald-300 block mb-1">Sheet 3. 월별_전기_가스_시계열</span>
+            <p class="text-slate-400 leading-relaxed">
+              1월~12월 계절별 가중치(동절기 난방가스 피크, 하절기 7~8월 장마 제습재열 가스비 + 냉방 전기 피크)가 분기별/월별로 테이블화되어 예산 편성 시 그대로 복사 가능합니다.
+            </p>
+          </div>
+          <div class="bg-slate-800/80 p-3.5 rounded-xl border border-slate-700">
+            <span class="font-bold text-emerald-300 block mb-1">Sheet 4. 공학산식_및_KBO기준표</span>
+            <p class="text-slate-400 leading-relaxed">
+              건물 피막 열손실 식, 돔구장 포물면 체적 적분식(8/15), KBO 3단계 조도(650 / 1750 / 2500 lx) 규격, 환기 기준(25/30/40 CMH) 이론적 도출 근거가 정리되어 있습니다.
+            </p>
+          </div>
+        </div>
 
+        <div class="bg-emerald-950/60 p-4 rounded-xl border border-emerald-800">
+          <span class="font-bold text-emerald-200 block mb-2">📌 엑셀 주요 셀 수식 매핑 사전 (Formula Lookup)</span>
+          <div class="overflow-x-auto">
+            <table class="w-full text-[11px] font-mono">
+              <thead class="text-emerald-400 border-b border-emerald-800/60 text-left">
+                <tr>
+                  <th class="py-1.5 px-2">항목</th>
+                  <th class="py-1.5 px-2">엑셀 셀 좌표</th>
+                  <th class="py-1.5 px-2">실제 엑셀 수식 (Formula)</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-emerald-900/40 text-slate-300">
+                <tr>
+                  <td class="py-1 px-2 font-sans font-semibold">인천 돔 체적</td>
+                  <td class="py-1 px-2 text-amber-300">C10</td>
+                  <td class="py-1 px-2 text-emerald-300">=ROUND(C7 * C8 * C9 * (8/15), 0)</td>
+                </tr>
+                <tr>
+                  <td class="py-1 px-2 font-sans font-semibold">체적 배수 (Ratio)</td>
+                  <td class="py-1 px-2 text-amber-300">C11</td>
+                  <td class="py-1 px-2 text-emerald-300">=ROUND(C10 / 124800, 2)</td>
+                </tr>
+                <tr>
+                  <td class="py-1 px-2 font-sans font-semibold">장마 제습재열 가스</td>
+                  <td class="py-1 px-2 text-amber-300">C35</td>
+                  <td class="py-1 px-2 text-emerald-300">=ROUND(C16 * 360000 * C11 * (C17 / 14) * MAX(0.7, C18 * 0.425), 0)</td>
+                </tr>
+                <tr>
+                  <td class="py-1 px-2 font-sans font-semibold">조명 총 소비전력</td>
+                  <td class="py-1 px-2 text-amber-300">C40</td>
+                  <td class="py-1 px-2 text-emerald-300">=ROUND((C23 * C24) / 1000, 1)</td>
+                </tr>
+                <tr>
+                  <td class="py-1 px-2 font-sans font-semibold">연간 총 가스요금</td>
+                  <td class="py-1 px-2 text-amber-300">C48</td>
+                  <td class="py-1 px-2 text-emerald-300">=ROUND(SUM(C33:C36) * (1 + C29/100), 0)</td>
+                </tr>
+                <tr>
+                  <td class="py-1 px-2 font-sans font-semibold">연간 총 운영비용</td>
+                  <td class="py-1 px-2 text-amber-300">C50</td>
+                  <td class="py-1 px-2 text-emerald-300">=C47 + C48</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
 
-  const toast = (msg) => { setToastMsg(msg); setTimeout(() => setToastMsg(''), 5000); };
+      <div class="mt-5 text-right">
+        <button id="btnModalClose" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-white transition">닫기</button>
+      </div>
+    </div>
+  </div>
 
-
-  useEffect(() => {
-    // Firebase 인증 상태 모니터링 (Vercel 무한 로딩 해결의 핵심)
-    const unsub = auth.onAuthStateChanged(async (u) => {
-      if (u) {
-        setUser(u);
-        try {
-          // 사용자 프로필 가져오기
-          const snap = await db.collection('users').doc(u.uid).get();
-          if (snap.exists) {
-            setUserProfile(snap.data());
-            setView('dashboard');
-          } else {
-            setView('register');
-          }
-        } catch (err) {
-          setAuthError(`데이터베이스 접속 권한 오류입니다. Firebase Console -> Firestore Database -> 규칙(Rules) 탭에서 allow read, write: if true; 로 설정되어 있는지 확인해주세요. (상세 에러: ${err.message})`);
-          setView('error');
-        }
-      } else {
-        // 비회원이면 즉시 익명 로그인 시도
-        try {
-          await auth.signInAnonymously();
-        } catch (err) {
-          console.error("Auth Error:", err);
-          // Vercel 도메인 미승인 에러를 명확하게 포착하여 안내
-          if (err.code === 'auth/unauthorized-domain') {
-            setAuthError('Vercel 배포 주소가 Firebase에 등록되지 않았습니다! \n\n[해결방법]\n1. Firebase 콘솔 접속\n2. 좌측 Authentication 클릭\n3. 상단 Settings(설정) 탭 클릭\n4. Authorized domains(승인된 도메인) 메뉴로 이동\n5. Add domain(도메인 추가)을 눌러 현재 Vercel 사이트 주소를 추가하세요.');
-          } else if (err.code === 'auth/operation-not-allowed') {
-            setAuthError('Firebase에서 "익명(Anonymous) 로그인"이 비활성화되어 있습니다. \n\n[해결방법]\n1. Firebase 콘솔 접속\n2. Authentication -> Sign-in method 메뉴 이동\n3. "익명(Anonymous)"을 찾아 "사용 설정"을 켜주세요.');
-          } else {
-            setAuthError(`로그인 오류가 발생했습니다: ${err.message}`);
-          }
-          setView('error');
-        }
-      }
-    });
-
-
-    return () => unsub();
-  }, []);
-
-
-  useEffect(() => {
-    if (!user || !userProfile) return;
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
     
-    // 데이터 불러오기 (리스너 등록)
-    const unsubReports = db.collection(reportsPath).onSnapshot(snap => {
-      const data = snap.docs.map(d => ({id: d.id, ...d.data()}));
-      data.sort((a, b) => b.createdAt - a.createdAt);
-      setReports(data);
-    }, err => console.error("Reports DB Error:", err));
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 mb-6">
+      
+      <!-- Gyeongju Benchmark (Fixed Reference) -->
+      <div class="lg:col-span-5 bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-2xl p-5 shadow-lg border border-slate-700 relative overflow-hidden">
+        <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl pointer-events-none"></div>
+        <div class="flex items-center justify-between pb-3 border-b border-slate-700/80 mb-3">
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 text-xs font-bold bg-amber-500/20 text-amber-300 rounded border border-amber-500/30">고정 기준치 (Benchmark)</span>
+            <h2 class="text-base font-bold text-slate-100">경주 스마트에어돔</h2>
+          </div>
+          <span class="text-xs text-slate-400">2024년 결산 실적</span>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-3 text-xs mb-3.5">
+          <div class="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700">
+            <span class="text-slate-400 block mb-0.5">규격 및 체적</span>
+            <span class="font-semibold text-slate-200">120m × 78m × 25m</span>
+            <span class="text-[11px] text-blue-400 block mt-0.5 font-mono">돔구장 체적 ≈ 124,800 m³</span>
+          </div>
+          <div class="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700">
+            <span class="text-slate-400 block mb-0.5">주요 시설</span>
+            <span class="font-semibold text-slate-200">축구장 1면 / 일체형공조 2대</span>
+            <span class="text-[11px] text-slate-400 block mt-0.5">출입구 3개소 (수동 회전문)</span>
+          </div>
+        </div>
 
+        <div class="grid grid-cols-3 gap-2 text-center bg-slate-950/60 p-3 rounded-xl border border-slate-800">
+          <div>
+            <span class="text-[11px] text-slate-400 block">연간 전기요금</span>
+            <span class="text-sm font-bold text-emerald-400">56,000,000 원</span>
+          </div>
+          <div class="border-x border-slate-800">
+            <span class="text-[11px] text-slate-400 block">연간 가스요금</span>
+            <span class="text-sm font-bold text-amber-400">67,000,000 원</span>
+          </div>
+          <div>
+            <span class="text-[11px] text-slate-400 block">총 에너지 비용</span>
+            <span class="text-sm font-extrabold text-white">123,000,000 원</span>
+          </div>
+        </div>
+      </div>
 
-    const unsubLogs = db.collection(logsPath).onSnapshot(snap => {
-      setDailyLogs(snap.docs.map(d => ({id: d.id, ...d.data()})));
-    }, err => console.error("Logs DB Error:", err));
+      <!-- Incheon Target Prediction Card -->
+      <div class="lg:col-span-7 bg-white rounded-2xl p-5 shadow-lg border border-blue-200 relative overflow-hidden flex flex-col justify-between">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-200 mb-3">
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-0.5 text-xs font-bold bg-blue-600 text-white rounded">실시간 시뮬레이션 결과</span>
+            <h2 class="text-base font-bold text-slate-900">인천 영종도 야구장 에어돔 (중산동)</h2>
+          </div>
+          <span class="text-xs text-blue-600 font-semibold" id="lblScaleRatio">경주 대비 에너지 체적 배수: 계산 중...</span>
+        </div>
 
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+          <div class="bg-blue-50/70 border border-blue-100 rounded-xl p-3.5">
+            <div class="flex items-center justify-between text-xs text-blue-800 font-semibold mb-1">
+              <span>예상 전기 요금 (연간)</span>
+              <i data-lucide="zap" class="w-4 h-4 text-blue-600"></i>
+            </div>
+            <div class="text-xl font-extrabold text-blue-900" id="resElectricityCost">0 원</div>
+            <div class="text-[11px] text-blue-700/80 mt-1 flex justify-between" id="resElectricityDiff">
+              <span>경주 대비:</span> <b class="font-bold">+0%</b>
+            </div>
+          </div>
 
-    return () => { unsubReports(); unsubLogs(); };
-  }, [user, userProfile]);
+          <div class="bg-amber-50/70 border border-amber-100 rounded-xl p-3.5">
+            <div class="flex items-center justify-between text-xs text-amber-800 font-semibold mb-1">
+              <span>예상 가스 요금 (연간)</span>
+              <i data-lucide="flame" class="w-4 h-4 text-amber-600"></i>
+            </div>
+            <div class="text-xl font-extrabold text-amber-900" id="resGasCost">0 원</div>
+            <div class="text-[11px] text-amber-700/80 mt-1 flex justify-between" id="resGasDiff">
+              <span>경주 대비:</span> <b class="font-bold">+0%</b>
+            </div>
+          </div>
 
+          <div class="bg-indigo-900 text-white rounded-xl p-3.5 shadow-md shadow-indigo-900/10">
+            <div class="flex items-center justify-between text-xs text-indigo-200 font-semibold mb-1">
+              <span>총 예상 운영 비용 (연간)</span>
+              <i data-lucide="calculator" class="w-4 h-4 text-indigo-300"></i>
+            </div>
+            <div class="text-xl font-extrabold text-indigo-100" id="resTotalCost">0 원</div>
+            <div class="text-[11px] text-indigo-200 mt-1 flex justify-between" id="resMonthlyAvg">
+              <span>월평균:</span> <b class="text-white">0 원/월</b>
+            </div>
+          </div>
+        </div>
 
-  // 에러 화면
-  if (view === 'error') return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-lg w-full text-center border-t-8 border-red-500">
-        <div className="bg-red-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"><Icon name="alert-circle" size={40} className="text-red-500"/></div>
-        <h2 className="text-2xl font-black text-gray-900 mb-4">접속 오류 발생</h2>
-        <p className="text-sm text-gray-700 mb-8 font-bold leading-relaxed bg-gray-50 p-4 rounded-xl text-left whitespace-pre-wrap">{authError}</p>
-        <button onClick={() => window.location.reload()} className="w-full bg-slate-800 hover:bg-slate-900 text-white font-black py-4 rounded-xl shadow-md">새로고침 재시도</button>
+        <!-- Quick Summary Bar -->
+        <div class="bg-slate-50 border border-slate-200/80 rounded-xl px-4 py-2.5 flex flex-wrap items-center justify-between text-xs text-slate-600 gap-2">
+          <div class="flex items-center gap-1.5">
+            <i data-lucide="box" class="w-4 h-4 text-slate-500"></i>
+            <span>선택 돔 체적: <b class="text-slate-800" id="statVolume">0 m³</b> <span class="text-[10px] text-slate-400" id="statDomeBenchmark">(고척돔 대비 0%)</span></span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <i data-lucide="layers" class="w-4 h-4 text-indigo-500"></i>
+            <span>선택 모델: <b class="text-indigo-700 font-bold" id="statModelName">체적 정비례 (고정)</b></span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <i data-lucide="flame" class="w-4 h-4 text-amber-500"></i>
+            <span>난방 설정: <b class="text-amber-700" id="statHeatSetting">실내 18℃ 유지 (120일)</b></span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <i data-lucide="droplets" class="w-4 h-4 text-teal-600"></i>
+            <span>장마 제습난방: <b class="text-teal-700" id="statMonsoonCost">가스 0 원 (습도 50% 제어)</b></span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <i data-lucide="door-open" class="w-4 h-4 text-purple-500"></i>
+            <span>출입구 설정: <b class="text-purple-700" id="statDoorSummary">주출입 1개 / 비상구 24개</b></span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <i data-lucide="snowflake" class="w-4 h-4 text-blue-500"></i>
+            <span>제설 가스할증: <b class="text-slate-800" id="statSnowCost">0 원</b></span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="mb-6 bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
+        <h3 class="text-xs sm:text-sm font-bold text-slate-900 flex items-center gap-2">
+          <i data-lucide="zap-off" class="w-4 h-4 text-blue-600"></i>
+          에어돔 설비별 에너지원(전기 vs 가스) 사용 구분표
+        </h3>
+        <span class="text-[11px] font-semibold text-slate-500">인천 영종도 에어돔 기계 설비 스펙 매핑</span>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+        <!-- 1. Blowers & Pressurization -->
+        <div class="bg-blue-50/60 border border-blue-200 rounded-xl p-3">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="font-bold text-blue-900 flex items-center gap-1.5">
+              <i data-lucide="fan" class="w-4 h-4 text-blue-600"></i> 송풍기 (가압·순환)
+            </span>
+            <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-blue-600 text-white">⚡ 100% 전기</span>
+          </div>
+          <p class="text-[11px] text-slate-600 leading-tight mb-2">
+            <b>Standby/Secondary 및 가압 모터</b><br>
+            돔을 팽팽하게 띄우는 공기압 유지용 380V 삼상 전동기 모터로 연중 24시간 무중단 전기를 소모합니다.
+          </p>
+          <div class="text-[10px] text-blue-800 bg-blue-100/60 rounded px-2 py-1 font-mono">
+            소비처: 전기요금 (한전 일반용/교육용)
+          </div>
+        </div>
+
+        <!-- 2. Heating System -->
+        <div class="bg-amber-50/60 border border-amber-200 rounded-xl p-3">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="font-bold text-amber-900 flex items-center gap-1.5">
+              <i data-lucide="flame" class="w-4 h-4 text-amber-600"></i> 난방 유닛 (Heat Unit)
+            </span>
+            <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-500 text-white">🔥 가스(열) + ⚡전기(팬)</span>
+          </div>
+          <p class="text-[11px] text-slate-600 leading-tight mb-2">
+            <b>Heat & Inflation Unit (기본 2대)</b><br>
+            대형 <b>도시가스</b> 연소 열교환기를 통해 대용량 온풍을 공급하며, 이를 돔 내부로 송출하는 순환 팬 모터가 전력을 함께 소비합니다.
+          </p>
+          <div class="text-[10px] text-amber-800 bg-amber-100/60 rounded px-2 py-1 font-mono">
+            소비처: 가스요금(92%) + 전기요금(8%)
+          </div>
+        </div>
+
+        <!-- 3. Cooling System -->
+        <div class="bg-cyan-50/60 border border-cyan-200 rounded-xl p-3">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="font-bold text-cyan-900 flex items-center gap-1.5">
+              <i data-lucide="snowflake" class="w-4 h-4 text-cyan-600"></i> 냉방 유닛 (Cooling Unit)
+            </span>
+            <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-cyan-600 text-white">⚡ 100% 전기</span>
+          </div>
+          <p class="text-[11px] text-slate-600 leading-tight mb-2">
+            <b>A/C Recirc Unit (40t×4대 + 50t×1대 = 5대, 210RT)</b><br>
+            도시가스가 아닌 전기 모터 구동식 <b>냉매 압축기(칠러/EHP)</b>입니다. 여름철 강력한 냉풍 순환에 대규모 전력을 씁니다.
+          </p>
+          <div class="text-[10px] text-cyan-800 bg-cyan-100/60 rounded px-2 py-1 font-mono">
+            소비처: 전기요금 (하절기 피크 유발)
+          </div>
+        </div>
+
+        <!-- 4. Snow Melt & Auxiliary -->
+        <div class="bg-purple-50/60 border border-purple-200 rounded-xl p-3">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="font-bold text-purple-900 flex items-center gap-1.5">
+              <i data-lucide="refresh-cw" class="w-4 h-4 text-purple-600"></i> 공조기 (HVAC Unit 8대)
+            </span>
+            <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-purple-600 text-white">⚡ 100% 전기</span>
+          </div>
+          <p class="text-[11px] text-slate-600 leading-tight mb-2">
+            <b>공조기 8대 (실내외 환기·순환·기압 보상)</b><br>
+            돔 내부 기류 순환 및 법정 환기(외기 도입), 필터 여과를 담당하는 8대의 독립 대용량 공조 송풍 유닛입니다.
+          </p>
+          <div class="text-[10px] text-purple-800 bg-purple-100/60 rounded px-2 py-1 font-mono">
+            소비처: 전기요금 (연중 순환 동력)
+          </div>
+        </div>
       </div>
     </div>
-  );
 
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-  // 로딩 화면
-  if (view === 'loading') return (
-    <div className="min-h-screen flex flex-col items-center
+      <!-- Left Column: Interactive Control Conditions -->
+      <div class="lg:col-span-6 space-y-4">
+        
+        <div class="flex items-center justify-between pb-1">
+          <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+            <i data-lucide="sliders" class="w-5 h-5 text-blue-600"></i>
+            10대 시뮬레이션 매개변수 설정 (엑셀 연동 셀)
+          </h2>
+          <span class="text-xs text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+            📊 엑셀 실시간 반영
+          </span>
+        </div>
 
+        <!-- Locked Volume Proportionality Notice -->
+        <div class="bg-indigo-50/70 rounded-xl border border-indigo-200 p-3.5 shadow-sm">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <i data-lucide="scale" class="w-4 h-4 text-indigo-700"></i>
+              <span class="text-xs font-bold text-indigo-950">냉난방 부하 산출 모델: 체적 정비례 고정 적용</span>
+            </div>
+            <span class="text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-indigo-600 text-white" id="badgeModelType">체적 정비례 (100% Volume)</span>
+          </div>
+          <p class="text-[11px] text-indigo-800 mt-1.5 leading-snug">
+            경주 스마트에어돔 체적(약 124,800m³) 대비 인천 에어돔 돔구장 체적(높이에 따라 약 52.2만~62.7만m³) 비율이 냉·난방 에너지 부하 산출에 <b>100% 정비례</b> 반영됩니다.
+          </p>
+        </div>
 
+        <!-- 1. Height & Dimensions (Cond 2 & 6) -->
+        <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm transition hover:border-blue-300">
+          <div class="flex items-center justify-between mb-2">
+            <label class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+              <span class="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[11px] font-bold">1</span>
+              에어돔 높이 및 돔구장 형상 체적 (조건 2, 6)
+            </label>
+            <span class="text-xs font-semibold px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-100" id="lblHeight">높이: 60 m</span>
+          </div>
+          <p class="text-[11px] text-slate-500 mb-3">인천 에어돔 밑면적: 140m × 140m = 19,600m² (야구장 규격). 포물면 돔구장 체적 기준으로 정밀 계산됩니다.</p>
+          <div class="grid grid-cols-3 gap-2">
+            <button type="button" class="btn-height py-2 text-xs font-semibold rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 transition" data-height="50">
+              <span class="block font-bold">50m</span>
+              <span class="text-[10px] text-slate-500 font-mono">약 522,700m³</span>
+            </button>
+            <button type="button" class="btn-height py-2 text-xs font-semibold rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 transition" data-height="55">
+              <span class="block font-bold">55m</span>
+              <span class="text-[10px] text-slate-500 font-mono">약 574,900m³</span>
+            </button>
+            <button type="button" class="btn-height py-2 text-xs font-semibold rounded-lg border-2 border-blue-600 bg-blue-50 text-blue-700 font-bold transition" data-height="60">
+              <span class="block font-bold">60m</span>
+              <span class="text-[10px] text-blue-600 font-mono">약 627,200m³</span>
+            </button>
+          </div>
+        </div>
 
+        <!-- 2. Weather & Region Difference (Cond 1) -->
+        <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm transition hover:border-blue-300">
+          <div class="flex items-center justify-between mb-2">
+            <label class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+              <span class="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[11px] font-bold">2</span>
+              지역별 외기 기후 및 풍하중 (조건 1)
+            </label>
+            <span class="text-xs font-semibold text-slate-600" id="lblWeather">인천 영종도(해안풍 + 난방도일 1.18배)</span>
+          </div>
+          <p class="text-[11px] text-slate-500 mb-2.5">영종도는 경주(내륙 남부) 대비 겨울철 최저기온이 약 4.2℃ 낮고 강풍으로 인해 피막 외벽 열관류율(U값) 및 가스 소모량이 증가합니다.</p>
+          <div class="space-y-3">
+            <div>
+              <div class="flex justify-between text-[11px] text-slate-600 font-medium mb-1">
+                <span>기후 가중치 보정 (난방·외벽 대류손실 계수)</span>
+                <span class="font-bold text-blue-600" id="valWeatherFactor">1.18 ×</span>
+              </div>
+              <input type="range" id="inputWeatherFactor" min="1.0" max="1.35" step="0.01" value="1.18" class="w-full h-2 bg-slate-200 rounded-lg cursor-pointer">
+              <div class="flex justify-between text-[10px] text-slate-400">
+                <span>경주 동등 (1.0x)</span>
+                <span>표준 영종도 해안 (1.18x)</span>
+                <span>혹한/강풍 극대 (1.35x)</span>
+              </div>
+            </div>
 
-```
+            <!-- Winter Extreme Cold Wave Days -->
+            <div class="bg-cyan-50/60 p-2.5 rounded-lg border border-cyan-200">
+              <div class="flex justify-between text-[11px] text-cyan-950 font-medium mb-1">
+                <span class="flex items-center gap-1">
+                  <i data-lucide="thermometer-snowflake" class="w-3.5 h-3.5 text-cyan-600"></i>
+                  겨울철 혹한일(영하 10℃ 이하 극저온) 일수
+                </span>
+                <b class="text-cyan-800 font-mono" id="valColdDays">16 일/년</b>
+              </div>
+              <input type="range" id="inputColdDays" min="0" max="40" step="1" value="16" class="w-full h-2 bg-cyan-200 rounded-lg cursor-pointer">
+              <div class="flex justify-between text-[10px] text-cyan-700/80 mt-1">
+                <span>온화한 겨울 (0~5일)</span>
+                <span>영종도 평년치 (16일)</span>
+                <span>극심한 한파특보 (30일+)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Heating & Cooling Operational Settings (Cond 3) -->
+        <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm transition hover:border-blue-300">
+          <div class="flex items-center justify-between mb-2">
+            <label class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+              <span class="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[11px] font-bold">3</span>
+              설비별 설치 대수 설정 (난방·냉방·송풍·공조기 8대)
+            </label>
+            <span class="text-xs font-semibold text-emerald-600 font-mono" id="lblHvacCapacity">설비 총 17대 연동</span>
+          </div>
+          <p class="text-[11px] text-slate-500 mb-3">
+            각 설비의 대수 증감에 따라 도시가스 열용량 및 전기 송풍·압축 동력비가 비례하여 실시간 산출됩니다.
+          </p>
+
+          <!-- Equipment Counts Controls Grid -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-3.5">
+            <!-- 1. Heating Units Count -->
+            <div class="bg-amber-50/70 p-2.5 rounded-xl border border-amber-200 text-center">
+              <span class="text-[11px] font-bold text-amber-900 block mb-1">🔥 난방 유닛</span>
+              <div class="flex items-center justify-center gap-1.5">
+                <button type="button" class="btn-qty w-6 h-6 rounded bg-amber-200 text-amber-900 font-bold hover:bg-amber-300 flex items-center justify-center" data-target="heatingUnits" data-delta="-1">-</button>
+                <span class="font-extrabold text-sm text-amber-950 font-mono w-7" id="valHeatingUnits">2대</span>
+                <button type="button" class="btn-qty w-6 h-6 rounded bg-amber-200 text-amber-900 font-bold hover:bg-amber-300 flex items-center justify-center" data-target="heatingUnits" data-delta="1">+</button>
+              </div>
+              <span class="text-[10px] text-amber-700 block mt-1">도시가스 온풍</span>
+            </div>
+
+            <!-- 2. Cooling Units Count -->
+            <div class="bg-blue-50/70 p-2.5 rounded-xl border border-blue-200 text-center">
+              <span class="text-[11px] font-bold text-blue-900 block mb-1">❄️ 냉방 유닛</span>
+              <div class="flex items-center justify-center gap-1.5">
+                <button type="button" class="btn-qty w-6 h-6 rounded bg-blue-200 text-blue-900 font-bold hover:bg-blue-300 flex items-center justify-center" data-target="coolingUnits" data-delta="-1">-</button>
+                <span class="font-extrabold text-sm text-blue-950 font-mono w-7" id="valCoolingUnits">5대</span>
+                <button type="button" class="btn-qty w-6 h-6 rounded bg-blue-200 text-blue-900 font-bold hover:bg-blue-300 flex items-center justify-center" data-target="coolingUnits" data-delta="1">+</button>
+              </div>
+              <span class="text-[10px] text-blue-700 block mt-1" id="lblCoolingRT">210 RT (전기)</span>
+            </div>
+
+            <!-- 3. Inflation / Blower Units Count -->
+            <div class="bg-indigo-50/70 p-2.5 rounded-xl border border-indigo-200 text-center">
+              <span class="text-[11px] font-bold text-indigo-900 block mb-1">⚡ 송풍 유닛</span>
+              <div class="flex items-center justify-center gap-1.5">
+                <button type="button" class="btn-qty w-6 h-6 rounded bg-indigo-200 text-indigo-900 font-bold hover:bg-indigo-300 flex items-center justify-center" data-target="blowerUnits" data-delta="-1">-</button>
+                <span class="font-extrabold text-sm text-indigo-950 font-mono w-7" id="valBlowerUnits">2대</span>
+                <button type="button" class="btn-qty w-6 h-6 rounded bg-indigo-200 text-indigo-900 font-bold hover:bg-indigo-300 flex items-center justify-center" data-target="blowerUnits" data-delta="1">+</button>
+              </div>
+              <span class="text-[10px] text-indigo-700 block mt-1">상시 가압용</span>
+            </div>
+
+            <!-- 4. HVAC Units Count -->
+            <div class="bg-purple-50/70 p-2.5 rounded-xl border border-purple-200 text-center">
+              <span class="text-[11px] font-bold text-purple-900 block mb-1">🔄 공조기(HVAC)</span>
+              <div class="flex items-center justify-center gap-1.5">
+                <button type="button" class="btn-qty w-6 h-6 rounded bg-purple-200 text-purple-900 font-bold hover:bg-purple-300 flex items-center justify-center" data-target="hvacUnits" data-delta="-1">-</button>
+                <span class="font-extrabold text-sm text-purple-950 font-mono w-7" id="valHvacUnits">8대</span>
+                <button type="button" class="btn-qty w-6 h-6 rounded bg-purple-200 text-purple-900 font-bold hover:bg-purple-300 flex items-center justify-center" data-target="hvacUnits" data-delta="1">+</button>
+              </div>
+              <span class="text-[10px] text-purple-700 block mt-1">기준: 8대 (전기)</span>
+            </div>
+          </div>
+
+          <!-- Operation settings sub-controls -->
+          <div class="grid grid-cols-2 gap-3 mb-2 text-xs">
+            <div class="bg-amber-50/50 p-2 rounded-lg border border-amber-100">
+              <div class="flex justify-between text-[11px] text-amber-900 font-semibold mb-1">
+                <span>🔥 난방 설정온도 (도시가스)</span>
+                <b class="text-amber-700 font-mono" id="valTargetHeatTemp">18 ℃</b>
+              </div>
+              <select id="selTargetHeatTemp" class="w-full bg-white border border-amber-200 rounded p-1 text-xs font-medium text-slate-700">
+                <option value="15">15℃ (절약형 훈련 - 가스 절감)</option>
+                <option value="18" selected>18℃ (표준 야구장 실내온도)</option>
+                <option value="21">21℃ (쾌적/유관중 모드 - 가스 증가)</option>
+              </select>
+            </div>
+
+            <div class="bg-blue-50/50 p-2 rounded-lg border border-blue-100">
+              <div class="flex justify-between text-[11px] text-blue-900 font-semibold mb-1">
+                <span>❄️ 냉방 가동률 (전기)</span>
+                <b class="text-blue-700 font-mono" id="valAcLoadFactor">75%</b>
+              </div>
+              <select id="selAcLoadFactor" class="w-full bg-white border border-blue-200 rounded p-1 text-xs font-medium text-slate-700">
+                <option value="0.5">50% (경제 절전 가동)</option>
+                <option value="0.75" selected>75% (표준 쾌적 냉방 - 24℃)</option>
+                <option value="0.95">95% (혹서기 연속 풀가동)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Blower and HVAC Motor Specs Grid -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+            <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+              <div class="flex justify-between items-center mb-1">
+                <span class="text-[11px] text-slate-700 font-medium">⚡ 송풍기 1대당 전류 (380V)</span>
+                <span class="font-bold text-blue-700 font-mono" id="valBlowerAmps">90 A (47.4 kW)</span>
+              </div>
+              <select id="selBlowerAmps" class="w-full bg-white border border-slate-200 rounded-lg p-1 text-xs font-medium">
+                <option value="75">절전 가압 (75A - 37kW급 부하)</option>
+                <option value="90" selected>표준 가압 (90A - 47kW급 부하)</option>
+                <option value="115">강풍 방재 (115A - 60kW급 고압)</option>
+              </select>
+            </div>
+
+            <div class="bg-purple-50/60 p-2.5 rounded-lg border border-purple-200">
+              <div class="flex justify-between items-center mb-1">
+                <span class="text-[11px] text-purple-900 font-medium">🔄 공조기(HVAC) 1대당 모터 스펙</span>
+                <span class="font-bold text-purple-700 font-mono" id="valHvacSpec">5.5 kW (7.5 HP)</span>
+              </div>
+              <select id="selHvacSpec" class="w-full bg-white border border-purple-200 rounded-lg p-1 text-xs font-medium text-purple-950">
+                <option value="3.7">경량 순환형 (3.7 kW / 5 HP)</option>
+                <option value="5.5" selected>표준 공조형 (5.5 kW / 7.5 HP, 12,000 CMH)</option>
+                <option value="7.5">중용량 정압형 (7.5 kW / 10 HP, 16,000 CMH)</option>
+                <option value="11.0">고풍량 고정압형 (11.0 kW / 15 HP, 22,000 CMH)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. Utility Rates Escalation (Cond 4) -->
+        <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm transition hover:border-blue-300">
+          <div class="flex items-center justify-between mb-2">
+            <label class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+              <span class="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[11px] font-bold">4</span>
+              공공요금(한전 전기·도시가스) 요금 변동률 (조건 4)
+            </label>
+            <span class="text-xs font-bold text-indigo-600" id="lblUtilityEscalation">+0% (2024년 기준)</span>
+          </div>
+          <div class="grid grid-cols-2 gap-3 text-xs">
+            <div>
+              <div class="flex justify-between text-[11px] text-slate-600 mb-1">
+                <span>전기요금 인상률</span>
+                <b class="text-blue-600 font-mono" id="valElecRate">+0%</b>
+              </div>
+              <input type="range" id="inputElecRate" min="-10" max="40" step="1" value="0" class="w-full h-2 bg-slate-200 rounded cursor-pointer">
+            </div>
+            <div>
+              <div class="flex justify-between text-[11px] text-slate-600 mb-1">
+                <span>도시가스 요금 인상률</span>
+                <b class="text-amber-600 font-mono" id="valGasRate">+0%</b>
+              </div>
+              <input type="range" id="inputGasRate" min="-10" max="40" step="1" value="0" class="w-full h-2 bg-slate-200 rounded cursor-pointer">
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. Sports Lighting (Cond 5) - KBO 3-Stage Standards & LED Specs -->
+        <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm transition hover:border-blue-300">
+          <div class="flex items-center justify-between mb-2">
+            <label class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+              <span class="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[11px] font-bold">5</span>
+              야구장 KBO 조도 기준 & 스포츠 LED 조명 스펙 (조건 5)
+            </label>
+            <span class="text-xs font-semibold text-yellow-700 font-mono" id="lblLightingPower">LED 144 kW (120등)</span>
+          </div>
+          <p class="text-[11px] text-slate-500 mb-2.5">
+            KBO 조도 규정에 맞춘 프리셋(저·평상·고)과 함께, <b>설치 등기구 수</b>와 <b>LED 정격 출력</b>을 직접 변경하여 전기 소비량과 달성 조도를 산출합니다.
+          </p>
+
+          <div class="grid grid-cols-3 gap-2 mb-3">
+            <button type="button" class="btn-lux p-2 text-left rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 transition" data-mode="low" data-fixtures="80">
+              <div class="flex items-center justify-between">
+                <span class="text-[11px] font-bold text-slate-800">1. 저 (훈련·연습)</span>
+                <span class="text-[9px] px-1 rounded bg-slate-200 text-slate-700">650 lx</span>
+              </div>
+              <span class="text-[10px] text-slate-500 block leading-tight mt-0.5">내야 800 / 외야 500 lx</span>
+            </button>
+
+            <button type="button" class="btn-lux p-2 text-left rounded-lg border-2 border-yellow-500 bg-yellow-50 text-yellow-900 font-bold transition" data-mode="normal" data-fixtures="160">
+              <div class="flex items-center justify-between">
+                <span class="text-[11px] font-bold">2. 평상경기 (KBO)</span>
+                <span class="text-[9px] px-1 rounded bg-yellow-200 text-yellow-800">1,750 lx</span>
+              </div>
+              <span class="text-[10px] text-yellow-700 block leading-tight mt-0.5">내야 2,000 / 외야 1,500 lx</span>
+            </button>
+
+            <button type="button" class="btn-lux p-2 text-left rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 transition" data-mode="high" data-fixtures="240">
+              <div class="flex items-center justify-between">
+                <span class="text-[11px] font-bold text-slate-800">3. 고 (프로·TV중계)</span>
+                <span class="text-[9px] px-1 rounded bg-amber-200 text-amber-900">2,500 lx</span>
+              </div>
+              <span class="text-[10px] text-slate-500 block leading-tight mt-0.5">내야 3,000 / 외야 2,000 lx</span>
+            </button>
+          </div>
+
+          <!-- Fixtures counter -->
+          <div class="bg-yellow-50/40 p-3 rounded-xl border border-yellow-200 mb-3 space-y-2.5">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="flex items-center gap-1.5">
+                <span class="text-xs font-bold text-yellow-950">💡 설치 등기구 수량 조절</span>
+                <span class="text-[10px] text-yellow-700 bg-yellow-100 px-1.5 py-0.5 rounded font-medium">최대 500개</span>
+              </div>
+              
+              <div class="flex items-center gap-1">
+                <button type="button" class="btn-fixture-step px-2 py-0.5 rounded bg-yellow-200 text-yellow-950 font-bold hover:bg-yellow-300 text-xs transition" data-delta="-50">-50</button>
+                <button type="button" class="btn-fixture-step px-1.5 py-0.5 rounded bg-yellow-200 text-yellow-950 font-bold hover:bg-yellow-300 text-xs transition" data-delta="-10">-10</button>
+                <span class="font-extrabold text-sm text-yellow-950 font-mono w-16 text-center" id="valFixtureCountText">160 개</span>
+                <button type="button" class="btn-fixture-step px-1.5 py-0.5 rounded bg-yellow-200 text-yellow-950 font-bold hover:bg-yellow-300 text-xs transition" data-delta="10">+10</button>
+                <button type="button" class="btn-fixture-step px-2 py-0.5 rounded bg-yellow-200 text-yellow-950 font-bold hover:bg-yellow-300 text-xs transition" data-delta="50">+50</button>
+              </div>
+            </div>
+
+            <input type="range" id="inputFixtureCount" min="30" max="500" step="2" value="160" class="w-full h-2 bg-yellow-200 rounded-lg cursor-pointer">
+            
+            <div class="flex justify-between items-center text-[10px] text-yellow-800">
+              <span>최소 30등</span>
+              <span>권장 배치: 120~240등</span>
+              <span>최대 500등</span>
+            </div>
+          </div>
+
+          <!-- LED Fixture controls -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs mb-2.5">
+            <div class="bg-yellow-50/50 p-2.5 rounded-lg border border-yellow-200">
+              <div class="flex justify-between items-center mb-1">
+                <span class="text-[11px] text-yellow-900 font-medium">단일 등기구 출력 스펙</span>
+                <span class="font-bold text-yellow-800 font-mono" id="valLedFixtureWatt">1,200 W (고출력)</span>
+              </div>
+              <select id="selLedFixtureWatt" class="w-full bg-white border border-yellow-300 rounded p-1 text-xs font-medium text-slate-800">
+                <option value="800">800 W급 (초고효율 150 lm/W)</option>
+                <option value="1000">1,000 W급 (표준 스포츠 투광기)</option>
+                <option value="1200" selected>1,200 W급 (KBO 구장 표준 광학형)</option>
+                <option value="1500">1,500 W급 (대구경 광폭 배광형)</option>
+              </select>
+            </div>
+
+            <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+              <div class="flex justify-between text-[11px] text-slate-600 mb-1">
+                <span>일평균 점등 가동시간</span>
+                <b class="text-blue-600 font-mono" id="valLightingHours">4.5 시간/일</b>
+              </div>
+              <input type="range" id="inputLightingHours" min="1" max="10" step="0.5" value="4.5" class="w-full h-2 bg-slate-200 rounded cursor-pointer mt-1">
+            </div>
+          </div>
+
+          <div class="flex flex-wrap items-center justify-between text-[11px] text-slate-600 bg-slate-100/70 rounded-lg px-2.5 py-1.5 font-mono gap-1">
+            <span>설치 등기구 수: <b class="text-slate-800" id="lblFixturesCount">160 개</b></span>
+            <span>환산 총 소비전력: <b class="text-yellow-700" id="lblTotalLightKW">192.0 kW</b></span>
+            <span class="text-emerald-700 font-semibold" id="lblKboCompliance">KBO 표준 경기조도 충족 (달성: 1,750 lx)</span>
+          </div>
+        </div>
+
+        <!-- 6. Snow Melting System (Cond 8) -->
+        <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm transition hover:border-blue-300">
+          <div class="flex items-center justify-between mb-2">
+            <label class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+              <span class="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[11px] font-bold">6</span>
+              겨울철 제설(융설) 모드 운영 일수 (조건 8)
+            </label>
+            <span class="text-xs font-bold text-cyan-600" id="lblSnowDays">연 7일 집중 제설</span>
+          </div>
+          <p class="text-[11px] text-slate-500 mb-2">적설 시 돔 붕괴 방지를 위해 돔 내부 상부 공기를 20~24℃로 급격히 승온시키고 가압 송풍기를 100% 가동하여 눈을 녹여 흘려보냅니다.</p>
+          <div class="space-y-1">
+            <div class="flex justify-between text-[11px] text-slate-600 font-medium">
+              <span>연간 폭설 및 제설가동 일수</span>
+              <span class="font-bold text-cyan-700" id="valSnowDays">7 일 (도시가스 승온 + 송풍 가압)</span>
+            </div>
+            <input type="range" id="inputSnowDays" min="0" max="25" step="1" value="7" class="w-full h-2 bg-slate-200 rounded-lg cursor-pointer">
+          </div>
+        </div>
+
+        <!-- 6-B. Summer Monsoon Season Dehumidification Reheat -->
+        <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm transition hover:border-teal-300">
+          <div class="flex items-center justify-between mb-2">
+            <label class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+              <span class="w-5 h-5 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center text-[11px] font-bold">6-B</span>
+              여름철 장마시즌 제습 재열난방 & 습도 50% 제어 (하절기 가스 소모)
+            </label>
+            <span class="text-xs font-bold text-teal-700 font-mono" id="lblMonsoonDays">장마 30일 (RH 50% 제어)</span>
+          </div>
+          <p class="text-[11px] text-slate-500 mb-2.5 leading-relaxed">
+            장마철 외기(습도 85~95%) 유입 시 그라운드 결로와 곰팡이를 막기 위해, 냉각 코일로 노점온도(약 12℃)까지 냉각 감습한 뒤 실내 과냉을 방지하고 <b>상대습도 50%</b>를 유지하고자 <b>도시가스 난방 유닛으로 재가열(Reheating, 12℃ ➔ 23℃)</b>합니다.
+          </p>
+
+          <div class="space-y-3">
+            <div>
+              <div class="flex justify-between text-[11px] text-slate-700 font-medium mb-1">
+                <span>연간 집중 장마 및 고습 제습일수</span>
+                <b class="text-teal-700 font-mono" id="valMonsoonDays">30 일/년</b>
+              </div>
+              <input type="range" id="inputMonsoonDays" min="0" max="60" step="1" value="30" class="w-full h-2 bg-teal-100 rounded-lg cursor-pointer accent-teal-600">
+              <div class="flex justify-between text-[10px] text-slate-400 mt-0.5">
+                <span>마른장마 (10일)</span>
+                <span>평년 장마철 (30일)</span>
+                <span>장기 장마·엘니뇨 (50일+)</span>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 text-xs">
+              <div class="bg-teal-50/70 p-2.5 rounded-lg border border-teal-200">
+                <span class="text-[11px] text-teal-900 font-semibold block mb-1">목표 상대습도 (RH)</span>
+                <div class="flex items-center justify-between">
+                  <span class="font-extrabold text-sm text-teal-800 font-mono">50 %</span>
+                  <span class="text-[10px] px-1.5 py-0.5 rounded bg-teal-200 text-teal-900 font-semibold">쾌적·결로방지</span>
+                </div>
+                <span class="text-[10px] text-teal-700 block mt-1">절대습도 9.8g/kg DA 제어</span>
+              </div>
+
+              <div class="bg-amber-50/70 p-2.5 rounded-lg border border-amber-200">
+                <span class="text-[11px] text-amber-900 font-semibold block mb-1">장마철 재열 난방(가스)</span>
+                <b class="text-sm font-extrabold text-amber-900 font-mono block" id="valMonsoonGasCost">0 원</b>
+                <span class="text-[10px] text-amber-700 block mt-1" id="lblMonsoonReheatDelta">재열 승온 폭: 약 ΔT 11℃</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 7. Audience & Training Mode (Cond 9) -->
+        <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm transition hover:border-blue-300">
+          <div class="flex items-center justify-between mb-2">
+            <label class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+              <span class="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[11px] font-bold">7</span>
+              유관중(1,000석) 경기 vs 무관중 훈련 비율 (조건 9)
+            </label>
+            <span class="text-xs font-semibold text-purple-700" id="lblAudienceRatio">유관중 연 40회</span>
+          </div>
+          <p class="text-[11px] text-slate-500 mb-2.5">
+            관중 1,000명 입장 시 설정된 기준(국내 법정 25 / 일본 빌딩관리법 30 / 도쿄돔 코로나 이후 40 CMH/인)에 따라 환기 급배기 부하와 비상구 왕래 공기 유출량이 자동 반영됩니다.
+          </p>
+          <div class="grid grid-cols-2 gap-3 text-xs">
+            <div>
+              <label class="text-[11px] text-slate-600 block mb-1">연간 유관중 공식경기 일수</label>
+              <input type="number" id="inputAudienceDays" value="40" min="0" max="200" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-xs font-semibold">
+            </div>
+            <div>
+              <label class="text-[11px] text-slate-600 block mb-1">관중 1인당 환기 외기 도입 기준</label>
+              <select id="selVentFactor" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-xs font-medium">
+                <option value="25">25 CMH/인 (국내 법정 기준)</option>
+                <option value="30" selected>30 CMH/인 (일본 빌딩관리법 기준)</option>
+                <option value="40">40 CMH/인 (도쿄돔 코로나 이후 운영 기준)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- 8. Doors and Engineering Factors (Cond 10) -->
+        <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm transition hover:border-blue-300">
+          <div class="flex items-center justify-between mb-2">
+            <label class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+              <span class="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[11px] font-bold">8</span>
+              출입문 개수 매개변수 & 피막단열 성능 (조건 10)
+            </label>
+            <span class="text-xs font-semibold text-purple-700 font-mono" id="lblTotalDoors">총 출입구 26개소</span>
+          </div>
+          <p class="text-[11px] text-slate-500 mb-3">
+            주출입구(에어락 회전문) 및 비상출입구(패닉도어) 개수를 직접 증감할 수 있습니다. 문이 많아질수록 틈새 공기 누기량(Air Leakage)이 증가하여 송풍기 가압 전력과 냉난방 손실비가 비례하여 상승합니다.
+          </p>
+
+          <div class="grid grid-cols-2 gap-3 mb-3">
+            <div class="bg-indigo-50/70 p-2.5 rounded-xl border border-indigo-200 text-center">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-[11px] font-bold text-indigo-900">🚪 주출입구 (에어락 회전문)</span>
+                <span class="text-[10px] text-indigo-600 font-mono">개폐 손실 多</span>
+              </div>
+              <div class="flex items-center justify-center gap-2 mt-1">
+                <button type="button" class="btn-door-qty w-7 h-7 rounded-lg bg-indigo-200 text-indigo-900 font-bold hover:bg-indigo-300 flex items-center justify-center" data-target="mainDoors" data-delta="-1">-</button>
+                <span class="font-extrabold text-sm text-indigo-950 font-mono w-10" id="valMainDoors">1개</span>
+                <button type="button" class="btn-door-qty w-7 h-7 rounded-lg bg-indigo-200 text-indigo-900 font-bold hover:bg-indigo-300 flex items-center justify-center" data-target="mainDoors" data-delta="1">+</button>
+              </div>
+              <span class="text-[10px] text-indigo-700 block mt-1.5">회전 도어 1개소당 침기손실 반영</span>
+            </div>
+
+            <div class="bg-purple-50/70 p-2.5 rounded-xl border border-purple-200 text-center">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-[11px] font-bold text-purple-900">🚨 비상출입구 (방화·패닉도어)</span>
+                <span class="text-[10px] text-purple-600 font-mono">틈새 누기</span>
+              </div>
+              <div class="flex items-center justify-center gap-2 mt-1">
+                <button type="button" class="btn-door-qty w-7 h-7 rounded-lg bg-purple-200 text-purple-900 font-bold hover:bg-purple-300 flex items-center justify-center" data-target="exitDoors" data-delta="-2">-2</button>
+                <span class="font-extrabold text-sm text-purple-950 font-mono w-12" id="valExitDoors">24개</span>
+                <button type="button" class="btn-door-qty w-7 h-7 rounded-lg bg-purple-200 text-purple-900 font-bold hover:bg-purple-300 flex items-center justify-center" data-target="exitDoors" data-delta="2">+2</button>
+              </div>
+              <span class="text-[10px] text-purple-700 block mt-1.5">가스켓 미세 가압 누기량 연동</span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+              <span class="text-[11px] text-slate-600 block mb-1 font-medium">피막 구조 (PVDF 막재 단열성능)</span>
+              <select id="selMembraneType" class="w-full bg-white border border-slate-200 rounded p-1 text-xs">
+                <option value="1.0">2중 멤브레인 (표준 공기층, U=2.5 W/m²K)</option>
+                <option value="0.82" selected>3중 고단열 멤브레인 (단열재 함유, U=1.8)</option>
+                <option value="1.25">단일막+보조막 (일반형, U=3.2 W/m²K)</option>
+              </select>
+            </div>
+            <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+              <span class="text-[11px] text-slate-600 block mb-1 font-medium">출입문 가스켓 기밀 등급</span>
+              <select id="selDoorAirtight" class="w-full bg-white border border-slate-200 rounded p-1 text-xs">
+                <option value="0.95">초기밀 마그네틱 가스켓 (누기 5% 절감)</option>
+                <option value="1.00" selected>표준 산업용 실링 가스켓</option>
+                <option value="1.10">다빈도 개폐 노후화 (누기 10% 증가)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right Column: Visual Charts, Cost Table, and Formulas Breakdown -->
+      <div class="lg:col-span-6 space-y-5">
+        
+        <!-- Breakdown Visual Card (Cost Composition Chart) -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <i data-lucide="pie-chart" class="w-4 h-4 text-blue-600"></i>
+                항목별 에너지 비용 분포 (연간 추정치)
+              </h3>
+              <p class="text-xs text-slate-500">인천 에어돔 부문별 전기·가스 지출 분석</p>
+            </div>
+            <span class="text-xs font-mono bg-slate-100 text-slate-700 px-2.5 py-1 rounded-md font-semibold" id="lblChartTotal">합계: 계산 중</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
+            <div class="sm:col-span-6 h-56 relative flex items-center justify-center">
+              <canvas id="costBreakdownChart"></canvas>
+            </div>
+            <div class="sm:col-span-6 space-y-2 text-xs">
+              <div class="p-2 rounded-lg bg-amber-50/70 border border-amber-100 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-full bg-amber-500"></span>
+                  <span class="text-slate-700">기본 난방 (도시가스)</span>
+                </div>
+                <b class="text-slate-900 font-mono" id="itemGasHeat">0 원</b>
+              </div>
+              <div class="p-2 rounded-lg bg-teal-50/70 border border-teal-200 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-full bg-teal-500"></span>
+                  <span class="text-slate-700">장마 제습재열 (습도50% 가스)</span>
+                </div>
+                <b class="text-slate-900 font-mono" id="itemMonsoonReheat">0 원</b>
+              </div>
+              <div class="p-2 rounded-lg bg-cyan-50/70 border border-cyan-100 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-full bg-cyan-500"></span>
+                  <span class="text-slate-700">폭설 제설 승온 (가스+송풍)</span>
+                </div>
+                <b class="text-slate-900 font-mono" id="itemSnowMelt">0 원</b>
+              </div>
+              <div class="p-2 rounded-lg bg-blue-50/70 border border-blue-100 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-full bg-blue-600"></span>
+                  <span class="text-slate-700">여름철 냉방 (AC 210RT)</span>
+                </div>
+                <b class="text-slate-900 font-mono" id="itemCooling">0 원</b>
+              </div>
+              <div class="p-2 rounded-lg bg-indigo-50/70 border border-indigo-100 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-full bg-indigo-600"></span>
+                  <span class="text-slate-700">24시간 상시 가압 송풍</span>
+                </div>
+                <b class="text-slate-900 font-mono" id="itemInflation">0 원</b>
+              </div>
+              <div class="p-2 rounded-lg bg-yellow-50/70 border border-yellow-200 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-full bg-yellow-500"></span>
+                  <span class="text-slate-700">야구장 스포츠 조명</span>
+                </div>
+                <b class="text-slate-900 font-mono" id="itemLighting">0 원</b>
+              </div>
+              <div class="p-2 rounded-lg bg-emerald-50/70 border border-emerald-100 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-full bg-emerald-600"></span>
+                  <span class="text-slate-700">공조기 8대 순환 및 환기</span>
+                </div>
+                <b class="text-slate-900 font-mono" id="itemVentilation">0 원</b>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Monthly Comparison Bar Chart -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <i data-lucide="bar-chart-3" class="w-4 h-4 text-emerald-600"></i>
+                월별 전기 vs 가스 비용 추이 (시뮬레이션)
+              </h3>
+              <p class="text-xs text-slate-500">동절기 가스 급증 vs 하절기 전기 피크 패턴</p>
+            </div>
+          </div>
+          <div class="h-48 relative">
+            <canvas id="monthlyTrendChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Formula Explanation Card -->
+        <div id="formulaExplanationCard" class="bg-slate-900 text-slate-100 rounded-2xl p-5 shadow-lg border border-slate-800">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-3.5">
+            <div class="flex items-center gap-2">
+              <i data-lucide="book-open-check" class="w-5 h-5 text-blue-400"></i>
+              <h3 class="text-sm font-bold text-white">공학적 산출 산식 및 도출 근거 (Formula Rationale)</h3>
+            </div>
+            <span class="text-[11px] text-blue-300 bg-blue-950/80 px-2.5 py-0.5 rounded border border-blue-800">열역학 및 전기공학 이론식</span>
+          </div>
+
+          <div class="space-y-3.5 text-xs text-slate-300 leading-relaxed max-h-[380px] overflow-y-auto pr-1 custom-scrollbar">
+            
+            <div class="bg-slate-800/80 p-3.5 rounded-xl border border-slate-700">
+              <span class="font-bold text-amber-300 block mb-1">1. 건물 피막 전도·대류 열손실 및 난방 부하 공식</span>
+              <p class="text-slate-400 mb-2">
+                정상 상태(Steady State)에서 돔 막재 표면을 통해 손실되는 관류열량과 도어 침기·환기 열손실의 총합:
+              </p>
+              <div class="formula-badge bg-slate-950 text-amber-400 p-2.5 rounded text-center text-xs mb-2 tracking-wide font-serif">
+                Q<sub>난방</sub> = [ U<sub>막재</sub> · A<sub>표면적</sub> · (T<sub>실내</sub> - T<sub>외기</sub>) + ρ · C<sub>p</sub> · (V<sub>환기</sub> + V<sub>도어누기</sub>) · ΔT ] × (N<sub>난방유닛</sub> / 2) × HDD
+              </div>
+              <ul class="list-disc list-inside text-[11px] text-slate-400 space-y-1">
+                <li><b>U<sub>막재</sub></b>: 멤브레인 총괄 열관류율 [W/m²·K] (2중막 2.5, 3중 고단열 1.8)</li>
+                <li><b>A<sub>표면적</sub></b>: 외부 대기와 접하는 돔 유효 외피 면적 [m²]</li>
+                <li><b>V<sub>도어누기</sub></b>: (주출입구수 × 600 CMH + 비상구수 × 180 CMH) × 기밀등급 계수</li>
+                <li><b>HDD</b>: 난방도일(Heating Degree Days) 지역별 외기 온도 가중치</li>
+                <li><b>N<sub>난방유닛</sub></b>: Heat & Inflation 유닛 설치 대수 (기준 2대 대비 비례)</li>
+              </ul>
+            </div>
+
+            <div class="bg-slate-800/80 p-3.5 rounded-xl border border-slate-700">
+              <span class="font-bold text-teal-300 block mb-1">2. 여름철 장마시즌 제습 재열난방 부하 공식 (습도 50% 유지)</span>
+              <p class="text-slate-400 mb-2">
+                여름 장마철 고습 공기(RH 85%+)의 수분을 응축하기 위해 냉각기 코일로 노점온도(약 12℃)까지 냉각 감습한 후, 실내 과냉을 방지하고 목표 습도 50%(실온 23℃)로 맞추기 위한 재열 난방열량:
+              </p>
+              <div class="formula-badge bg-slate-950 text-teal-400 p-2.5 rounded text-center text-xs mb-2 tracking-wide font-serif">
+                Q<sub>재열(가스)</sub> = [ ρ · C<sub>p</sub> · Q<sub>제습순환풍량</sub> · (T<sub>목표공급</sub> - T<sub>이슬점코일</sub>) ] × (V<sub>돔</sub> / V<sub>기준</sub>) × 일일가동시간 × N<sub>장마일수</sub>
+              </div>
+              <ul class="list-disc list-inside text-[11px] text-slate-400 space-y-1">
+                <li><b>T<sub>목표공급</sub> - T<sub>이슬점코일</sub></b>: 공기 재가열 온도차 (ΔT<sub>reheat</sub> ≈ 23℃ - 12℃ = 11℃)</li>
+                <li><b>Q<sub>재열</sub> 열원</b>: Heat & Inflation 유닛의 <b>도시가스</b> 버너 가열 부하로 직접 산정</li>
+                <li><b>체적 정비례</b>: 돔구장 체적 비례 부하를 100% 적용하여 대용량 공기 덩어리의 감습 재열비 산출</li>
+              </ul>
+            </div>
+
+            <div class="bg-slate-800/80 p-3.5 rounded-xl border border-slate-700">
+              <span class="font-bold text-cyan-300 block mb-1">3. 여름철 냉동기(Chiller/AC) 전력 소모량 공식</span>
+              <div class="formula-badge bg-slate-950 text-cyan-400 p-2.5 rounded text-center text-xs mb-2 tracking-wide font-serif">
+                P<sub>냉방</sub> = [ 용량<sub>RT</sub> × 3.517 kW/RT ÷ COP ] × 부하율 × (N<sub>냉방유닛</sub> / 5)
+              </div>
+              <p class="text-[11px] text-slate-400">
+                • 냉방기 5대(40t 4대 + 50t 1대 = 210RT)를 기준으로 대수 증감에 따라 압축기 총 전력 정비례 반영.
+              </p>
+            </div>
+
+            <div class="bg-slate-800/80 p-3.5 rounded-xl border border-slate-700">
+              <span class="font-bold text-purple-300 block mb-1">4. 공조기 8대 순환 동력 및 환기 에너지 공식</span>
+              <div class="formula-badge bg-slate-950 text-purple-400 p-2.5 rounded text-center text-xs mb-2 tracking-wide font-serif">
+                E<sub>HVAC</sub> = N<sub>공조기</sub> × ( Q<sub>급배기</sub> · ΔP ÷ 3600 ÷ η<sub>팬</sub> ) × 운전시간
+              </div>
+              <ul class="list-disc list-inside text-[11px] text-slate-400 space-y-1">
+                <li><b>N<sub>공조기</sub></b>: 대용량 공조기 설치 대수 (기준 8대)</li>
+                <li><b>Q, ΔP</b>: 순환 풍량 [m³/h] 및 정압 손실 [Pa]</li>
+                <li><b>관람객 환기 보정</b>: 1,000석 규모 다중이용 법정 외기량(30 m³/h·인) 급기 가중치 적용</li>
+              </ul>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="mt-8 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div class="px-5 py-4 border-b border-slate-200 bg-slate-50/70 flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+            <i data-lucide="table" class="w-4 h-4 text-blue-600"></i>
+            조건별 1:1 정밀 비교 요약표 (Gyeongju vs Incheon)
+          </h3>
+          <p class="text-xs text-slate-500">10대 핵심 설계 및 운영 파라미터 상세 분석</p>
+        </div>
+        <span class="text-xs text-slate-500">단위: 원(KRW), m, RT, %</span>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs text-left">
+          <thead class="bg-slate-100 text-slate-700 uppercase font-semibold border-b border-slate-200">
+            <tr>
+              <th class="py-3 px-4">구분 / 평가 항목</th>
+              <th class="py-3 px-4">경주 스마트에어돔 (기준)</th>
+              <th class="py-3 px-4 bg-blue-50/50 text-blue-900">인천 영종도 야구장 에어돔 (예측)</th>
+              <th class="py-3 px-4">스케일 배수 / 영향도</th>
+              <th class="py-3 px-4">비용 영향 분석</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200 text-slate-600 font-medium">
+            <tr class="hover:bg-slate-50/50">
+              <td class="py-3 px-4 font-bold text-slate-800">에어돔 규격 (L×W×H)</td>
+              <td class="py-3 px-4">120m × 78m × 25m</td>
+              <td class="py-3 px-4 bg-blue-50/30 text-blue-900 font-semibold" id="tblSpecDim">140m × 140m × 60m</td>
+              <td class="py-3 px-4 font-mono text-blue-700" id="tblSpecVolumeDiff">돔 체적 5.03배 / 고척돔 대비 74.7%</td>
+              <td class="py-3 px-4">난방·냉방 기본 질량 및 표면 열손실 급증</td>
+            </tr>
+            <tr class="hover:bg-slate-50/50">
+              <td class="py-3 px-4 font-bold text-slate-800">기후 및 위치 특성</td>
+              <td class="py-3 px-4">경주 천군동 (내륙분지)</td>
+              <td class="py-3 px-4 bg-blue-50/30 text-blue-900">인천 중산동 (서해안 해풍지대)</td>
+              <td class="py-3 px-4 font-mono text-amber-700" id="tblSpecWeather">난방도일 +18% / 풍속 1.4배</td>
+              <td class="py-3 px-4">외벽 대류 열손실 계수(U) 증가로 가스 소모량 확대</td>
+            </tr>
+            <tr class="hover:bg-slate-50/50">
+              <td class="py-3 px-4 font-bold text-slate-800">공조 및 송풍 장비</td>
+              <td class="py-3 px-4">일체형 공조기 2대</td>
+              <td class="py-3 px-4 bg-blue-50/30 text-blue-900" id="tblSpecEquip">난방 2대 + 냉방 5대 + 송풍 2대 + 공조기 8대</td>
+              <td class="py-3 px-4 font-mono text-slate-700" id="tblSpecEquipRatio">장비 총 17대 운영</td>
+              <td class="py-3 px-4">난방(도시가스) 및 냉방·송풍·공조(전기) 분리 운전</td>
+            </tr>
+            <tr class="hover:bg-slate-50/50">
+              <td class="py-3 px-4 font-bold text-slate-800">스포츠 조명 스펙</td>
+              <td class="py-3 px-4">축구장 전용 (약 55 kW)</td>
+              <td class="py-3 px-4 bg-blue-50/30 text-blue-900" id="tblSpecLight">야구장 경기용 (120 kW)</td>
+              <td class="py-3 px-4 font-mono text-slate-700" id="tblSpecLightDiff">소비전력 2.18배</td>
+              <td class="py-3 px-4">내/외야 균제도 확보 및 방송조명으로 전기비 가중</td>
+            </tr>
+            <tr class="hover:bg-slate-50/50">
+              <td class="py-3 px-4 font-bold text-slate-800">장마철 제습 난방 (습도 50%)</td>
+              <td class="py-3 px-4">기본 공조 (재열 난방 미비)</td>
+              <td class="py-3 px-4 bg-blue-50/30 text-blue-900" id="tblSpecMonsoon">연간 30일 집중 제습 재열</td>
+              <td class="py-3 px-4 font-mono text-teal-700" id="tblSpecMonsoonDiff">가스 재열 ΔT 11℃</td>
+              <td class="py-3 px-4">하절기에도 결로방지·습도 50% 유지를 위해 도시가스 난방 가동</td>
+            </tr>
+            <tr class="hover:bg-slate-50/50">
+              <td class="py-3 px-4 font-bold text-slate-800">출입문 및 기밀성</td>
+              <td class="py-3 px-4">출입구 3개소 (수동 회전문)</td>
+              <td class="py-3 px-4 bg-blue-50/30 text-blue-900" id="tblSpecDoors">주출입 1 + 비상구 24 + 차량 1 (총 26개)</td>
+              <td class="py-3 px-4 font-mono text-purple-700" id="tblSpecDoorRatio">도어 수 8.7배</td>
+              <td class="py-3 px-4">미세 틈새 누기량 증가 보상을 위한 상시 가압 송풍 필요</td>
+            </tr>
+            <tr class="hover:bg-slate-50/50">
+              <td class="py-3 px-4 font-bold text-slate-800">제설 (융설) 모드</td>
+              <td class="py-3 px-4">연간 1~2일 (경주 온화)</td>
+              <td class="py-3 px-4 bg-blue-50/30 text-blue-900" id="tblSpecSnow">연간 7일 집중 제설</td>
+              <td class="py-3 px-4 font-mono text-cyan-700" id="tblSpecSnowDiff">제설 빈도 4~5배</td>
+              <td class="py-3 px-4">겨울철 급격한 가스 피크 부하(Peak Gas) 유발</td>
+            </tr>
+            <tr class="bg-slate-50 font-bold">
+              <td class="py-3.5 px-4 text-slate-900">연간 총 예상 비용</td>
+              <td class="py-3.5 px-4 text-slate-700">123,000,000 원</td>
+              <td class="py-3.5 px-4 bg-blue-100/50 text-blue-900 text-sm" id="tblSpecTotalCost">0 원</td>
+              <td class="py-3.5 px-4 text-blue-700 font-bold" id="tblSpecTotalRatio">+0%</td>
+              <td class="py-3.5 px-4 text-slate-800">에너지 효율화 및 고단열 막재 채택 권장</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    // Initialize icons
+    lucide.createIcons();
+
+    // Baseline Gyeongju Constant Data (2024 Actual) - Dome Geometry Standard
+    const SHAPE_K = 8 / 15; // 0.5333 Elliptic paraboloid baseball dome volume factor
+    const GOCHEOK_DOME_VOLUME = 840000; // Benchmark: Gocheok Sky Dome ~840,000 m3
+
+    const GYEONGJU = {
+      length: 120,
+      width: 78,
+      height: 25,
+      area: 120 * 78, // 9,360 m2
+      volume: 120 * 78 * 25 * SHAPE_K, // ~124,800 m3
+      surfaceArea: 14850,
+      elecCost: 56000000,
+      gasCost: 67000000,
+      totalCost: 123000000,
+      lightingPowerKW: 55,
+      lightingHoursDaily: 4.0,
+      snowDays: 1.5,
+      doors: 3
+    };
+
+    // State Variables for Incheon Dome
+    let state = {
+      modelType: 'volume', // Strictly 체적 정비례 고정
+      height: 60,
+      width: 140,
+      length: 140,
+      weatherFactor: 1.18,
+      coldWaveDays: 16,
+      targetHeatTemp: 18,
+      acLoadFactor: 0.75,
+      blowerAmps: 90,
+      monsoonDays: 30,
+      targetHumidity: 50,
+      monsoonHoursDaily: 14,
+      heatingUnits: 2,
+      coolingUnits: 5,
+      blowerUnits: 2,
+      hvacUnits: 8,
+      hvacMotorKW: 5.5,
+      lightingLuxMode: 'normal',
+      ledFixtureWatts: 1200,
+      fixtureCount: 160,
+      lightingPowerKW: 192,
+      lightingHoursDaily: 4.5,
+      mainDoors: 1,
+      exitDoors: 24,
+      vehicleDoors: 1,
+      elecRatePct: 0,
+      gasRatePct: 0,
+      snowDays: 7,
+      audienceDays: 40,
+      ventCMHPerPerson: 30,
+      membraneFactor: 0.82,
+      doorAirtightFactor: 1.00
+    };
+
+    // Latest calculated simulation results cache
+    let currentCalc = null;
+
+    // Chart References
+    let costBreakdownChart = null;
+    let monthlyTrendChart = null;
+
+    // Helper formatters
+    const fmtKRW = (num) => Math.round(num).toLocaleString('ko-KR') + ' 원';
+    const fmtNum = (num, decimals = 1) => Number(num).toLocaleString('ko-KR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+
+    function runSimulation() {
+      // 1. KBO Lighting Calculation
+      const fieldArea = 140 * 140; // 19,600 m2
+      const luxTargets = {
+        'low': 650,
+        'normal': 1750,
+        'high': 2500
+      };
+      const targetLux = luxTargets[state.lightingLuxMode] || 1750;
+      
+      const lumenPerWatt = state.ledFixtureWatts >= 1200 ? 135 : 145;
+      const effectiveFixtures = state.fixtureCount;
+      state.lightingPowerKW = (effectiveFixtures * state.ledFixtureWatts) / 1000;
+      
+      const totalGeneratedLumens = effectiveFixtures * state.ledFixtureWatts * lumenPerWatt;
+      const achievedLux = Math.round((totalGeneratedLumens * 0.55) / fieldArea);
+
+      // 2. Geometric Calculation
+      const incheonArea = state.length * state.width; // 19,600 m2
+      const incheonVolume = incheonArea * state.height * SHAPE_K; // V = 8/15 * L * W * H
+      const incheonSurface = incheonArea + (2 * (state.length + state.width) * state.height * 0.78);
+      
+      const volumeRatio = incheonVolume / GYEONGJU.volume;
+      const surfaceRatio = incheonSurface / GYEONGJU.surfaceArea;
+      const gocheokRatio = (incheonVolume / GOCHEOK_DOME_VOLUME) * 100;
+
+      // Strictly Volume Proportional Load Scaling
+      const effectiveLoadScale = volumeRatio;
+
+      let heatingTempMultiplier = 1.0;
+      if (state.targetHeatTemp === 15) heatingTempMultiplier = 0.80;
+      else if (state.targetHeatTemp === 21) heatingTempMultiplier = 1.25;
+
+      const heatUnitScale = state.heatingUnits / 2.0;
+      const coolUnitScale = state.coolingUnits / 5.0;
+      const blowerUnitScale = state.blowerUnits / 2.0;
+      const hvacUnitScale = state.hvacUnits / 8.0;
+
+      // 3. Door Leakage Model
+      const baselineDoorsLeakage = (1 * 600) + (24 * 180); // 4,920 CMH
+      const currentDoorsLeakage = (state.mainDoors * 600 + state.exitDoors * 180) * state.doorAirtightFactor;
+      const doorLeakageRatio = currentDoorsLeakage / baselineDoorsLeakage;
+
+      // 4. Severe Cold Wave Impact
+      const coldWaveLoadFactor = 1.0 + (state.coldWaveDays / 120) * 0.52;
+
+      // 5. Gas Heating Cost Model
+      const doorGasInfiltrationMultiplier = 1 + (doorLeakageRatio - 1) * 0.12;
+      const baseGasHeat = (GYEONGJU.gasCost * 0.88) * effectiveLoadScale * state.weatherFactor * heatingTempMultiplier * state.membraneFactor * doorGasInfiltrationMultiplier * heatUnitScale * coldWaveLoadFactor;
+      
+      const snowMeltCost = state.snowDays * (1450000 * (incheonArea / 19600) * state.weatherFactor) * Math.max(0.7, heatUnitScale * 0.85);
+      const audienceGasWinter = state.audienceDays * (1000 * state.ventCMHPerPerson * 0.45 * (state.weatherFactor - 0.8) * 12 / 30) * Math.max(0.6, hvacUnitScale);
+      
+      // Summer Monsoon Dehumidification Reheating Cost (가스 난방)
+      const reheatBaseGasPerDay = 360000;
+      const monsoonGasCost = state.monsoonDays * reheatBaseGasPerDay * effectiveLoadScale * (state.monsoonHoursDaily / 14) * Math.max(0.7, heatUnitScale * 0.85);
+
+      let totalGasRaw = (baseGasHeat + snowMeltCost + audienceGasWinter + monsoonGasCost);
+      const totalGas = totalGasRaw * (1 + state.gasRatePct / 100);
+
+      // 6. Electricity Cost Model
+      const unitElecRate = 145; // KRW per kWh
+
+      // Component A: Constant Blower Inflation
+      const coldBlowerMultiplier = 1.0 + (state.coldWaveDays / 365) * 0.15;
+      const blowerDoorMultiplier = 1 + (doorLeakageRatio - 1) * 0.15;
+      const singleBlowerPowerKW = (1.732 * 380 * state.blowerAmps * 0.86) / 1000;
+      const effectiveBlowerKW = singleBlowerPowerKW * Math.max(0.7, blowerUnitScale) * blowerDoorMultiplier * coldBlowerMultiplier;
+      const annualInflationKWh = effectiveBlowerKW * 8760;
+      const costInflationElec = annualInflationKWh * unitElecRate;
+
+      // Component B: Summer Cooling
+      const totalRT = 210 * coolUnitScale;
+      const acPowerKW = (totalRT * 1.15) * 1.4;
+      const coolingDoorMultiplier = 1 + (doorLeakageRatio - 1) * 0.08;
+      const monsoonChillerExtraKWh = state.monsoonDays * (acPowerKW * 0.32 * state.monsoonHoursDaily);
+      const annualCoolingKWh = (acPowerKW * (90 * 8) * state.acLoadFactor * coolingDoorMultiplier) + monsoonChillerExtraKWh;
+      const costCooling = annualCoolingKWh * unitElecRate * 1.15;
+
+      // Component C: Sports Lighting
+      const annualLightingKWh = state.lightingPowerKW * state.lightingHoursDaily * 365;
+      const costLighting = annualLightingKWh * unitElecRate;
+
+      // Component D: HVAC Circulation & Audience Ventilation
+      const hvacCirculationKW = state.hvacMotorKW * state.hvacUnits;
+      const annualHvacCircKWh = hvacCirculationKW * (365 * 12);
+      const audienceVentKWh = (state.audienceDays * 4 * 1000 * 0.04 * (state.ventCMHPerPerson / 25)) * 200 * hvacUnitScale;
+      const costVentAndAux = (annualHvacCircKWh + audienceVentKWh + 25000) * unitElecRate;
+
+      const costSnowElec = state.snowDays * (effectiveBlowerKW * 0.35 * 24 * unitElecRate);
+
+      let totalElecRaw = costInflationElec + costCooling + costLighting + costVentAndAux + costSnowElec;
+      const totalElec = totalElecRaw * (1 + state.elecRatePct / 100);
+
+      const totalAnnualCost = totalElec + totalGas;
+      const monthlyAvg = totalAnnualCost / 12;
+
+      // Cache calculation state for Excel export
+      currentCalc = {
+        incheonArea,
+        incheonVolume,
+        incheonSurface,
+        volumeRatio,
+        surfaceRatio,
+        effectiveLoadScale,
+        gocheokRatio,
+        totalElec,
+        totalGas,
+        totalAnnualCost,
+        monthlyAvg,
+        costInflationElec,
+        costCooling,
+        costLighting,
+        costVentAndAux,
+        baseGasHeat,
+        monsoonGasCost,
+        snowMeltCost,
+        audienceGasWinter,
+        costSnowElec,
+        totalRT,
+        effectiveFixtures,
+        targetLux,
+        achievedLux,
+        singleBlowerPowerKW,
+        effectiveBlowerKW,
+        unitElecRate
+      };
+
+      // Update UI Metrics
+      updateUI(currentCalc);
+
+      // Update Charts
+      updateCharts({
+        costInflationElec,
+        costCooling,
+        costLighting,
+        costVentAndAux,
+        baseGasHeat,
+        monsoonGasCost,
+        snowMeltCost: snowMeltCost + costSnowElec,
+        totalElec,
+        totalGas
+      });
+    }
+
+    function updateUI(data) {
+      document.getElementById('lblHeight').innerText = `높이: ${state.height} m`;
+      document.getElementById('statVolume').innerText = `${fmtNum(data.incheonVolume, 0)} m³`;
+      document.getElementById('statDomeBenchmark').innerText = `(고척돔의 ${fmtNum(data.gocheokRatio, 1)}%)`;
+      
+      document.getElementById('statModelName').innerText = `체적 정비례 (${fmtNum(data.volumeRatio, 2)}x 고정)`;
+      document.getElementById('badgeModelType').innerText = `체적 정비례 (${fmtNum(data.volumeRatio, 2)}x 고정)`;
+      
+      document.getElementById('lblScaleRatio').innerText = `경주 대비 돔구장 체적 배수: ${fmtNum(data.volumeRatio, 2)}배 (체적 정비례 부하 100% 적용)`;
+      
+      document.getElementById('resElectricityCost').innerText = fmtKRW(data.totalElec);
+      document.getElementById('resGasCost').innerText = fmtKRW(data.totalGas);
+      document.getElementById('resTotalCost').innerText = fmtKRW(data.totalAnnualCost);
+      document.getElementById('resMonthlyAvg').innerHTML = `<span>월평균:</span> <b class="text-white">${fmtKRW(data.monthlyAvg)}/월</b>`;
+      
+      const elecDiff = ((data.totalElec - GYEONGJU.elecCost) / GYEONGJU.elecCost) * 100;
+      const gasDiff = ((data.totalGas - GYEONGJU.gasCost) / GYEONGJU.gasCost) * 100;
+      const totalDiff = ((data.totalAnnualCost - GYEONGJU.totalCost) / GYEONGJU.totalCost) * 100;
+
+      document.getElementById('resElectricityDiff').innerHTML = `<span>경주 대비:</span> <b class="${elecDiff >= 0 ? 'text-blue-700 font-bold' : 'text-emerald-700'}">${elecDiff >= 0 ? '+' : ''}${fmtNum(elecDiff, 1)}%</b>`;
+      document.getElementById('resGasDiff').innerHTML = `<span>경주 대비:</span> <b class="${gasDiff >= 0 ? 'text-amber-700 font-bold' : 'text-emerald-700'}">${gasDiff >= 0 ? '+' : ''}${fmtNum(gasDiff, 1)}%</b>`;
+
+      const statHeatEl = document.getElementById('statHeatSetting');
+      if (statHeatEl) statHeatEl.innerText = `실내 ${state.targetHeatTemp}℃ (혹한 ${state.coldWaveDays}일)`;
+
+      const statMonsoonEl = document.getElementById('statMonsoonCost');
+      if (statMonsoonEl) statMonsoonEl.innerText = `가스 ${fmtKRW(data.monsoonGasCost)} (습도 50% 제어)`;
+
+      const statSnowEl = document.getElementById('statSnowCost');
+      if (statSnowEl) statSnowEl.innerText = fmtKRW(data.snowMeltCost + data.costSnowElec);
+
+      const statDoorEl = document.getElementById('statDoorSummary');
+      if (statDoorEl) statDoorEl.innerText = `주출입 ${state.mainDoors}개 / 비상구 ${state.exitDoors}개`;
+
+      // Weather & Cold Wave UI
+      document.getElementById('valColdDays').innerText = `${state.coldWaveDays} 일/년`;
+      document.getElementById('lblWeather').innerText = `인천 영종도(해안풍 + 혹한 ${state.coldWaveDays}일, 보정 ${state.weatherFactor}배)`;
+
+      // Monsoon Dehumidification UI updates
+      const lblMonsoon = document.getElementById('lblMonsoonDays');
+      if (lblMonsoon) lblMonsoon.innerText = `장마 ${state.monsoonDays}일 (RH 50% 제어)`;
+      const valMonsoon = document.getElementById('valMonsoonDays');
+      if (valMonsoon) valMonsoon.innerText = `${state.monsoonDays} 일/년`;
+      const valMonsoonCost = document.getElementById('valMonsoonGasCost');
+      if (valMonsoonCost) valMonsoonCost.innerText = fmtKRW(data.monsoonGasCost);
+
+      // Equipment and HVAC Specs
+      document.getElementById('valHeatingUnits').innerText = `${state.heatingUnits}대`;
+      document.getElementById('valCoolingUnits').innerText = `${state.coolingUnits}대`;
+      document.getElementById('valBlowerUnits').innerText = `${state.blowerUnits}대`;
+      document.getElementById('valHvacUnits').innerText = `${state.hvacUnits}대`;
+      document.getElementById('lblCoolingRT').innerText = `${Math.round(data.totalRT)} RT (전기)`;
+      
+      const hpMap = { 3.7: '5 HP', 5.5: '7.5 HP', 7.5: '10 HP', 11.0: '15 HP' };
+      document.getElementById('valHvacSpec').innerText = `${state.hvacMotorKW} kW (${hpMap[state.hvacMotorKW] || '동력'})`;
+      
+      const totalUnitsCount = state.heatingUnits + state.coolingUnits + state.blowerUnits + state.hvacUnits;
+      document.getElementById('lblHvacCapacity').innerText = `설비 총 ${totalUnitsCount}대 연동 (난방 ${state.heatingUnits} + 냉방 ${state.coolingUnits} + 송풍 ${state.blowerUnits} + 공조 ${state.hvacUnits}대[${state.hvacMotorKW}kW])`;
+
+      // Door counts UI
+      document.getElementById('valMainDoors').innerText = `${state.mainDoors}개`;
+      document.getElementById('valExitDoors').innerText = `${state.exitDoors}개`;
+      const totalDoorsCount = state.mainDoors + state.exitDoors + state.vehicleDoors;
+      document.getElementById('lblTotalDoors').innerText = `총 출입구 ${totalDoorsCount}개소 (주 ${state.mainDoors} + 비상 ${state.exitDoors} + 차량 1)`;
+
+      // Lighting & Fixture Count UI
+      document.getElementById('valFixtureCountText').innerText = `${state.fixtureCount} 개`;
+      document.getElementById('inputFixtureCount').value = state.fixtureCount;
+      document.getElementById('lblLightingPower').innerText = `LED ${fmtNum(state.lightingPowerKW, 1)} kW (${state.fixtureCount}등)`;
+      document.getElementById('lblFixturesCount').innerText = `${state.fixtureCount} 개`;
+      document.getElementById('lblTotalLightKW').innerText = `${fmtNum(state.lightingPowerKW, 1)} kW`;
+      
+      let complianceColor = 'text-emerald-700';
+      let complianceStatus = '충족';
+      if (data.achievedLux < data.targetLux * 0.9) {
+        complianceColor = 'text-rose-600 font-bold';
+        complianceStatus = '조도 부족 (권장 증설 필요)';
+      } else if (data.achievedLux > data.targetLux * 1.25) {
+        complianceColor = 'text-blue-700 font-semibold';
+        complianceStatus = '초과 달성 (고조도 여유)';
+      }
+      document.getElementById('lblKboCompliance').className = complianceColor;
+      document.getElementById('lblKboCompliance').innerText = `KBO 규정: ${data.targetLux} lx | 실제 달성: ${data.achievedLux} lx [${complianceStatus}]`;
+
+      // Breakdown Cards
+      document.getElementById('itemGasHeat').innerText = fmtKRW(data.baseGasHeat);
+      const itemMonsoonEl = document.getElementById('itemMonsoonReheat');
+      if (itemMonsoonEl) itemMonsoonEl.innerText = fmtKRW(data.monsoonGasCost);
+      document.getElementById('itemSnowMelt').innerText = fmtKRW(data.snowMeltCost + data.costSnowElec);
+      document.getElementById('itemCooling').innerText = fmtKRW(data.costCooling);
+      document.getElementById('itemInflation').innerText = fmtKRW(data.costInflationElec);
+      document.getElementById('itemLighting').innerText = fmtKRW(data.costLighting);
+      document.getElementById('itemVentilation').innerText = fmtKRW(data.costVentAndAux);
+      document.getElementById('lblChartTotal').innerText = `총계: ${fmtKRW(data.totalAnnualCost)}`;
+
+      // Detailed Table updates
+      document.getElementById('tblSpecDim').innerText = `140m × 140m × ${state.height}m`;
+      document.getElementById('tblSpecVolumeDiff').innerText = `체적 정비례 ${fmtNum(data.volumeRatio, 2)}배 (${fmtNum(data.incheonVolume, 0)}m³, 고척돔 대비 ${fmtNum(data.gocheokRatio, 1)}%)`;
+      document.getElementById('tblSpecWeather').innerText = `난방도일 ${state.weatherFactor}배 (혹한 ${state.coldWaveDays}일, 영종해안풍)`;
+      document.getElementById('tblSpecEquip').innerText = `난방 ${state.heatingUnits}대 + 냉방 ${state.coolingUnits}대(${Math.round(data.totalRT)}RT) + 송풍 ${state.blowerUnits}대 + 공조기 ${state.hvacUnits}대(${state.hvacMotorKW}kW)`;
+      document.getElementById('tblSpecEquipRatio').innerText = `총 ${totalUnitsCount}대 가동 운전`;
+      const tblMonsoon = document.getElementById('tblSpecMonsoon');
+      if (tblMonsoon) tblMonsoon.innerText = `연간 ${state.monsoonDays}일 집중 제습 재열`;
+      const tblMonsoonDiff = document.getElementById('tblSpecMonsoonDiff');
+      if (tblMonsoonDiff) tblMonsoonDiff.innerText = `가스 재열 ${fmtKRW(data.monsoonGasCost)} (RH 50% 제어)`;
+      document.getElementById('tblSpecDoors').innerText = `주출입 ${state.mainDoors} + 비상구 ${state.exitDoors} + 차량 1 (총 ${totalDoorsCount}개소)`;
+      document.getElementById('tblSpecDoorRatio').innerText = `경주 대비 ${fmtNum(totalDoorsCount / GYEONGJU.doors, 1)}배`;
+      document.getElementById('tblSpecLight').innerText = `KBO ${state.lightingLuxMode === 'high' ? '고(중계방송)' : (state.lightingLuxMode === 'normal' ? '평상(공식경기)' : '저(훈련)')} LED ${state.fixtureCount}등 (${fmtNum(state.lightingPowerKW, 0)}kW)`;
+      document.getElementById('tblSpecLightDiff').innerText = `소비전력 ${fmtNum(state.lightingPowerKW / GYEONGJU.lightingPowerKW, 2)}배 (달성: ${data.achievedLux} lx)`;
+      document.getElementById('tblSpecSnow').innerText = `연간 ${state.snowDays}일 집중 제설`;
+      document.getElementById('tblSpecSnowDiff').innerText = `제설 빈도 ${fmtNum(state.snowDays / GYEONGJU.snowDays, 1)}배`;
+      document.getElementById('tblSpecTotalCost').innerText = fmtKRW(data.totalAnnualCost);
+      document.getElementById('tblSpecTotalRatio').innerText = `${totalDiff >= 0 ? '+' : ''}${fmtNum(totalDiff, 1)}%`;
+    }
+
+    function initCharts() {
+      const ctxPie = document.getElementById('costBreakdownChart').getContext('2d');
+      costBreakdownChart = new Chart(ctxPie, {
+        type: 'doughnut',
+        data: {
+          labels: ['기본 난방(도시가스)', '장마 제습재열(도시가스)', '제설 융설(가스+송풍)', '여름 냉방(전기)', '24h 가압송풍(전기)', '야구장 조명(전기)', '공조기 8대 및 환기(전기)'],
+          datasets: [{
+            data: [1, 1, 1, 1, 1, 1, 1],
+            backgroundColor: ['#f59e0b', '#0d9488', '#06b6d4', '#2563eb', '#4f46e5', '#eab308', '#059669'],
+            borderWidth: 2,
+            borderColor: '#ffffff'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return context.label + ': ' + Math.round(context.raw).toLocaleString('ko-KR') + ' 원';
+                }
+              }
+            }
+          },
+          cutout: '65%'
+        }
+      });
+
+      const ctxBar = document.getElementById('monthlyTrendChart').getContext('2d');
+      monthlyTrendChart = new Chart(ctxBar, {
+        type: 'bar',
+        data: {
+          labels: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'],
+          datasets: [
+            {
+              label: '전기요금 (KRW)',
+              data: new Array(12).fill(0),
+              backgroundColor: '#3b82f6',
+              borderRadius: 4
+            },
+            {
+              label: '가스요금 (KRW)',
+              data: new Array(12).fill(0),
+              backgroundColor: '#f59e0b',
+              borderRadius: 4
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: { stacked: true, grid: { display: false } },
+            y: {
+              stacked: true,
+              ticks: {
+                callback: function(val) {
+                  return (val / 1000000).toFixed(0) + '백만';
+                }
+              }
+            }
+          },
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: { boxWidth: 12, font: { size: 11 } }
+            },
+            tooltip: {
+              callbacks: {
+                label: function(ctx) {
+                  return ctx.dataset.label + ': ' + Math.round(ctx.raw).toLocaleString('ko-KR') + ' 원';
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function updateCharts(breakdown) {
+      if (!costBreakdownChart || !monthlyTrendChart) return;
+
+      costBreakdownChart.data.datasets[0].data = [
+        breakdown.baseGasHeat,
+        breakdown.monsoonGasCost,
+        breakdown.snowMeltCost,
+        breakdown.costCooling,
+        breakdown.costInflationElec,
+        breakdown.costLighting,
+        breakdown.costVentAndAux
+      ];
+      costBreakdownChart.update();
+
+      const gasWinterMonthlyWeights = [0.25, 0.22, 0.14, 0.04, 0.01, 0.00, 0.00, 0.00, 0.00, 0.03, 0.11, 0.20];
+      const baseElecMonthly = (breakdown.costInflationElec + breakdown.costLighting + breakdown.costVentAndAux) / 12;
+      const coolingMonthlyWeights = [0, 0, 0, 0, 0.05, 0.20, 0.38, 0.32, 0.05, 0, 0, 0];
+      const monsoonGasMonthly = [0, 0, 0, 0, 0, 0.05, 0.60, 0.35, 0, 0, 0, 0];
+
+      const monthlyElecData = [];
+      const monthlyGasData = [];
+      const winterGasOnly = breakdown.baseGasHeat + breakdown.snowMeltCost;
+
+      for (let m = 0; m < 12; m++) {
+        const mGas = (winterGasOnly * gasWinterMonthlyWeights[m]) + (breakdown.monsoonGasCost * monsoonGasMonthly[m]);
+        const mElec = baseElecMonthly + (breakdown.costCooling * coolingMonthlyWeights[m]);
+        monthlyGasData.push(Math.round(mGas));
+        monthlyElecData.push(Math.round(mElec));
+      }
+
+      monthlyTrendChart.data.datasets[0].data = monthlyElecData;
+      monthlyTrendChart.data.datasets[1].data = monthlyGasData;
+      monthlyTrendChart.update();
+    }
+
+    function generateAndDownloadExcel() {
+      if (!currentCalc) {
+        runSimulation();
+      }
+
+      const wb = XLSX.utils.book_new();
+
+      // ==========================================
+      // SHEET 1: 대시보드_비용요약 (Executive Summary)
+      // ==========================================
+      const wsSummaryData = [
+        ['대형 에어돔 전기·가스 사용량 및 운영비용 시뮬레이션 보고서', '', '', '', ''],
+        ['생성일시: ' + new Date().toLocaleString('ko-KR'), '', '', '모델: 체적 정비례 고정 적용', ''],
+        ['', '', '', '', ''],
+        ['[1] 핵심 지표 1:1 비교 (경주 실적 vs 인천 예측)', '', '', '', ''],
+        ['구분 항목', '경주 스마트에어돔 (2024 결산)', '인천 영종도 야구장 에어돔 (시뮬레이션)', '단위', '스케일 배수 / 증감'],
+        ['에어돔 평면 규격 (L×W)', '120 × 78', `${state.length} × ${state.width}`, 'm', '밑면적 19,600 m² (야구장)'],
+        ['에어돔 최고 높이 (H)', 25, state.height, 'm', `인천 에어돔: ${state.height}m`],
+        ['공학 포물면 돔구장 체적 (V)', 124800, currentCalc.incheonVolume, 'm³', `경주 대비 ${fmtNum(currentCalc.volumeRatio, 2)}배 (고척돔의 ${fmtNum(currentCalc.gocheokRatio, 1)}%)`],
+        ['피막 유효 표면적 (A)', 14850, currentCalc.incheonSurface, 'm²', `경주 대비 ${fmtNum(currentCalc.surfaceRatio, 2)}배`],
+        ['연간 전기요금', 56000000, currentCalc.totalElec, '원(KRW)', `${((currentCalc.totalElec - 56000000)/56000000*100).toFixed(1)}%`],
+        ['연간 가스요금', 67000000, currentCalc.totalGas, '원(KRW)', `${((currentCalc.totalGas - 67000000)/67000000*100).toFixed(1)}%`],
+        ['연간 총 에너지 운영비용', 123000000, currentCalc.totalAnnualCost, '원(KRW)', `${((currentCalc.totalAnnualCost - 123000000)/123000000*100).toFixed(1)}%`],
+        ['월평균 운영비용', 10250000, currentCalc.monthlyAvg, '원/월', '월평균 지출액'],
+        ['', '', '', '', ''],
+        ['[2] 인천 에어돔 항목별 에너지 지출 분장표', '', '', '', ''],
+        ['부문', '세부 항목', '주요 에너지원', '연간 예상 비용 (원)', '비중 (%)'],
+        ['난방', '동절기 기본 실내 난방', '도시가스(LNG)', currentCalc.baseGasHeat, (currentCalc.baseGasHeat / currentCalc.totalAnnualCost * 100).toFixed(1) + '%'],
+        ['난방', '장마철 제습 재열난방 (습도 50% 유지)', '도시가스(LNG)', currentCalc.monsoonGasCost, (currentCalc.monsoonGasCost / currentCalc.totalAnnualCost * 100).toFixed(1) + '%'],
+        ['난방/가압', '동절기 폭설 제설(융설) 모드', '도시가스 + 전기', currentCalc.snowMeltCost + currentCalc.costSnowElec, ((currentCalc.snowMeltCost + currentCalc.costSnowElec) / currentCalc.totalAnnualCost * 100).toFixed(1) + '%'],
+        ['냉방', '여름철 냉방 (AC 210RT 및 감습)', '전기(칠러/EHP)', currentCalc.costCooling, (currentCalc.costCooling / currentCalc.totalAnnualCost * 100).toFixed(1) + '%'],
+        ['송풍', '24시간 무중단 상시 가압 송풍기', '전기(380V 삼상모터)', currentCalc.costInflationElec, (currentCalc.costInflationElec / currentCalc.totalAnnualCost * 100).toFixed(1) + '%'],
+        ['조명', '야구장 KBO 경기용 스포츠 LED 조명', '전기(LED 투광등)', currentCalc.costLighting, (currentCalc.costLighting / currentCalc.totalAnnualCost * 100).toFixed(1) + '%'],
+        ['공조/환기', '공조기 8대 실내 순환 및 관람객 외기 환기', '전기(AHU 모터)', currentCalc.costVentAndAux, (currentCalc.costVentAndAux / currentCalc.totalAnnualCost * 100).toFixed(1) + '%'],
+        ['합계', '연간 총 합계', '전기 + 도시가스', currentCalc.totalAnnualCost, '100.0%']
+      ];
+      const wsSummary = XLSX.utils.aoa_to_sheet(wsSummaryData);
+
+      // ==========================================
+      // SHEET 2: 시뮬레이션_계산엔진 (Interactive Formula Engine)
+      // Cell references are explicitly constructed with live formulas!
+      // ==========================================
+      const wsEngineData = [
+        ['에어돔 시뮬레이션 인터랙티브 계산 엔진 (엑셀 수식 연동 시트)'],
+        ['※ 회색 셀(C7~C30)의 숫자를 변경하면 모든 계산 셀(C33~C51)이 엑셀 수식에 의해 자동 갱신됩니다.'],
+        [''],
+        ['1. 입력 매개변수 (Input Parameters)', '', '값 (Value)', '단위 (Unit)', '비고 및 설계 기준'],
+        ['에어돔 가로 길이 (Length)', '', state.length, 'm', '인천 에어돔 설계값'],
+        ['에어돔 세로 폭 (Width)', '', state.width, 'm', '인천 에어돔 설계값'],
+        ['에어돔 최고 높이 (Height)', '', state.height, 'm', '50, 55, 60m 중 선택 가능'],
+        ['바닥 면적 (Area)', '', null, 'm²', '수식: =C5*C6'], // C8
+        ['포물면 형상 계수 (Shape Factor)', '', 8/15, '계수', '야구 돔구장 타원 포물면 체적 적분치 (8/15)'], // C9
+        ['인천 돔구장 체적 (Volume)', '', null, 'm³', '수식: =ROUND(C8*C7*C9, 0)'], // C10
+        ['경주 스마트에어돔 체적 (기준)', '', 124800, 'm³', '120m × 78m × 25m × (8/15)'], // C11
+        ['체적 정비례 스케일 배수 (Volume Ratio)', '', null, '배', '수식: =ROUND(C10/C11, 2)'], // C12
+        ['지역 기후 가중치 (Weather Factor)', '', state.weatherFactor, '배', '인천 영종도 해안풍 및 저온 보정 (1.0~1.35)'], // C13
+        ['겨울철 혹한일(영하 10℃ 이하) 일수', '', state.coldWaveDays, '일/년', '피크 난방 가스비 보정'], // C14
+        ['실내 난방 목표온도 설정치', '', state.targetHeatTemp, '℃', '15℃, 18℃, 21℃'], // C15
+        ['여름철 장마 및 집중제습 일수', '', state.monsoonDays, '일/년', '습도 50% 유지를 위한 감습 재열 일수'], // C16
+        ['장마철 일일 제습운전 시간', '', state.monsoonHoursDaily, '시간/일', '기준: 14시간'], // C17
+        ['난방 유닛 (Heat Unit) 설치 대수', '', state.heatingUnits, '대', '기준: 2대'], // C18
+        ['냉방 유닛 (Cooling Unit) 설치 대수', '', state.coolingUnits, '대', '기준: 5대 (210 RT)'], // C19
+        ['가압 송풍기 (Blower) 설치 대수', '', state.blowerUnits, '대', '기준: 2대'], // C20
+        ['공조기 (HVAC Unit) 설치 대수', '', state.hvacUnits, '대', '기준: 8대'], // C21
+        ['공조기 1대당 모터 용량', '', state.hvacMotorKW, 'kW', '스펙: 5.5kW (7.5HP)'], // C22
+        ['야구장 LED 등기구 설치 수량', '', state.fixtureCount, '개', '최대 500개 조절 가능'], // C23
+        ['LED 등기구 1개당 소비전력', '', state.ledFixtureWatts, 'W', '800, 1000, 1200, 1500W'], // C24
+        ['조명 일평균 점등 시간', '', state.lightingHoursDaily, '시간/일', '기준: 4.5시간'], // C25
+        ['주출입구 (회전문) 개수', '', state.mainDoors, '개소', '기준: 1개'], // C26
+        ['비상출입구 (패닉도어) 개수', '', state.exitDoors, '개소', '기준: 24개'], // C27
+        ['겨울철 제설(융설) 가동 일수', '', state.snowDays, '일/년', '기준: 연 7일'], // C28
+        ['한전 전기요금 변동률', '', state.elecRatePct, '%', '기준: 0%'], // C29
+        ['도시가스 요금 변동률', '', state.gasRatePct, '%', '기준: 0%'], // C30
+        ['전기 단위 단가 (kWh당)', '', 145, '원/kWh', '한전 일반용/교육용 고압(A) 환산치'], // C31
+        [''],
+        ['2. 중간 연산 및 부문별 비용 산출 (Formula Results)', '', '계산값 (원)', '엑셀 수식 정의', '비고'],
+        ['① 동절기 기본 난방 가스비', '', null, '=ROUND((67000000*0.88)*C12*C13*(IF(C15=15,0.8,IF(C15=21,1.25,1)))*0.82*(C18/2)*(1+(C14/120)*0.52),0)', '도시가스 (체적 정비례)'], // C34
+        ['② 장마시즌 제습 재열난방 가스비 (습도 50%)', '', null, '=ROUND(C16*360000*C12*(C17/14)*MAX(0.7,C18*0.425),0)', '도시가스 (습도 50% 재열)'], // C35
+        ['③ 제설 승온 가스비', '', null, '=ROUND(C28*(1450000*(C8/19600)*C13)*MAX(0.7,C18*0.425),0)', '도시가스 (융설 버너)'], // C36
+        ['④ 관람객 신선외기 난방 가스비', '', null, '=ROUND(40*(1000*30*0.45*(C13-0.8)*12/30)*MAX(0.6,C21/8),0)', '도시가스 (환기 외기 가열)'], // C37
+        ['⑤ 24시간 상시 가압 송풍 전기료', '', null, '=ROUND(((1.732*380*90*0.86)/1000)*(C20/2)*8760*C31*(1+(C14/365)*0.15),0)', '전기요금 (380V 삼상 송풍)'], // C38
+        ['⑥ 하절기 냉방기(210RT) 전기료', '', null, '=ROUND(((C19/5)*210*1.15*1.4*(90*8)*0.75+C16*(((C19/5)*210*1.15*1.4)*0.32*C17))*C31*1.15,0)', '전기요금 (AC 컴프레서)'], // C39
+        ['⑦ 야구장 LED 스포츠 조명 전기료', '', null, '=ROUND(((C23*C24)/1000)*C25*365*C31,0)', '전기요금 (KBO 조명)'], // C40
+        ['⑧ 공조기 8대 순환 및 환기 전기료', '', null, '=ROUND((C22*C21*(365*12)+25000)*C31,0)', '전기요금 (HVAC 팬 모터)'], // C41
+        ['⑨ 제설 모드 송풍기 가압 할증 전기료', '', null, '=ROUND(C28*(((1.732*380*90*0.86)/1000)*0.35*24*C31),0)', '전기요금 (제설 강풍)'], // C42
+        [''],
+        ['3. 최종 합산 및 연간 운영 예산 (Total Operations Budget)', '', '', '', ''],
+        ['전기요금 원가 합계 (할인/인상 전)', '', null, '=SUM(C38:C42)', '원'], // C45
+        ['도시가스 원가 합계 (할인/인상 전)', '', null, '=SUM(C34:C37)', '원'], // C46
+        ['연간 최종 전기요금 (인상률 반영)', '', null, '=ROUND(C45*(1+C29/100),0)', '원 (한전 납부액)'], // C47
+        ['연간 최종 가스요금 (인상률 반영)', '', null, '=ROUND(C46*(1+C30/100),0)', '원 (도시가스사 납부액)'], // C48
+        ['연간 총 에너지 운영비용 (Total Energy Cost)', '', null, '=C47+C48', '원 (전기+가스)'], // C49
+        ['월평균 운영비용 (Monthly Average)', '', null, '=ROUND(C49/12,0)', '원/월'], // C50
+        ['경주 스마트에어돔 대비 총비용 증감률', '', null, '=ROUND(((C49-123000000)/123000000)*100,1)', '% (경주: 1.23억)'] // C51
+      ];
+
+      const wsEngine = XLSX.utils.aoa_to_sheet(wsEngineData);
+
+      // Inject exact Excel formulas into cells
+      wsEngine['C8']  = { t: 'n', f: 'C5*C6' };
+      wsEngine['C10'] = { t: 'n', f: 'ROUND(C8*C7*C9,0)' };
+      wsEngine['C12'] = { t: 'n', f: 'ROUND(C10/C11,2)' };
+      
+      wsEngine['C34'] = { t: 'n', f: 'ROUND((67000000*0.88)*C12*C13*(IF(C15=15,0.8,IF(C15=21,1.25,1)))*0.82*(C18/2)*(1+(C14/120)*0.52),0)' };
+      wsEngine['C35'] = { t: 'n', f: 'ROUND(C16*360000*C12*(C17/14)*MAX(0.7,C18*0.425),0)' };
+      wsEngine['C36'] = { t: 'n', f: 'ROUND(C28*(1450000*(C8/19600)*C13)*MAX(0.7,C18*0.425),0)' };
+      wsEngine['C37'] = { t: 'n', f: 'ROUND(40*(1000*30*0.45*(C13-0.8)*12/30)*MAX(0.6,C21/8),0)' };
+      
+      wsEngine['C38'] = { t: 'n', f: 'ROUND(((1.732*380*90*0.86)/1000)*(C20/2)*8760*C31*(1+(C14/365)*0.15),0)' };
+      wsEngine['C39'] = { t: 'n', f: 'ROUND(((C19/5)*210*1.15*1.4*(90*8)*0.75+C16*(((C19/5)*210*1.15*1.4)*0.32*C17))*C31*1.15,0)' };
+      wsEngine['C40'] = { t: 'n', f: 'ROUND(((C23*C24)/1000)*C25*365*C31,0)' };
+      wsEngine['C41'] = { t: 'n', f: 'ROUND((C22*C21*(365*12)+25000)*C31,0)' };
+      wsEngine['C42'] = { t: 'n', f: 'ROUND(C28*(((1.732*380*90*0.86)/1000)*0.35*24*C31),0)' };
+      
+      wsEngine['C45'] = { t: 'n', f: 'SUM(C38:C42)' };
+      wsEngine['C46'] = { t: 'n', f: 'SUM(C34:C37)' };
+      wsEngine['C47'] = { t: 'n', f: 'ROUND(C45*(1+C29/100),0)' };
+      wsEngine['C48'] = { t: 'n', f: 'ROUND(C46*(1+C30/100),0)' };
+      wsEngine['C49'] = { t: 'n', f: 'C47+C48' };
+      wsEngine['C50'] = { t: 'n', f: 'ROUND(C49/12,0)' };
+      wsEngine['C51'] = { t: 'n', f: 'ROUND(((C49-123000000)/123000000)*100,1)' };
+
+      // ==========================================
+      // SHEET 3: 월별_전기_가스_시계열 (12 Months Schedule)
+      // ==========================================
+      const gasWinterMonthlyWeights = [0.25, 0.22, 0.14, 0.04, 0.01, 0.00, 0.00, 0.00, 0.00, 0.03, 0.11, 0.20];
+      const coolingMonthlyWeights = [0, 0, 0, 0, 0.05, 0.20, 0.38, 0.32, 0.05, 0, 0, 0];
+      const monsoonGasMonthly = [0, 0, 0, 0, 0, 0.05, 0.60, 0.35, 0, 0, 0, 0];
+
+      const wsMonthlyData = [
+        ['인천 영종도 에어돔 월별 전기·가스 지출 스케줄표 (KRW)'],
+        ['월 (Month)', '전기요금 (KRW)', '도시가스요금 (KRW)', '월별 합계 (KRW)', '주요 운전 특성']
+      ];
+
+      const baseElecMonthly = (currentCalc.costInflationElec + currentCalc.costLighting + currentCalc.costVentAndAux) / 12;
+      const winterGasOnly = currentCalc.baseGasHeat + currentCalc.snowMeltCost;
+
+      for (let m = 0; m < 12; m++) {
+        const mGas = Math.round((winterGasOnly * gasWinterMonthlyWeights[m]) + (currentCalc.monsoonGasCost * monsoonGasMonthly[m]));
+        const mElec = Math.round(baseElecMonthly + (currentCalc.costCooling * coolingMonthlyWeights[m]));
+        const mTotal = mElec + mGas;
+        
+        let note = '평상 순환 및 조명/가압';
+        if (m === 0 || m === 1 || m === 11) note = '동절기 혹한 난방 피크 + 제설 대기';
+        else if (m === 6 || m === 7) note = '하절기 냉방 피크 + 장마 제습재열(가스 소모)';
+        
+        wsMonthlyData.push([`${m + 1}월`, mElec, mGas, mTotal, note]);
+      }
+      wsMonthlyData.push(['연간 총계', currentCalc.totalElec, currentCalc.totalGas, currentCalc.totalAnnualCost, '12개월 누적 합계']);
+      const wsMonthly = XLSX.utils.aoa_to_sheet(wsMonthlyData);
+
+      // ==========================================
+      // SHEET 4: 공학산식_및_KBO기준표 (Engineering Reference)
+      // ==========================================
+      const wsTheoryData = [
+        ['에어돔 기계설비 공학 산출 이론 및 KBO 기준표'],
+        [''],
+        ['[1] 포물면 돔구장 형상 체적 공식 (Elliptic Paraboloid Formula)'],
+        ['공식:', 'V = (8/15) × Length × Width × Height ≈ 0.5333 × L × W × H'],
+        ['경주 스마트에어돔 (축구장):', '120m × 78m × 25m × (8/15) = 124,800 m³'],
+        ['인천 에어돔 야구장 (60m):', '140m × 140m × 60m × (8/15) = 627,200 m³ (경주 대비 5.03배, 고척돔의 74.7%)'],
+        [''],
+        ['[2] KBO 야구장 조도 기준 및 스포츠 조명 설계'],
+        ['1단계 [저] (훈련/연습):', '평균 650 lx (내야 800 lx / 외야 500 lx) - 권장 등기구: 80~120등'],
+        ['2단계 [평상경기] (KBO 공식):', '평균 1,750 lx (내야 2,000 lx / 외야 1,500 lx) - 권장 등기구: 160~200등'],
+        ['3단계 [고] (프로 1군 TV중계):', '평균 2,500 lx (내야 3,000 lx / 외야 2,000 lx) - 권장 등기구: 240~320등'],
+        ['달성 조도 산식:', 'E_lux = (등기구수 × 정격W × 135 lm/W × 조명율 0.55) / 19,600 m²'],
+        [''],
+        ['[3] 여름철 장마시즌 제습 재열난방 (습도 50% 유지) 이론'],
+        ['목적:', '장마철 상대습도 85~95% 유입 시 실내 결로, 인조잔디 미끄럼, 곰팡이 방지'],
+        ['원리:', '냉각 코일로 노점온도(약 12℃)까지 냉각 감습 ➔ 도시가스 난방 유닛으로 23℃(ΔT=11℃) 재열'],
+        ['가스 소모:', '대용량 돔 체적(62.7만 m³) 순환 풍량을 재가열하므로 7~8월 하절기에도 도시가스 비용 발생']
+      ];
+      const wsTheory = XLSX.utils.aoa_to_sheet(wsTheoryData);
+
+      // Append all sheets to workbook
+      XLSX.utils.book_append_sheet(wb, wsSummary, '대시보드_비용요약');
+      XLSX.utils.book_append_sheet(wb, wsEngine, '시뮬레이션_계산엔진');
+      XLSX.utils.book_append_sheet(wb, wsMonthly, '월별_전기_가스_시계열');
+      XLSX.utils.book_append_sheet(wb, wsTheory, '공학산식_및_KBO기준표');
+
+      // Export workbook to user as .xlsx
+      const dateStr = new Date().toISOString().slice(0, 10);
+      XLSX.writeFile(wb, `에어돔_전기_가스_비용_시뮬레이션_통합수식본_${dateStr}.xlsx`);
+    }
+
+    function setupEventListeners() {
+      // Excel Download Handler
+      document.getElementById('btnDownloadExcel').addEventListener('click', generateAndDownloadExcel);
+
+      // Excel Mapping Guide Modal Handlers
+      const modal = document.getElementById('excelGuideModal');
+      document.getElementById('btnToggleExcelGuide').addEventListener('click', () => {
+        modal.classList.remove('hidden');
+      });
+      document.getElementById('btnCloseExcelGuide').addEventListener('click', () => {
+        modal.classList.add('hidden');
+      });
+      document.getElementById('btnModalClose').addEventListener('click', () => {
+        modal.classList.add('hidden');
+      });
+
+      // Equipment Counts Buttons (+/-)
+      document.querySelectorAll('.btn-qty').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const target = btn.getAttribute('data-target');
+          const delta = parseInt(btn.getAttribute('data-delta'), 10);
+          
+          if (target === 'heatingUnits') {
+            state.heatingUnits = Math.max(1, Math.min(6, state.heatingUnits + delta));
+          } else if (target === 'coolingUnits') {
+            state.coolingUnits = Math.max(1, Math.min(12, state.coolingUnits + delta));
+          } else if (target === 'blowerUnits') {
+            state.blowerUnits = Math.max(1, Math.min(6, state.blowerUnits + delta));
+          } else if (target === 'hvacUnits') {
+            state.hvacUnits = Math.max(2, Math.min(16, state.hvacUnits + delta));
+          }
+          runSimulation();
+        });
+      });
+
+      // Door Counts Buttons (+/-)
+      document.querySelectorAll('.btn-door-qty').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const target = btn.getAttribute('data-target');
+          const delta = parseInt(btn.getAttribute('data-delta'), 10);
+          
+          if (target === 'mainDoors') {
+            state.mainDoors = Math.max(1, Math.min(6, state.mainDoors + delta));
+          } else if (target === 'exitDoors') {
+            state.exitDoors = Math.max(4, Math.min(48, state.exitDoors + delta));
+          }
+          runSimulation();
+        });
+      });
+
+      // Height Selector Buttons
+      document.querySelectorAll('.btn-height').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.btn-height').forEach(b => {
+            b.classList.remove('border-2', 'border-blue-600', 'bg-blue-50', 'text-blue-700', 'font-bold');
+            b.classList.add('border-slate-200', 'bg-slate-50', 'text-slate-700');
+          });
+          btn.classList.add('border-2', 'border-blue-600', 'bg-blue-50', 'text-blue-700', 'font-bold');
+          state.height = parseInt(btn.getAttribute('data-height'), 10);
+          runSimulation();
+        });
+      });
+
+      // Weather Factor Slider
+      const inputWeather = document.getElementById('inputWeatherFactor');
+      inputWeather.addEventListener('input', (e) => {
+        state.weatherFactor = parseFloat(e.target.value);
+        document.getElementById('valWeatherFactor').innerText = `${state.weatherFactor.toFixed(2)} ×`;
+        runSimulation();
+      });
+
+      // Severe Cold Wave Days Slider
+      const inputColdDays = document.getElementById('inputColdDays');
+      inputColdDays.addEventListener('input', (e) => {
+        state.coldWaveDays = parseInt(e.target.value, 10);
+        document.getElementById('valColdDays').innerText = `${state.coldWaveDays} 일/년`;
+        runSimulation();
+      });
+
+      // Target Heating Temp Selector
+      const selTargetHeat = document.getElementById('selTargetHeatTemp');
+      if (selTargetHeat) {
+        selTargetHeat.addEventListener('change', (e) => {
+          state.targetHeatTemp = parseInt(e.target.value, 10);
+          document.getElementById('valTargetHeatTemp').innerText = `${state.targetHeatTemp} ℃`;
+          runSimulation();
+        });
+      }
+
+      // HVAC Motor Spec Selector
+      const selHvacSpec = document.getElementById('selHvacSpec');
+      if (selHvacSpec) {
+        selHvacSpec.addEventListener('change', (e) => {
+          state.hvacMotorKW = parseFloat(e.target.value);
+          const hpMap = { 3.7: '5 HP', 5.5: '7.5 HP', 7.5: '10 HP', 11.0: '15 HP' };
+          document.getElementById('valHvacSpec').innerText = `${state.hvacMotorKW} kW (${hpMap[state.hvacMotorKW] || ''})`;
+          runSimulation();
+        });
+      }
+
+      // AC Load Factor & Blower Current Selectors
+      document.getElementById('selAcLoadFactor').addEventListener('change', (e) => {
+        state.acLoadFactor = parseFloat(e.target.value);
+        document.getElementById('valAcLoadFactor').innerText = `${Math.round(state.acLoadFactor * 100)}%`;
+        runSimulation();
+      });
+      document.getElementById('selBlowerAmps').addEventListener('change', (e) => {
+        state.blowerAmps = parseFloat(e.target.value);
+        const ampKw = ((1.732 * 380 * state.blowerAmps * 0.86) / 1000).toFixed(1);
+        document.getElementById('valBlowerAmps').innerText = `${state.blowerAmps} A (${ampKw} kW)`;
+        runSimulation();
+      });
+
+      // Utility Escalation Sliders
+      const inputElecRate = document.getElementById('inputElecRate');
+      inputElecRate.addEventListener('input', (e) => {
+        state.elecRatePct = parseInt(e.target.value, 10);
+        document.getElementById('valElecRate').innerText = `${state.elecRatePct >= 0 ? '+' : ''}${state.elecRatePct}%`;
+        document.getElementById('lblUtilityEscalation').innerText = `전기: ${state.elecRatePct >= 0 ? '+' : ''}${state.elecRatePct}% / 가스: ${state.gasRatePct >= 0 ? '+' : ''}${state.gasRatePct}%`;
+        runSimulation();
+      });
+
+      const inputGasRate = document.getElementById('inputGasRate');
+      inputGasRate.addEventListener('input', (e) => {
+        state.gasRatePct = parseInt(e.target.value, 10);
+        document.getElementById('valGasRate').innerText = `${state.gasRatePct >= 0 ? '+' : ''}${state.gasRatePct}%`;
+        document.getElementById('lblUtilityEscalation').innerText = `전기: ${state.elecRatePct >= 0 ? '+' : ''}${state.elecRatePct}% / 가스: ${state.gasRatePct >= 0 ? '+' : ''}${state.gasRatePct}%`;
+        runSimulation();
+      });
+
+      // KBO 3-Tier Lux Preset Buttons
+      document.querySelectorAll('.btn-lux').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.btn-lux').forEach(b => {
+            b.classList.remove('border-2', 'border-yellow-500', 'bg-yellow-50', 'text-yellow-900', 'font-bold');
+            b.classList.add('border-slate-200', 'bg-slate-50', 'text-slate-800');
+          });
+          btn.classList.add('border-2', 'border-yellow-500', 'bg-yellow-50', 'text-yellow-900', 'font-bold');
+          btn.classList.remove('bg-slate-50');
+          
+          state.lightingLuxMode = btn.getAttribute('data-mode');
+          const presetFixtures = parseInt(btn.getAttribute('data-fixtures'), 10);
+          if (presetFixtures) {
+            state.fixtureCount = presetFixtures;
+          }
+          runSimulation();
+        });
+      });
+
+      // Fixtures Stepper Buttons (+/-) supporting up to 500
+      document.querySelectorAll('.btn-fixture-step').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const delta = parseInt(btn.getAttribute('data-delta'), 10);
+          state.fixtureCount = Math.max(30, Math.min(500, state.fixtureCount + delta));
+          runSimulation();
+        });
+      });
+
+      // Fixtures Range Slider up to 500
+      const inputFixtureCount = document.getElementById('inputFixtureCount');
+      if (inputFixtureCount) {
+        inputFixtureCount.addEventListener('input', (e) => {
+          state.fixtureCount = parseInt(e.target.value, 10);
+          runSimulation();
+        });
+      }
+
+      // LED Fixture Wattage Spec Selector
+      const selLedFixture = document.getElementById('selLedFixtureWatt');
+      if (selLedFixture) {
+        selLedFixture.addEventListener('change', (e) => {
+          state.ledFixtureWatts = parseInt(e.target.value, 10);
+          document.getElementById('valLedFixtureWatt').innerText = `${state.ledFixtureWatts} W`;
+          runSimulation();
+        });
+      }
+
+      const inputLightingHours = document.getElementById('inputLightingHours');
+      inputLightingHours.addEventListener('input', (e) => {
+        state.lightingHoursDaily = parseFloat(e.target.value);
+        document.getElementById('valLightingHours').innerText = `${state.lightingHoursDaily.toFixed(1)} 시간/일`;
+        runSimulation();
+      });
+
+      // Snow Melting Days Slider
+      const inputSnowDays = document.getElementById('inputSnowDays');
+      inputSnowDays.addEventListener('input', (e) => {
+        state.snowDays = parseInt(e.target.value, 10);
+        document.getElementById('lblSnowDays').innerText = `연 ${state.snowDays}일 집중 제설`;
+        document.getElementById('valSnowDays').innerText = `${state.snowDays} 일 (도시가스 승온 + 송풍 가압)`;
+        runSimulation();
+      });
+
+      // Monsoon Days Slider (여름철 장마 제습 재열 일수)
+      const inputMonsoon = document.getElementById('inputMonsoonDays');
+      if (inputMonsoon) {
+        inputMonsoon.addEventListener('input', (e) => {
+          state.monsoonDays = parseInt(e.target.value, 10);
+          document.getElementById('lblMonsoonDays').innerText = `장마 ${state.monsoonDays}일 (RH 50% 제어)`;
+          document.getElementById('valMonsoonDays').innerText = `${state.monsoonDays} 일/년`;
+          runSimulation();
+        });
+      }
+
+      // Audience Days & Selector
+      document.getElementById('inputAudienceDays').addEventListener('input', (e) => {
+        state.audienceDays = parseInt(e.target.value, 10) || 0;
+        document.getElementById('lblAudienceRatio').innerText = `유관중 연 ${state.audienceDays}회`;
+        runSimulation();
+      });
+
+      document.getElementById('selVentFactor').addEventListener('change', (e) => {
+        state.ventCMHPerPerson = parseInt(e.target.value, 10) || 30;
+        runSimulation();
+      });
+
+      // Membrane and Door Sealing
+      document.getElementById('selMembraneType').addEventListener('change', (e) => {
+        state.membraneFactor = parseFloat(e.target.value);
+        runSimulation();
+      });
+
+      document.getElementById('selDoorAirtight').addEventListener('change', (e) => {
+        state.doorAirtightFactor = parseFloat(e.target.value);
+        runSimulation();
+      });
+
+      // Toggle Formula Box Button
+      const btnToggle = document.getElementById('btnToggleFormula');
+      const formulaBox = document.getElementById('formulaExplanationCard');
+      btnToggle.addEventListener('click', () => {
+        formulaBox.classList.toggle('hidden');
+      });
+
+      // Reset Button
+      document.getElementById('btnReset').addEventListener('click', () => {
+        state = {
+          modelType: 'volume',
+          height: 60,
+          width: 140,
+          length: 140,
+          weatherFactor: 1.18,
+          coldWaveDays: 16,
+          targetHeatTemp: 18,
+          acLoadFactor: 0.75,
+          blowerAmps: 90,
+          monsoonDays: 30,
+          targetHumidity: 50,
+          monsoonHoursDaily: 14,
+          heatingUnits: 2,
+          coolingUnits: 5,
+          blowerUnits: 2,
+          hvacUnits: 8,
+          hvacMotorKW: 5.5,
+          lightingLuxMode: 'normal',
+          ledFixtureWatts: 1200,
+          fixtureCount: 160,
+          lightingPowerKW: 192,
+          lightingHoursDaily: 4.5,
+          mainDoors: 1,
+          exitDoors: 24,
+          vehicleDoors: 1,
+          elecRatePct: 0,
+          gasRatePct: 0,
+          snowDays: 7,
+          audienceDays: 40,
+          ventCMHPerPerson: 30,
+          membraneFactor: 0.82,
+          doorAirtightFactor: 1.00
+        };
+
+        inputWeather.value = 1.18;
+        document.getElementById('valWeatherFactor').innerText = "1.18 ×";
+        if (inputColdDays) {
+          inputColdDays.value = 16;
+          document.getElementById('valColdDays').innerText = "16 일/년";
+        }
+        if (document.getElementById('inputMonsoonDays')) {
+          document.getElementById('inputMonsoonDays').value = 30;
+          document.getElementById('lblMonsoonDays').innerText = "장마 30일 (RH 50% 제어)";
+          document.getElementById('valMonsoonDays').innerText = "30 일/년";
+        }
+        if (document.getElementById('selTargetHeatTemp')) {
+          document.getElementById('selTargetHeatTemp').value = "18";
+          document.getElementById('valTargetHeatTemp').innerText = "18 ℃";
+        }
+        if (document.getElementById('selHvacSpec')) {
+          document.getElementById('selHvacSpec').value = "5.5";
+          document.getElementById('valHvacSpec').innerText = "5.5 kW (7.5 HP)";
+        }
+        document.getElementById('selAcLoadFactor').value = "0.75";
+        document.getElementById('valAcLoadFactor').innerText = "75%";
+        document.getElementById('selBlowerAmps').value = "90";
+        document.getElementById('valBlowerAmps').innerText = "90 A (47.4 kW)";
+        inputElecRate.value = 0;
+        document.getElementById('valElecRate').innerText = "+0%";
+        inputGasRate.value = 0;
+        document.getElementById('valGasRate').innerText = "+0%";
+        document.getElementById('lblUtilityEscalation').innerText = "+0% (2024년 기준)";
+        
+        document.querySelectorAll('.btn-lux').forEach(b => {
+          b.classList.remove('border-2', 'border-yellow-500', 'bg-yellow-50', 'text-yellow-900', 'font-bold');
+          b.classList.add('border-slate-200', 'bg-slate-50', 'text-slate-800');
+          if (b.getAttribute('data-mode') === 'normal') {
+            b.classList.add('border-2', 'border-yellow-500', 'bg-yellow-50', 'text-yellow-900', 'font-bold');
+            b.classList.remove('bg-slate-50');
+          }
+        });
+
+        if (inputFixtureCount) {
+          inputFixtureCount.value = 160;
+        }
+
+        if (document.getElementById('selLedFixtureWatt')) {
+          document.getElementById('selLedFixtureWatt').value = "1200";
+          document.getElementById('valLedFixtureWatt').innerText = "1,200 W (고출력)";
+        }
+
+        inputLightingHours.value = 4.5;
+        document.getElementById('valLightingHours').innerText = "4.5 시간/일";
+        inputSnowDays.value = 7;
+        document.getElementById('lblSnowDays').innerText = "연 7일 집중 제설";
+        document.getElementById('valSnowDays').innerText = "7 일 (도시가스 승온 + 송풍 가압)";
+        document.getElementById('inputAudienceDays').value = 40;
+        document.getElementById('lblAudienceRatio').innerText = "유관중 연 40회";
+        document.getElementById('selVentFactor').value = "30";
+        document.getElementById('selMembraneType').value = "0.82";
+        document.getElementById('selDoorAirtight').value = "1.00";
+
+        document.querySelectorAll('.btn-height').forEach(b => {
+          b.classList.remove('border-2', 'border-blue-600', 'bg-blue-50', 'text-blue-700', 'font-bold');
+          b.classList.add('border-slate-200', 'bg-slate-50', 'text-slate-700');
+          if (b.getAttribute('data-height') === '60') {
+            b.classList.add('border-2', 'border-blue-600', 'bg-blue-50', 'text-blue-700', 'font-bold');
+          }
+        });
+
+        runSimulation();
+      });
+    }
+
+    // Window Onload initialization
+    window.onload = function() {
+      initCharts();
+      setupEventListeners();
+      runSimulation();
+    };
+  </script>
+</body>
+</html>
