@@ -66,13 +66,13 @@
           <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
           <span>엑셀(.xlsx) 수식 통합본 다운로드</span>
         </button>
-        <button id="btnToggleExcelGuide" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-300 bg-emerald-50 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 transition shadow-sm">
+        <button id="btnToggleExcelGuide" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-emerald-300 bg-emerald-50 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 transition shadow-sm">
           <i data-lucide="table-properties" class="w-3.5 h-3.5"></i> 엑셀 수식 매핑표
         </button>
-        <button id="btnReset" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-100 transition shadow-sm">
+        <button id="btnReset" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-100 transition shadow-sm">
           <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> 초기화
         </button>
-        <button id="btnToggleFormula" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 border border-blue-200 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition shadow-sm">
+        <button id="btnToggleFormula" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-blue-50 border border-blue-200 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition shadow-sm">
           <i data-lucide="file-code-2" class="w-3.5 h-3.5"></i> 산출 공식 해설
         </button>
       </div>
@@ -799,8 +799,8 @@
               <label class="text-[11px] text-slate-600 block mb-1">관중 1인당 환기 외기 도입 기준</label>
               <select id="selVentFactor" class="w-full bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-xs font-medium">
                 <option value="25">25 CMH/인 (국내 법정 기준)</option>
-                <option value="30" selected>30 CMH/인 (일본 빌딩관리법 기준)</option>
-                <option value="40">40 CMH/인 (도쿄돔 코로나 이후 운영 기준)</option>
+                <option value="30">30 CMH/인 (일본 빌딩관리법 기준)</option>
+                <option value="40" selected>40 CMH/인 (도쿄돔 코로나 이후 운영 기준 - 만석기준)</option>
               </select>
             </div>
           </div>
@@ -1021,7 +1021,7 @@
               <ul class="list-disc list-inside text-[11px] text-slate-400 space-y-1">
                 <li><b>N<sub>공조기</sub></b>: 대용량 공조기 설치 대수 (기준 8대)</li>
                 <li><b>Q, ΔP</b>: 순환 풍량 [m³/h] 및 정압 손실 [Pa]</li>
-                <li><b>관람객 환기 보정</b>: 1,000석 규모 다중이용 법정 외기량(30 m³/h·인) 급기 가중치 적용</li>
+                <li><b>관람객 환기 보정</b>: 1,000석 규모 다중이용 법정 외기량 및 고도 환기(40 m³/h·인) 급기 가중치 적용</li>
               </ul>
             </div>
 
@@ -1174,7 +1174,7 @@
       gasRatePct: 0,
       snowDays: 7,
       audienceDays: 40,
-      ventCMHPerPerson: 30,
+      ventCMHPerPerson: 40, // 도쿄돔 코로나 이후 운영 기준 (만석기준) 적용
       membraneFactor: 0.82,
       doorAirtightFactor: 1.00
     };
@@ -1606,7 +1606,6 @@
 
       // ==========================================
       // SHEET 2: 시뮬레이션_계산엔진 (Interactive Formula Engine)
-      // Cell references are explicitly constructed with live formulas!
       // ==========================================
       const wsEngineData = [
         ['에어돔 시뮬레이션 인터랙티브 계산 엔진 (엑셀 수식 연동 시트)'],
@@ -1645,7 +1644,7 @@
         ['① 동절기 기본 난방 가스비', '', null, '=ROUND((67000000*0.88)*C12*C13*(IF(C15=15,0.8,IF(C15=21,1.25,1)))*0.82*(C18/2)*(1+(C14/120)*0.52),0)', '도시가스 (체적 정비례)'], // C34
         ['② 장마시즌 제습 재열난방 가스비 (습도 50%)', '', null, '=ROUND(C16*360000*C12*(C17/14)*MAX(0.7,C18*0.425),0)', '도시가스 (습도 50% 재열)'], // C35
         ['③ 제설 승온 가스비', '', null, '=ROUND(C28*(1450000*(C8/19600)*C13)*MAX(0.7,C18*0.425),0)', '도시가스 (융설 버너)'], // C36
-        ['④ 관람객 신선외기 난방 가스비', '', null, '=ROUND(40*(1000*30*0.45*(C13-0.8)*12/30)*MAX(0.6,C21/8),0)', '도시가스 (환기 외기 가열)'], // C37
+        ['④ 관람객 신선외기 난방 가스비', '', null, '=ROUND(40*(1000*40*0.45*(C13-0.8)*12/30)*MAX(0.6,C21/8),0)', '도시가스 (외기 40 CMH 도쿄돔 만석기준)'], // C37
         ['⑤ 24시간 상시 가압 송풍 전기료', '', null, '=ROUND(((1.732*380*90*0.86)/1000)*(C20/2)*8760*C31*(1+(C14/365)*0.15),0)', '전기요금 (380V 삼상 송풍)'], // C38
         ['⑥ 하절기 냉방기(210RT) 전기료', '', null, '=ROUND(((C19/5)*210*1.15*1.4*(90*8)*0.75+C16*(((C19/5)*210*1.15*1.4)*0.32*C17))*C31*1.15,0)', '전기요금 (AC 컴프레서)'], // C39
         ['⑦ 야구장 LED 스포츠 조명 전기료', '', null, '=ROUND(((C23*C24)/1000)*C25*365*C31,0)', '전기요금 (KBO 조명)'], // C40
@@ -1672,7 +1671,7 @@
       wsEngine['C34'] = { t: 'n', f: 'ROUND((67000000*0.88)*C12*C13*(IF(C15=15,0.8,IF(C15=21,1.25,1)))*0.82*(C18/2)*(1+(C14/120)*0.52),0)' };
       wsEngine['C35'] = { t: 'n', f: 'ROUND(C16*360000*C12*(C17/14)*MAX(0.7,C18*0.425),0)' };
       wsEngine['C36'] = { t: 'n', f: 'ROUND(C28*(1450000*(C8/19600)*C13)*MAX(0.7,C18*0.425),0)' };
-      wsEngine['C37'] = { t: 'n', f: 'ROUND(40*(1000*30*0.45*(C13-0.8)*12/30)*MAX(0.6,C21/8),0)' };
+      wsEngine['C37'] = { t: 'n', f: 'ROUND(40*(1000*40*0.45*(C13-0.8)*12/30)*MAX(0.6,C21/8),0)' };
       
       wsEngine['C38'] = { t: 'n', f: 'ROUND(((1.732*380*90*0.86)/1000)*(C20/2)*8760*C31*(1+(C14/365)*0.15),0)' };
       wsEngine['C39'] = { t: 'n', f: 'ROUND(((C19/5)*210*1.15*1.4*(90*8)*0.75+C16*(((C19/5)*210*1.15*1.4)*0.32*C17))*C31*1.15,0)' };
@@ -1737,7 +1736,10 @@
         ['[3] 여름철 장마시즌 제습 재열난방 (습도 50% 유지) 이론'],
         ['목적:', '장마철 상대습도 85~95% 유입 시 실내 결로, 인조잔디 미끄럼, 곰팡이 방지'],
         ['원리:', '냉각 코일로 노점온도(약 12℃)까지 냉각 감습 ➔ 도시가스 난방 유닛으로 23℃(ΔT=11℃) 재열'],
-        ['가스 소모:', '대용량 돔 체적(62.7만 m³) 순환 풍량을 재가열하므로 7~8월 하절기에도 도시가스 비용 발생']
+        ['가스 소모:', '대용량 돔 체적(62.7만 m³) 순환 풍량을 재가열하므로 7~8월 하절기에도 도시가스 비용 발생'],
+        [''],
+        ['[4] 관람객 외기 환기 기준'],
+        ['도쿄돔 기준:', '만석 기준 40 CMH/인 (코로나19 이후 감염 예방 및 고밀도 환기 운영 표준)']
       ];
       const wsTheory = XLSX.utils.aoa_to_sheet(wsTheoryData);
 
@@ -1945,7 +1947,7 @@
         runSimulation();
       });
 
-      // Monsoon Days Slider (여름철 장마 제습 재열 일수)
+      // Monsoon Days Slider
       const inputMonsoon = document.getElementById('inputMonsoonDays');
       if (inputMonsoon) {
         inputMonsoon.addEventListener('input', (e) => {
@@ -1964,7 +1966,7 @@
       });
 
       document.getElementById('selVentFactor').addEventListener('change', (e) => {
-        state.ventCMHPerPerson = parseInt(e.target.value, 10) || 30;
+        state.ventCMHPerPerson = parseInt(e.target.value, 10) || 40;
         runSimulation();
       });
 
@@ -2018,7 +2020,7 @@
           gasRatePct: 0,
           snowDays: 7,
           audienceDays: 40,
-          ventCMHPerPerson: 30,
+          ventCMHPerPerson: 40, // 초기화 시에도 40 적용
           membraneFactor: 0.82,
           doorAirtightFactor: 1.00
         };
@@ -2077,7 +2079,7 @@
         document.getElementById('valSnowDays').innerText = "7 일 (도시가스 승온 + 송풍 가압)";
         document.getElementById('inputAudienceDays').value = 40;
         document.getElementById('lblAudienceRatio').innerText = "유관중 연 40회";
-        document.getElementById('selVentFactor').value = "30";
+        document.getElementById('selVentFactor').value = "40";
         document.getElementById('selMembraneType').value = "0.82";
         document.getElementById('selDoorAirtight').value = "1.00";
 
