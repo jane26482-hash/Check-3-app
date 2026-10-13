@@ -1,23 +1,27 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+
   <title>에어돔 및 통합훈련장 시뮬레이터</title>
   <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <!-- Chart.js for dynamic visualization -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- SheetJS (xlsx) for direct in-browser Excel file generation -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
   <!-- Font -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com/">
+  <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
+  
   
   <style>
+    :root{color-scheme:light} body{background:#f8fafc;color:#1e293b}
+    /* 한글 줄바꿈: 단어 중간에서 끊기지 않도록 */
+    body{word-break:keep-all;overflow-wrap:break-word}
+    h1,h2,h3,label{text-wrap:balance}
+    p{text-wrap:pretty}
+    canvas{max-width:100%}
+    .nowrap{white-space:nowrap}
+    #app,#app>main{min-width:0;max-width:100%}
+    .overflow-x-auto{max-width:100%}
     body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; }
     input[type=range] { accent-color: #2563eb; }
     .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -29,76 +33,46 @@
     .tab-btn { transition: all 0.2s ease; border-bottom: 3px solid transparent; }
     .tab-btn.active { border-bottom-color: #2563eb; color: #1e3a8a; font-weight: 800; background-color: #eff6ff; }
   </style>
-</head>
-<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col">
+<style>*, ::before, ::after{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/* ! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com */*,::after,::before{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}::after,::before{--tw-content:''}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.fixed{position:fixed}.absolute{position:absolute}.relative{position:relative}.sticky{position:sticky}.inset-0{inset:0px}.bottom-0{bottom:0px}.left-0{left:0px}.right-0{right:0px}.top-0{top:0px}.z-10{z-index:10}.z-40{z-index:40}.z-50{z-index:50}.mx-auto{margin-left:auto;margin-right:auto}.-mb-16{margin-bottom:-4rem}.-ml-16{margin-left:-4rem}.-mr-16{margin-right:-4rem}.-mt-16{margin-top:-4rem}.mb-0\.5{margin-bottom:0.125rem}.mb-1{margin-bottom:0.25rem}.mb-1\.5{margin-bottom:0.375rem}.mb-2{margin-bottom:0.5rem}.mb-3{margin-bottom:0.75rem}.mb-3\.5{margin-bottom:0.875rem}.mb-4{margin-bottom:1rem}.mb-6{margin-bottom:1.5rem}.mb-8{margin-bottom:2rem}.ml-1{margin-left:0.25rem}.mt-0\.5{margin-top:0.125rem}.mt-2{margin-top:0.5rem}.mt-3{margin-top:0.75rem}.mt-4{margin-top:1rem}.mt-5{margin-top:1.25rem}.block{display:block}.flex{display:flex}.inline-flex{display:inline-flex}.grid{display:grid}.hidden{display:none}.h-1{height:0.25rem}.h-1\.5{height:0.375rem}.h-10{height:2.5rem}.h-2{height:0.5rem}.h-2\.5{height:0.625rem}.h-3\.5{height:0.875rem}.h-4{height:1rem}.h-5{height:1.25rem}.h-6{height:1.5rem}.h-64{height:16rem}.h-8{height:2rem}.h-\[250px\]{height:250px}.h-full{height:100%}.max-h-\[90vh\]{max-height:90vh}.min-h-screen{min-height:100vh}.min-h-\[220px\]{min-height:220px}.min-h-\[240px\]{min-height:240px}.w-1\/3{width:33.333333%}.w-10{width:2.5rem}.w-12{width:3rem}.w-2{width:0.5rem}.w-2\.5{width:0.625rem}.w-2\/3{width:66.666667%}.w-3\.5{width:0.875rem}.w-4{width:1rem}.w-5{width:1.25rem}.w-6{width:1.5rem}.w-64{width:16rem}.w-8{width:2rem}.w-full{width:100%}.max-w-4xl{max-width:56rem}.max-w-7xl{max-width:80rem}.flex-1{flex:1 1 0%}.flex-grow{flex-grow:1}.border-collapse{border-collapse:collapse}@keyframes ping{75%, 100%{transform:scale(2);opacity:0}}.animate-ping{animation:ping 1s cubic-bezier(0, 0, 0.2, 1) infinite}@keyframes pulse{50%{opacity:.5}}.animate-pulse{animation:pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite}.cursor-pointer{cursor:pointer}.grid-cols-1{grid-template-columns:repeat(1, minmax(0, 1fr))}.grid-cols-2{grid-template-columns:repeat(2, minmax(0, 1fr))}.grid-cols-3{grid-template-columns:repeat(3, minmax(0, 1fr))}.grid-cols-4{grid-template-columns:repeat(4, minmax(0, 1fr))}.flex-col{flex-direction:column}.flex-wrap{flex-wrap:wrap}.items-center{align-items:center}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.gap-1{gap:0.25rem}.gap-1\.5{gap:0.375rem}.gap-2{gap:0.5rem}.gap-3{gap:0.75rem}.gap-4{gap:1rem}.gap-6{gap:1.5rem}.gap-8{gap:2rem}.space-x-3 > :not([hidden]) ~ :not([hidden]){--tw-space-x-reverse:0;margin-right:calc(0.75rem * var(--tw-space-x-reverse));margin-left:calc(0.75rem * calc(1 - var(--tw-space-x-reverse)))}.space-y-2 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.5rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.5rem * var(--tw-space-y-reverse))}.space-y-3 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.75rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.75rem * var(--tw-space-y-reverse))}.space-y-4 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1rem * var(--tw-space-y-reverse))}.space-y-6 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1.5rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1.5rem * var(--tw-space-y-reverse))}.divide-y > :not([hidden]) ~ :not([hidden]){--tw-divide-y-reverse:0;border-top-width:calc(1px * calc(1 - var(--tw-divide-y-reverse)));border-bottom-width:calc(1px * var(--tw-divide-y-reverse))}.divide-slate-100 > :not([hidden]) ~ :not([hidden]){--tw-divide-opacity:1;border-color:rgb(241 245 249 / var(--tw-divide-opacity, 1))}.divide-slate-200 > :not([hidden]) ~ :not([hidden]){--tw-divide-opacity:1;border-color:rgb(226 232 240 / var(--tw-divide-opacity, 1))}.overflow-hidden{overflow:hidden}.overflow-x-auto{overflow-x:auto}.overflow-y-auto{overflow-y:auto}.whitespace-nowrap{white-space:nowrap}.rounded{border-radius:0.25rem}.rounded-2xl{border-radius:1rem}.rounded-full{border-radius:9999px}.rounded-lg{border-radius:0.5rem}.rounded-md{border-radius:0.375rem}.rounded-xl{border-radius:0.75rem}.rounded-t-lg{border-top-left-radius:0.5rem;border-top-right-radius:0.5rem}.rounded-bl-md{border-bottom-left-radius:0.375rem}.border{border-width:1px}.border-2{border-width:2px}.border-y{border-top-width:1px;border-bottom-width:1px}.border-b{border-bottom-width:1px}.border-r{border-right-width:1px}.border-t{border-top-width:1px}.border-t-2{border-top-width:2px}.border-amber-100{--tw-border-opacity:1;border-color:rgb(254 243 199 / var(--tw-border-opacity, 1))}.border-amber-200{--tw-border-opacity:1;border-color:rgb(253 230 138 / var(--tw-border-opacity, 1))}.border-blue-100{--tw-border-opacity:1;border-color:rgb(219 234 254 / var(--tw-border-opacity, 1))}.border-blue-200{--tw-border-opacity:1;border-color:rgb(191 219 254 / var(--tw-border-opacity, 1))}.border-blue-300{--tw-border-opacity:1;border-color:rgb(147 197 253 / var(--tw-border-opacity, 1))}.border-blue-400{--tw-border-opacity:1;border-color:rgb(96 165 250 / var(--tw-border-opacity, 1))}.border-blue-500{--tw-border-opacity:1;border-color:rgb(59 130 246 / var(--tw-border-opacity, 1))}.border-blue-600{--tw-border-opacity:1;border-color:rgb(37 99 235 / var(--tw-border-opacity, 1))}.border-blue-700{--tw-border-opacity:1;border-color:rgb(29 78 216 / var(--tw-border-opacity, 1))}.border-cyan-200{--tw-border-opacity:1;border-color:rgb(165 243 252 / var(--tw-border-opacity, 1))}.border-emerald-100{--tw-border-opacity:1;border-color:rgb(209 250 229 / var(--tw-border-opacity, 1))}.border-emerald-200{--tw-border-opacity:1;border-color:rgb(167 243 208 / var(--tw-border-opacity, 1))}.border-emerald-300{--tw-border-opacity:1;border-color:rgb(110 231 183 / var(--tw-border-opacity, 1))}.border-emerald-500\/20{border-color:rgb(16 185 129 / 0.2)}.border-emerald-500\/40{border-color:rgb(16 185 129 / 0.4)}.border-indigo-200{--tw-border-opacity:1;border-color:rgb(199 210 254 / var(--tw-border-opacity, 1))}.border-purple-100{--tw-border-opacity:1;border-color:rgb(243 232 255 / var(--tw-border-opacity, 1))}.border-purple-200{--tw-border-opacity:1;border-color:rgb(233 213 255 / var(--tw-border-opacity, 1))}.border-purple-300{--tw-border-opacity:1;border-color:rgb(216 180 254 / var(--tw-border-opacity, 1))}.border-slate-100{--tw-border-opacity:1;border-color:rgb(241 245 249 / var(--tw-border-opacity, 1))}.border-slate-200{--tw-border-opacity:1;border-color:rgb(226 232 240 / var(--tw-border-opacity, 1))}.border-slate-300{--tw-border-opacity:1;border-color:rgb(203 213 225 / var(--tw-border-opacity, 1))}.border-slate-700{--tw-border-opacity:1;border-color:rgb(51 65 85 / var(--tw-border-opacity, 1))}.border-slate-800{--tw-border-opacity:1;border-color:rgb(30 41 59 / var(--tw-border-opacity, 1))}.border-slate-900{--tw-border-opacity:1;border-color:rgb(15 23 42 / var(--tw-border-opacity, 1))}.border-white\/20{border-color:rgb(255 255 255 / 0.2)}.border-yellow-300{--tw-border-opacity:1;border-color:rgb(253 224 71 / var(--tw-border-opacity, 1))}.bg-slate-50{--tw-bg-opacity:1;background-color:rgb(248 250 252 / var(--tw-bg-opacity, 1))}.bg-\[\#059669\]{--tw-bg-opacity:1;background-color:rgb(5 150 105 / var(--tw-bg-opacity, 1))}.bg-\[\#06b6d4\]{--tw-bg-opacity:1;background-color:rgb(6 182 212 / var(--tw-bg-opacity, 1))}.bg-\[\#0d9488\]{--tw-bg-opacity:1;background-color:rgb(13 148 136 / var(--tw-bg-opacity, 1))}.bg-\[\#2563eb\]{--tw-bg-opacity:1;background-color:rgb(37 99 235 / var(--tw-bg-opacity, 1))}.bg-\[\#4f46e5\]{--tw-bg-opacity:1;background-color:rgb(79 70 229 / var(--tw-bg-opacity, 1))}.bg-\[\#eab308\]{--tw-bg-opacity:1;background-color:rgb(234 179 8 / var(--tw-bg-opacity, 1))}.bg-\[\#f59e0b\]{--tw-bg-opacity:1;background-color:rgb(245 158 11 / var(--tw-bg-opacity, 1))}.bg-amber-100{--tw-bg-opacity:1;background-color:rgb(254 243 199 / var(--tw-bg-opacity, 1))}.bg-amber-200{--tw-bg-opacity:1;background-color:rgb(253 230 138 / var(--tw-bg-opacity, 1))}.bg-amber-50{--tw-bg-opacity:1;background-color:rgb(255 251 235 / var(--tw-bg-opacity, 1))}.bg-amber-50\/50{background-color:rgb(255 251 235 / 0.5)}.bg-amber-500{--tw-bg-opacity:1;background-color:rgb(245 158 11 / var(--tw-bg-opacity, 1))}.bg-blue-100{--tw-bg-opacity:1;background-color:rgb(219 234 254 / var(--tw-bg-opacity, 1))}.bg-blue-100\/50{background-color:rgb(219 234 254 / 0.5)}.bg-blue-200{--tw-bg-opacity:1;background-color:rgb(191 219 254 / var(--tw-bg-opacity, 1))}.bg-blue-400{--tw-bg-opacity:1;background-color:rgb(96 165 250 / var(--tw-bg-opacity, 1))}.bg-blue-50{--tw-bg-opacity:1;background-color:rgb(239 246 255 / var(--tw-bg-opacity, 1))}.bg-blue-50\/40{background-color:rgb(239 246 255 / 0.4)}.bg-blue-50\/50{background-color:rgb(239 246 255 / 0.5)}.bg-blue-500{--tw-bg-opacity:1;background-color:rgb(59 130 246 / var(--tw-bg-opacity, 1))}.bg-blue-500\/10{background-color:rgb(59 130 246 / 0.1)}.bg-blue-600{--tw-bg-opacity:1;background-color:rgb(37 99 235 / var(--tw-bg-opacity, 1))}.bg-blue-800{--tw-bg-opacity:1;background-color:rgb(30 64 175 / var(--tw-bg-opacity, 1))}.bg-cyan-200{--tw-bg-opacity:1;background-color:rgb(165 243 252 / var(--tw-bg-opacity, 1))}.bg-cyan-50\/60{background-color:rgb(236 254 255 / 0.6)}.bg-cyan-500{--tw-bg-opacity:1;background-color:rgb(6 182 212 / var(--tw-bg-opacity, 1))}.bg-emerald-100{--tw-bg-opacity:1;background-color:rgb(209 250 229 / var(--tw-bg-opacity, 1))}.bg-emerald-50{--tw-bg-opacity:1;background-color:rgb(236 253 245 / var(--tw-bg-opacity, 1))}.bg-emerald-50\/50{background-color:rgb(236 253 245 / 0.5)}.bg-emerald-500\/10{background-color:rgb(16 185 129 / 0.1)}.bg-emerald-600{--tw-bg-opacity:1;background-color:rgb(5 150 105 / var(--tw-bg-opacity, 1))}.bg-emerald-950\/90{background-color:rgb(2 44 34 / 0.9)}.bg-indigo-100{--tw-bg-opacity:1;background-color:rgb(224 231 255 / var(--tw-bg-opacity, 1))}.bg-indigo-200{--tw-bg-opacity:1;background-color:rgb(199 210 254 / var(--tw-bg-opacity, 1))}.bg-indigo-50{--tw-bg-opacity:1;background-color:rgb(238 242 255 / var(--tw-bg-opacity, 1))}.bg-purple-100{--tw-bg-opacity:1;background-color:rgb(243 232 255 / var(--tw-bg-opacity, 1))}.bg-purple-200{--tw-bg-opacity:1;background-color:rgb(233 213 255 / var(--tw-bg-opacity, 1))}.bg-purple-50{--tw-bg-opacity:1;background-color:rgb(250 245 255 / var(--tw-bg-opacity, 1))}.bg-purple-50\/40{background-color:rgb(250 245 255 / 0.4)}.bg-slate-100{--tw-bg-opacity:1;background-color:rgb(241 245 249 / var(--tw-bg-opacity, 1))}.bg-slate-200{--tw-bg-opacity:1;background-color:rgb(226 232 240 / var(--tw-bg-opacity, 1))}.bg-slate-50\/50{background-color:rgb(248 250 252 / 0.5)}.bg-slate-600{--tw-bg-opacity:1;background-color:rgb(71 85 105 / var(--tw-bg-opacity, 1))}.bg-slate-800{--tw-bg-opacity:1;background-color:rgb(30 41 59 / var(--tw-bg-opacity, 1))}.bg-slate-800\/80{background-color:rgb(30 41 59 / 0.8)}.bg-slate-900{--tw-bg-opacity:1;background-color:rgb(15 23 42 / var(--tw-bg-opacity, 1))}.bg-slate-950{--tw-bg-opacity:1;background-color:rgb(2 6 23 / var(--tw-bg-opacity, 1))}.bg-teal-100{--tw-bg-opacity:1;background-color:rgb(204 251 241 / var(--tw-bg-opacity, 1))}.bg-teal-200{--tw-bg-opacity:1;background-color:rgb(153 246 228 / var(--tw-bg-opacity, 1))}.bg-white{--tw-bg-opacity:1;background-color:rgb(255 255 255 / var(--tw-bg-opacity, 1))}.bg-white\/10{background-color:rgb(255 255 255 / 0.1)}.bg-yellow-200{--tw-bg-opacity:1;background-color:rgb(254 240 138 / var(--tw-bg-opacity, 1))}.bg-yellow-50{--tw-bg-opacity:1;background-color:rgb(254 252 232 / var(--tw-bg-opacity, 1))}.bg-yellow-50\/50{background-color:rgb(254 252 232 / 0.5)}.bg-gradient-to-br{background-image:linear-gradient(to bottom right, var(--tw-gradient-stops))}.bg-gradient-to-r{background-image:linear-gradient(to right, var(--tw-gradient-stops))}.from-blue-500{--tw-gradient-from:#3b82f6 var(--tw-gradient-from-position);--tw-gradient-to:rgb(59 130 246 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.from-slate-900{--tw-gradient-from:#0f172a var(--tw-gradient-from-position);--tw-gradient-to:rgb(15 23 42 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.to-blue-950{--tw-gradient-to:#172554 var(--tw-gradient-to-position)}.to-indigo-500{--tw-gradient-to:#6366f1 var(--tw-gradient-to-position)}.p-0\.5{padding:0.125rem}.p-1{padding:0.25rem}.p-1\.5{padding:0.375rem}.p-2{padding:0.5rem}.p-2\.5{padding:0.625rem}.p-3{padding:0.75rem}.p-3\.5{padding:0.875rem}.p-4{padding:1rem}.p-5{padding:1.25rem}.p-6{padding:1.5rem}.px-1{padding-left:0.25rem;padding-right:0.25rem}.px-1\.5{padding-left:0.375rem;padding-right:0.375rem}.px-2{padding-left:0.5rem;padding-right:0.5rem}.px-2\.5{padding-left:0.625rem;padding-right:0.625rem}.px-3\.5{padding-left:0.875rem;padding-right:0.875rem}.px-4{padding-left:1rem;padding-right:1rem}.px-5{padding-left:1.25rem;padding-right:1.25rem}.py-0\.5{padding-top:0.125rem;padding-bottom:0.125rem}.py-1{padding-top:0.25rem;padding-bottom:0.25rem}.py-1\.5{padding-top:0.375rem;padding-bottom:0.375rem}.py-2{padding-top:0.5rem;padding-bottom:0.5rem}.py-2\.5{padding-top:0.625rem;padding-bottom:0.625rem}.py-3{padding-top:0.75rem;padding-bottom:0.75rem}.py-3\.5{padding-top:0.875rem;padding-bottom:0.875rem}.py-4{padding-top:1rem;padding-bottom:1rem}.py-8{padding-top:2rem;padding-bottom:2rem}.pb-1{padding-bottom:0.25rem}.pb-3{padding-bottom:0.75rem}.pb-4{padding-bottom:1rem}.pr-1{padding-right:0.25rem}.text-left{text-align:left}.text-center{text-align:center}.text-right{text-align:right}.font-mono{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace}.font-sans{font-family:ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"}.text-3xl{font-size:1.875rem;line-height:2.25rem}.text-\[10px\]{font-size:10px}.text-\[11px\]{font-size:11px}.text-\[13px\]{font-size:13px}.text-\[15px\]{font-size:15px}.text-\[9px\]{font-size:9px}.text-base{font-size:1rem;line-height:1.5rem}.text-lg{font-size:1.125rem;line-height:1.75rem}.text-sm{font-size:0.875rem;line-height:1.25rem}.text-xl{font-size:1.25rem;line-height:1.75rem}.text-xs{font-size:0.75rem;line-height:1rem}.font-black{font-weight:900}.font-bold{font-weight:700}.font-extrabold{font-weight:800}.font-medium{font-weight:500}.font-normal{font-weight:400}.font-semibold{font-weight:600}.leading-relaxed{line-height:1.625}.leading-snug{line-height:1.375}.leading-tight{line-height:1.25}.tracking-normal{letter-spacing:0em}.tracking-tight{letter-spacing:-0.025em}.tracking-tighter{letter-spacing:-0.05em}.text-slate-800{--tw-text-opacity:1;color:rgb(30 41 59 / var(--tw-text-opacity, 1))}.text-amber-300{--tw-text-opacity:1;color:rgb(252 211 77 / var(--tw-text-opacity, 1))}.text-amber-400{--tw-text-opacity:1;color:rgb(251 191 36 / var(--tw-text-opacity, 1))}.text-amber-600{--tw-text-opacity:1;color:rgb(217 119 6 / var(--tw-text-opacity, 1))}.text-amber-700{--tw-text-opacity:1;color:rgb(180 83 9 / var(--tw-text-opacity, 1))}.text-amber-900{--tw-text-opacity:1;color:rgb(120 53 15 / var(--tw-text-opacity, 1))}.text-blue-100{--tw-text-opacity:1;color:rgb(219 234 254 / var(--tw-text-opacity, 1))}.text-blue-200{--tw-text-opacity:1;color:rgb(191 219 254 / var(--tw-text-opacity, 1))}.text-blue-300{--tw-text-opacity:1;color:rgb(147 197 253 / var(--tw-text-opacity, 1))}.text-blue-400{--tw-text-opacity:1;color:rgb(96 165 250 / var(--tw-text-opacity, 1))}.text-blue-600{--tw-text-opacity:1;color:rgb(37 99 235 / var(--tw-text-opacity, 1))}.text-blue-700{--tw-text-opacity:1;color:rgb(29 78 216 / var(--tw-text-opacity, 1))}.text-blue-700\/70{color:rgb(29 78 216 / 0.7)}.text-blue-800{--tw-text-opacity:1;color:rgb(30 64 175 / var(--tw-text-opacity, 1))}.text-blue-900{--tw-text-opacity:1;color:rgb(30 58 138 / var(--tw-text-opacity, 1))}.text-cyan-600{--tw-text-opacity:1;color:rgb(8 145 178 / var(--tw-text-opacity, 1))}.text-cyan-700{--tw-text-opacity:1;color:rgb(14 116 144 / var(--tw-text-opacity, 1))}.text-cyan-950{--tw-text-opacity:1;color:rgb(8 51 68 / var(--tw-text-opacity, 1))}.text-emerald-200{--tw-text-opacity:1;color:rgb(167 243 208 / var(--tw-text-opacity, 1))}.text-emerald-300{--tw-text-opacity:1;color:rgb(110 231 183 / var(--tw-text-opacity, 1))}.text-emerald-400{--tw-text-opacity:1;color:rgb(52 211 153 / var(--tw-text-opacity, 1))}.text-emerald-600{--tw-text-opacity:1;color:rgb(5 150 105 / var(--tw-text-opacity, 1))}.text-emerald-700{--tw-text-opacity:1;color:rgb(4 120 87 / var(--tw-text-opacity, 1))}.text-emerald-800{--tw-text-opacity:1;color:rgb(6 95 70 / var(--tw-text-opacity, 1))}.text-emerald-900{--tw-text-opacity:1;color:rgb(6 78 59 / var(--tw-text-opacity, 1))}.text-indigo-300{--tw-text-opacity:1;color:rgb(165 180 252 / var(--tw-text-opacity, 1))}.text-indigo-400{--tw-text-opacity:1;color:rgb(129 140 248 / var(--tw-text-opacity, 1))}.text-indigo-600{--tw-text-opacity:1;color:rgb(79 70 229 / var(--tw-text-opacity, 1))}.text-indigo-700{--tw-text-opacity:1;color:rgb(67 56 202 / var(--tw-text-opacity, 1))}.text-indigo-900{--tw-text-opacity:1;color:rgb(49 46 129 / var(--tw-text-opacity, 1))}.text-purple-600{--tw-text-opacity:1;color:rgb(147 51 234 / var(--tw-text-opacity, 1))}.text-purple-700{--tw-text-opacity:1;color:rgb(126 34 206 / var(--tw-text-opacity, 1))}.text-purple-900{--tw-text-opacity:1;color:rgb(88 28 135 / var(--tw-text-opacity, 1))}.text-slate-100{--tw-text-opacity:1;color:rgb(241 245 249 / var(--tw-text-opacity, 1))}.text-slate-300{--tw-text-opacity:1;color:rgb(203 213 225 / var(--tw-text-opacity, 1))}.text-slate-400{--tw-text-opacity:1;color:rgb(148 163 184 / var(--tw-text-opacity, 1))}.text-slate-500{--tw-text-opacity:1;color:rgb(100 116 139 / var(--tw-text-opacity, 1))}.text-slate-600{--tw-text-opacity:1;color:rgb(71 85 105 / var(--tw-text-opacity, 1))}.text-slate-700{--tw-text-opacity:1;color:rgb(51 65 85 / var(--tw-text-opacity, 1))}.text-slate-900{--tw-text-opacity:1;color:rgb(15 23 42 / var(--tw-text-opacity, 1))}.text-teal-300{--tw-text-opacity:1;color:rgb(94 234 212 / var(--tw-text-opacity, 1))}.text-teal-400{--tw-text-opacity:1;color:rgb(45 212 191 / var(--tw-text-opacity, 1))}.text-teal-700{--tw-text-opacity:1;color:rgb(15 118 110 / var(--tw-text-opacity, 1))}.text-white{--tw-text-opacity:1;color:rgb(255 255 255 / var(--tw-text-opacity, 1))}.text-yellow-300{--tw-text-opacity:1;color:rgb(253 224 71 / var(--tw-text-opacity, 1))}.text-yellow-400{--tw-text-opacity:1;color:rgb(250 204 21 / var(--tw-text-opacity, 1))}.text-yellow-600{--tw-text-opacity:1;color:rgb(202 138 4 / var(--tw-text-opacity, 1))}.text-yellow-700{--tw-text-opacity:1;color:rgb(161 98 7 / var(--tw-text-opacity, 1))}.antialiased{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}.accent-amber-600{accent-color:#d97706}.accent-emerald-600{accent-color:#059669}.accent-teal-600{accent-color:#0d9488}.accent-yellow-500{accent-color:#eab308}.opacity-75{opacity:0.75}.shadow-2xl{--tw-shadow:0 25px 50px -12px rgb(0 0 0 / 0.25);--tw-shadow-colored:0 25px 50px -12px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-inner{--tw-shadow:inset 0 2px 4px 0 rgb(0 0 0 / 0.05);--tw-shadow-colored:inset 0 2px 4px 0 var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-lg{--tw-shadow:0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);--tw-shadow-colored:0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -4px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-md{--tw-shadow:0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);--tw-shadow-colored:0 4px 6px -1px var(--tw-shadow-color), 0 2px 4px -2px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-sm{--tw-shadow:0 1px 2px 0 rgb(0 0 0 / 0.05);--tw-shadow-colored:0 1px 2px 0 var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-xl{--tw-shadow:0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);--tw-shadow-colored:0 20px 25px -5px var(--tw-shadow-color), 0 8px 10px -6px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-blue-100{--tw-shadow-color:#dbeafe;--tw-shadow:var(--tw-shadow-colored)}.shadow-blue-500\/20{--tw-shadow-color:rgb(59 130 246 / 0.2);--tw-shadow:var(--tw-shadow-colored)}.shadow-blue-900\/50{--tw-shadow-color:rgb(30 58 138 / 0.5);--tw-shadow:var(--tw-shadow-colored)}.shadow-emerald-600\/20{--tw-shadow-color:rgb(5 150 105 / 0.2);--tw-shadow:var(--tw-shadow-colored)}.blur-3xl{--tw-blur:blur(64px);filter:var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)}.backdrop-blur-sm{--tw-backdrop-blur:blur(4px);-webkit-backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia)}.transition{transition-property:color, background-color, border-color, fill, stroke, opacity, box-shadow, transform, filter, -webkit-text-decoration-color, -webkit-backdrop-filter;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter, -webkit-text-decoration-color, -webkit-backdrop-filter;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.transition-colors{transition-property:color, background-color, border-color, fill, stroke, -webkit-text-decoration-color;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke, -webkit-text-decoration-color;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.hover\:border-blue-300:hover{--tw-border-opacity:1;border-color:rgb(147 197 253 / var(--tw-border-opacity, 1))}.hover\:border-indigo-300:hover{--tw-border-opacity:1;border-color:rgb(165 180 252 / var(--tw-border-opacity, 1))}.hover\:bg-blue-50\/40:hover{background-color:rgb(239 246 255 / 0.4)}.hover\:bg-emerald-100:hover{--tw-bg-opacity:1;background-color:rgb(209 250 229 / var(--tw-bg-opacity, 1))}.hover\:bg-emerald-700:hover{--tw-bg-opacity:1;background-color:rgb(4 120 87 / var(--tw-bg-opacity, 1))}.hover\:bg-slate-100:hover{--tw-bg-opacity:1;background-color:rgb(241 245 249 / var(--tw-bg-opacity, 1))}.hover\:bg-slate-50:hover{--tw-bg-opacity:1;background-color:rgb(248 250 252 / var(--tw-bg-opacity, 1))}.hover\:bg-slate-700:hover{--tw-bg-opacity:1;background-color:rgb(51 65 85 / var(--tw-bg-opacity, 1))}.hover\:bg-slate-800:hover{--tw-bg-opacity:1;background-color:rgb(30 41 59 / var(--tw-bg-opacity, 1))}.hover\:text-slate-800:hover{--tw-text-opacity:1;color:rgb(30 41 59 / var(--tw-text-opacity, 1))}.hover\:text-white:hover{--tw-text-opacity:1;color:rgb(255 255 255 / var(--tw-text-opacity, 1))}@media (min-width: 640px){.sm\:grid-cols-3{grid-template-columns:repeat(3, minmax(0, 1fr))}.sm\:px-6{padding-left:1.5rem;padding-right:1.5rem}.sm\:text-\[11px\]{font-size:11px}.sm\:text-sm{font-size:0.875rem;line-height:1.25rem}.sm\:text-xl{font-size:1.25rem;line-height:1.75rem}}@media (min-width: 768px){.md\:w-1\/3{width:33.333333%}.md\:flex-row{flex-direction:row}.md\:gap-8{gap:2rem}}@media (min-width: 1024px){.lg\:col-span-12{grid-column:span 12 / span 12}.lg\:col-span-5{grid-column:span 5 / span 5}.lg\:col-span-7{grid-column:span 7 / span 7}.lg\:grid-cols-12{grid-template-columns:repeat(12, minmax(0, 1fr))}.lg\:grid-cols-2{grid-template-columns:repeat(2, minmax(0, 1fr))}.lg\:gap-6{gap:1.5rem}.lg\:px-8{padding-left:2rem;padding-right:2rem}.lg\:text-4xl{font-size:2.25rem;line-height:2.5rem}}</style>
+<div id="app" class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col">
 
   <!-- HEADER -->
   <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-wrap items-center justify-between gap-4">
       <div class="flex items-center space-x-3">
         <div class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-500/20">
-          <i data-lucide="layers" class="w-6 h-6"></i>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="layers" aria-hidden="true" class="lucide lucide-layers w-6 h-6"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"></path><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"></path><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"></path></svg>
         </div>
         <div>
           <h1 class="text-lg sm:text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-            에어돔 및 통합훈련장 정밀 시뮬레이터
-            <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">v5.0 통합본</span>
+            영종통합훈련장 수도광열비 산출
+            <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 whitespace-nowrap">v5.0 통합본</span>
           </h1>
-          <p class="text-xs text-slate-500">경주 스마트에어돔 2024 실적 기반 ➔ 인천 영종도 야구장 및 부대시설 예측 모델</p>
+          <p class="text-xs text-slate-500">경주 스마트에어돔 2025 실적 기반 ➔ 인천 영종도 야구장 및 부대시설 예측 모델</p>
         </div>
       </div>
       
       <!-- Top Action Buttons (Restored from ver3) -->
       <div class="flex items-center flex-wrap gap-2">
-        <button id="btnDownloadExcel" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-md shadow-emerald-600/20">
-          <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
-          <span>에어돔 엑셀(.xlsx) 통합본 다운로드</span>
-        </button>
-        <button id="btnToggleExcelGuide" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-emerald-300 bg-emerald-50 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 transition shadow-sm">
-          <i data-lucide="table-properties" class="w-3.5 h-3.5"></i> 엑셀 매핑표
-        </button>
         <button id="btnReset" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-100 transition shadow-sm">
-          <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> 초기화
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="rotate-ccw" aria-hidden="true" class="lucide lucide-rotate-ccw w-3.5 h-3.5"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg> 초기화
         </button>
       </div>
     </div>
     
     <!-- TABS -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-2 flex gap-1 border-b border-slate-200">
-      <button id="tabBtnDome" class="tab-btn active px-5 py-3 text-sm font-semibold text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-t-lg flex items-center gap-2">
-        <i data-lucide="tent" class="w-4 h-4"></i>
-        1. 주경기장(에어돔) 단독 예측
+      <button id="tabBtnDome" class="tab-btn px-5 py-3 text-sm font-semibold text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-t-lg flex items-center gap-2 active">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="tent" aria-hidden="true" class="lucide lucide-tent w-4 h-4"><path d="M3.5 21 14 3"></path><path d="M20.5 21 10 3"></path><path d="M15.5 21 12 15l-3.5 6"></path><path d="M2 21h20"></path></svg>
+        1. 주경기장(에어돔) 산출
       </button>
       <button id="tabBtnTotal" class="tab-btn px-5 py-3 text-sm font-semibold text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-t-lg flex items-center gap-2">
-        <i data-lucide="building-2" class="w-4 h-4"></i>
-        2. 전체 훈련장 통합 수도광열비 산출
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="building-2" aria-hidden="true" class="lucide lucide-building-2 w-4 h-4"><path d="M10 12h4"></path><path d="M10 8h4"></path><path d="M14 21v-3a2 2 0 0 0-4 0v3"></path><path d="M6 10H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2"></path><path d="M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"></path></svg>
+        2. 영종통합훈련장 전체 산출
       </button>
     </div>
   </header>
 
-  <!-- EXCEL GUIDE MODAL (Restored from ver3) -->
-  <div id="excelGuideModal" class="hidden bg-emerald-950/90 text-white fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-    <div class="bg-slate-900 border border-emerald-500/40 rounded-2xl max-w-4xl w-full p-6 shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
-      <div class="flex items-center justify-between pb-4 border-b border-slate-700 mb-4">
-        <div class="flex items-center gap-2">
-          <i data-lucide="file-spreadsheet" class="w-6 h-6 text-emerald-400"></i>
-          <div>
-            <h3 class="text-base font-bold text-white">엑셀(.xlsx) 통합 수식 시트 구성 가이드</h3>
-            <p class="text-xs text-slate-400">우측 상단 '다운로드' 클릭 시 4개 시트로 구성된 수식 연동 통합 엑셀 파일이 즉시 생성됩니다.</p>
-          </div>
-        </div>
-        <button id="btnCloseExcelGuide" class="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
-      </div>
-      <div class="space-y-4 text-xs text-slate-300 leading-relaxed">
-        <p>11대 변수 (체적, 혹한일, 운영일수 등)가 포함된 계산 엔진이 엑셀에 내장되어 실시간 재계산이 가능합니다.</p>
-      </div>
-      <div class="mt-5 text-right">
-        <button id="btnModalClose" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-white transition">닫기</button>
-      </div>
-    </div>
-  </div>
 
 
   <!-- ========================================================================= -->
@@ -139,7 +113,7 @@
               </tr>
               <tr class="hover:bg-slate-50 transition-colors">
                 <th class="w-1/3 py-3 px-5 text-slate-500 font-semibold bg-slate-50/50">내부설비</th>
-                <td class="w-2/3 py-3 px-5 text-slate-900 font-bold leading-snug">일체형 공조기 2대, 이중필터<br><span class="text-slate-500 font-normal text-[11px]">*비상용발전기 有(등유사용)</span></td>
+                <td class="w-2/3 py-3 px-5 text-slate-900 font-bold leading-snug">냉방 2대, 난방 2대, 송풍/공조 일체형 2대<br><span class="text-slate-500 font-normal text-[11px]">*비상용발전기 有(등유사용)</span></td>
               </tr>
               <tr class="hover:bg-slate-50 transition-colors">
                 <th class="w-1/3 py-3 px-5 text-slate-500 font-semibold bg-slate-50/50">운영시간</th>
@@ -159,17 +133,17 @@
 
         <div class="bg-slate-50 border-t border-slate-200 p-4">
           <div class="grid grid-cols-3 gap-2">
-            <div class="bg-white rounded-lg border border-slate-200 p-2.5 text-center shadow-sm">
+            <div class="bg-white rounded-lg border border-slate-200 px-1 pt-5 pb-2.5 sm:p-2.5 text-center shadow-sm">
               <div class="text-[10px] sm:text-[11px] text-slate-500 font-bold mb-1">연간 전기요금</div>
-              <div class="text-[13px] sm:text-sm font-black text-slate-800">56,000,000원</div>
+              <div class="text-[11px] sm:text-sm font-black tracking-tight text-slate-800">51,510,280원</div>
             </div>
-            <div class="bg-white rounded-lg border border-slate-200 p-2.5 text-center shadow-sm">
+            <div class="bg-white rounded-lg border border-slate-200 px-1 pt-5 pb-2.5 sm:p-2.5 text-center shadow-sm">
               <div class="text-[10px] sm:text-[11px] text-slate-500 font-bold mb-1">연간 가스요금</div>
-              <div class="text-[13px] sm:text-sm font-black text-slate-800">67,000,000원</div>
+              <div class="text-[11px] sm:text-sm font-black tracking-tight text-slate-800">37,809,690원</div>
             </div>
-            <div class="bg-slate-800 rounded-lg border border-slate-900 p-2.5 text-center shadow-sm">
+            <div class="bg-slate-800 rounded-lg border border-slate-900 px-1 pt-5 pb-2.5 sm:p-2.5 text-center shadow-sm">
               <div class="text-[10px] sm:text-[11px] text-slate-300 font-bold mb-1">총 비용</div>
-              <div class="text-[13px] sm:text-sm font-black text-white">123,000,000원</div>
+              <div class="text-[11px] sm:text-sm font-black tracking-tight text-white">89,319,970원</div>
             </div>
           </div>
         </div>
@@ -196,7 +170,7 @@
             <tbody class="divide-y divide-slate-100 text-[13px]">
               <tr class="hover:bg-blue-50/40 transition-colors">
                 <th class="w-1/3 py-3 px-5 text-slate-500 font-semibold bg-slate-50/50">규격 및 체적</th>
-                <td class="w-2/3 py-3 px-5 text-blue-900 font-bold" id="topResVol">140m × 140m × 60m</td>
+                <td class="w-2/3 py-3 px-5 text-blue-900 font-bold" id="topResVol">140m × 140m × 60m <span class="text-slate-400 font-normal ml-1">(627,200m³)</span></td>
               </tr>
               <tr class="hover:bg-blue-50/40 transition-colors">
                 <th class="w-1/3 py-3 px-5 text-slate-500 font-semibold bg-slate-50/50">주요시설</th>
@@ -208,19 +182,19 @@
               </tr>
               <tr class="hover:bg-blue-50/40 transition-colors">
                 <th class="w-1/3 py-3 px-5 text-slate-500 font-semibold bg-slate-50/50">내부기압</th>
-                <td class="w-2/3 py-3 px-5 text-slate-900 font-bold">250Pa (비상 시 600Pa)</td>
+                <td class="w-2/3 py-3 px-5 text-slate-900 font-bold" id="topResPressure">400Pa (비상 시 600Pa)</td>
               </tr>
               <tr class="hover:bg-blue-50/40 transition-colors">
                 <th class="w-1/3 py-3 px-5 text-slate-500 font-semibold bg-slate-50/50">내부설비</th>
-                <td class="w-2/3 py-3 px-5 text-blue-900 font-bold leading-snug" id="topResEquip">난방 2대, 냉방 5대, 송풍 2대, 공조 8대</td>
+                <td class="w-2/3 py-3 px-5 text-blue-900 font-bold leading-snug" id="topResEquip">냉방 10대, 난방 10대, 송풍/공조 일체형 6대<br><span class="text-slate-500 font-normal text-[11px]">*비상용발전기 有</span></td>
               </tr>
               <tr class="hover:bg-blue-50/40 transition-colors">
                 <th class="w-1/3 py-3 px-5 text-slate-500 font-semibold bg-slate-50/50">운영시간</th>
-                <td class="w-2/3 py-3 px-5 text-blue-900 font-bold leading-snug" id="topResHours">홈경기 40일 / 훈련 200일<br><span class="text-blue-700/70 font-normal text-[11px]">휴식 125일 (송풍 24h 가동)</span></td>
+                <td class="w-2/3 py-3 px-5 text-blue-900 font-bold leading-snug" id="topResHours">홈경기 60일 / 훈련 245일<br><span class="text-blue-700/70 font-normal text-[11px]">휴식 60일 (송풍 24h 가동)</span></td>
               </tr>
               <tr class="hover:bg-blue-50/40 transition-colors">
                 <th class="w-1/3 py-3 px-5 text-slate-500 font-semibold bg-slate-50/50">내부 조도</th>
-                <td class="w-2/3 py-3 px-5 text-blue-900 font-bold" id="topResLux">1,750 lux (LED 타워형)</td>
+                <td class="w-2/3 py-3 px-5 text-blue-900 font-bold" id="topResLux">1,455 lux (LED 타워형)</td>
               </tr>
               <tr class="hover:bg-blue-50/40 transition-colors">
                 <th class="w-1/3 py-3 px-5 text-slate-500 font-semibold bg-slate-50/50">내부습도</th>
@@ -232,20 +206,20 @@
 
         <div class="bg-blue-50/50 border-t border-blue-100 p-4">
           <div class="grid grid-cols-3 gap-2">
-            <div class="bg-white rounded-lg border border-blue-200 p-2.5 text-center shadow-sm relative overflow-hidden">
-              <div class="absolute top-0 right-0 bg-blue-100 text-blue-700 text-[9px] font-bold px-1.5 py-0.5 rounded-bl-md" id="topResElecDiff">+0%</div>
+            <div class="bg-white rounded-lg border border-blue-200 px-1 pt-5 pb-2.5 sm:p-2.5 text-center shadow-sm relative overflow-hidden">
+              <div class="absolute top-0 right-0 bg-amber-100 text-amber-700 text-[9px] font-bold px-1.5 py-0.5 rounded-bl-md" id="topResElecDiff">+832.5%</div>
               <div class="text-[10px] sm:text-[11px] text-slate-500 font-bold mb-1">연간 전기요금</div>
-              <div class="text-[13px] sm:text-sm font-black text-blue-700" id="topResElec">0원</div>
+              <div class="text-[11px] sm:text-sm font-black tracking-tight text-amber-600" id="topResElec">522,213,728원</div>
             </div>
-            <div class="bg-white rounded-lg border border-blue-200 p-2.5 text-center shadow-sm relative overflow-hidden">
-              <div class="absolute top-0 right-0 bg-amber-100 text-amber-700 text-[9px] font-bold px-1.5 py-0.5 rounded-bl-md" id="topResGasDiff">+0%</div>
+            <div class="bg-white rounded-lg border border-blue-200 px-1 pt-5 pb-2.5 sm:p-2.5 text-center shadow-sm relative overflow-hidden">
+              <div class="absolute top-0 right-0 bg-blue-100 text-blue-700 text-[9px] font-bold px-1.5 py-0.5 rounded-bl-md" id="topResGasDiff">+548.7%</div>
               <div class="text-[10px] sm:text-[11px] text-slate-500 font-bold mb-1">연간 가스요금</div>
-              <div class="text-[13px] sm:text-sm font-black text-amber-600" id="topResGas">0원</div>
+              <div class="text-[11px] sm:text-sm font-black tracking-tight text-blue-700" id="topResGas">434,647,891원</div>
             </div>
-            <div class="bg-blue-600 rounded-lg border border-blue-700 p-2.5 text-center shadow-md relative overflow-hidden">
-              <div class="absolute top-0 right-0 bg-blue-800 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-bl-md" id="topResTotalDiff">+0%</div>
+            <div class="bg-blue-600 rounded-lg border border-blue-700 px-1 pt-5 pb-2.5 sm:p-2.5 text-center shadow-md relative overflow-hidden">
+              <div class="absolute top-0 right-0 bg-blue-800 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-bl-md" id="topResTotalDiff">+677.9%</div>
               <div class="text-[10px] sm:text-[11px] text-blue-100 font-bold mb-1">총 비용</div>
-              <div class="text-[13px] sm:text-sm font-black text-white" id="topResTotal">0원</div>
+              <div class="text-[11px] sm:text-sm font-black tracking-tight text-white" id="topResTotal">956,861,619원</div>
             </div>
           </div>
         </div>
@@ -257,7 +231,7 @@
       <div class="px-5 py-4 border-b border-slate-200 bg-slate-50 flex flex-wrap items-center justify-between gap-2">
         <div>
           <h3 class="text-[15px] font-bold text-slate-900 flex items-center gap-2">
-            <i data-lucide="table" class="w-4 h-4 text-blue-600"></i>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="table" aria-hidden="true" class="lucide lucide-table w-4 h-4 text-blue-600"><path d="M12 3v18"></path><rect width="18" height="18" x="3" y="3" rx="2"></rect><path d="M3 9h18"></path><path d="M3 15h18"></path></svg>
             조건별 1:1 비교요약표
           </h3>
           <p class="text-xs text-slate-500 mt-0.5">11대 핵심 설계 및 운영 파라미터 상세 영향 분석</p>
@@ -265,7 +239,7 @@
       </div>
 
       <div class="overflow-x-auto">
-        <table class="w-full text-xs text-left">
+        <table class="w-full min-w-[760px] text-xs text-left">
           <thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
             <tr>
               <th class="py-3 px-4">구분 / 평가 항목</th>
@@ -280,48 +254,48 @@
               <td class="py-3 px-4 font-bold text-slate-800">에어돔 규격 (L×W×H)</td>
               <td class="py-3 px-4">120m × 78m × 25m</td>
               <td class="py-3 px-4 bg-yellow-50/50 text-slate-800 font-semibold" id="tblSpecDim">140m × 140m × 60m</td>
-              <td class="py-3 px-4 font-mono text-blue-700" id="tblSpecVolumeDiff">돔 체적 배수 연동</td>
+              <td class="py-3 px-4 font-mono text-blue-700" id="tblSpecVolumeDiff">체적 스케일 5.03배</td>
               <td class="py-3 px-4">난방·냉방 기본 질량 및 표면 열손실 급증</td>
             </tr>
             <tr class="hover:bg-slate-50">
               <td class="py-3 px-4 font-bold text-slate-800">기후 및 위치 특성</td>
               <td class="py-3 px-4">경주 천군동 (내륙분지)</td>
               <td class="py-3 px-4 bg-yellow-50/50 text-slate-800">인천 중산동 (서해안 해풍지대)</td>
-              <td class="py-3 px-4 font-mono text-amber-700" id="tblSpecWeather">난방도일 연동</td>
+              <td class="py-3 px-4 font-mono text-amber-700" id="tblSpecWeather">난방도일 1.18배</td>
               <td class="py-3 px-4">외벽 대류 열손실 계수(U) 증가로 가스 소모량 확대</td>
             </tr>
             <tr class="hover:bg-slate-50">
               <td class="py-3 px-4 font-bold text-slate-800">공조 및 송풍 장비</td>
-              <td class="py-3 px-4 leading-snug">일체형 공조기 2대<br><span class="text-slate-500 font-normal text-[10px]">*비상용발전기 有(등유사용)</span></td>
-              <td class="py-3 px-4 bg-yellow-50/50 text-slate-800" id="tblSpecEquip">설비 연동</td>
+              <td class="py-3 px-4 leading-snug">냉방2 난방2 송풍·공조2<br><span class="text-slate-500 font-normal text-[10px]">*비상용발전기 有(등유사용)</span></td>
+              <td class="py-3 px-4 bg-yellow-50/50 text-slate-800 leading-snug" id="tblSpecEquip">냉방10 난방10 송풍·공조6<br><span class="text-slate-500 font-normal text-[10px]">*비상용발전기 有</span></td>
               <td class="py-3 px-4 font-mono text-slate-700" id="tblSpecEquipRatio">장비 대수 운전</td>
-              <td class="py-3 px-4">난방(도시가스) 및 냉방·송풍·공조(전기) 분리 운전</td>
+              <td class="py-3 px-4">냉방·송풍·공조(전기) / 난방(도시가스) 분리 운전</td>
             </tr>
             <tr class="hover:bg-slate-50">
               <td class="py-3 px-4 font-bold text-slate-800">스포츠 조명 스펙</td>
               <td class="py-3 px-4">축구장 전용 (약 55 kW)</td>
-              <td class="py-3 px-4 bg-yellow-50/50 text-slate-800" id="tblSpecLight">야구장 경기용</td>
+              <td class="py-3 px-4 bg-yellow-50/50 text-slate-800" id="tblSpecLight">야구장 LED 330등</td>
               <td class="py-3 px-4 font-mono text-slate-700" id="tblSpecLightDiff">소비전력 연동</td>
               <td class="py-3 px-4">내/외야 균제도 확보 및 방송조명으로 전기비 가중</td>
             </tr>
             <tr class="hover:bg-slate-50">
               <td class="py-3 px-4 font-bold text-slate-800">장마철 제습 난방</td>
               <td class="py-3 px-4">기본 공조 (재열 난방 미비)</td>
-              <td class="py-3 px-4 bg-yellow-50/50 text-slate-800" id="tblSpecMonsoon">연간 집중 제습 재열</td>
+              <td class="py-3 px-4 bg-yellow-50/50 text-slate-800 leading-snug" id="tblSpecMonsoon">연 32일 제습 재열<br><span class="text-slate-500 font-normal text-[10px] whitespace-nowrap">*인천 영종구 포함 중부지방 평년값 31.5일</span></td>
               <td class="py-3 px-4 font-mono text-teal-700" id="tblSpecMonsoonDiff">가스 재열 ΔT 11℃</td>
               <td class="py-3 px-4">하절기에도 결로방지·습도 50% 유지를 위해 난방 가동</td>
             </tr>
             <tr class="hover:bg-slate-50">
               <td class="py-3 px-4 font-bold text-slate-800">운영시간 (휴식일)</td>
               <td class="py-3 px-4">월요일 휴관 (주 6일)</td>
-              <td class="py-3 px-4 bg-yellow-50/50 text-slate-800" id="tblSpecHours">홈/훈련/휴식 배분</td>
-              <td class="py-3 px-4 font-mono text-indigo-700" id="tblSpecHoursDiff">송풍기는 24h 가동</td>
+              <td class="py-3 px-4 bg-yellow-50/50 text-slate-800" id="tblSpecHours">홈60/훈련245/휴식60</td>
+              <td class="py-3 px-4 font-mono text-indigo-700" id="tblSpecHoursDiff">송풍 24h 고정 / 가동률 85%</td>
               <td class="py-3 px-4">휴식일 비례하여 조명/냉난방 가동률 절감</td>
             </tr>
             <tr class="hover:bg-slate-50">
               <td class="py-3 px-4 font-bold text-slate-800">제설 (융설) 모드</td>
               <td class="py-3 px-4">연간 1~2일 (경주 온화)</td>
-              <td class="py-3 px-4 bg-yellow-50/50 text-slate-800" id="tblSpecSnow">인천 평년 기준 제설</td>
+              <td class="py-3 px-4 bg-yellow-50/50 text-slate-800" id="tblSpecSnow">인천 평년 22일 기준</td>
               <td class="py-3 px-4 font-mono text-cyan-700" id="tblSpecSnowDiff">제설 빈도 연동</td>
               <td class="py-3 px-4">겨울철 급격한 가스 피크 부하(Peak Gas) 유발</td>
             </tr>
@@ -336,22 +310,21 @@
       <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm h-full flex flex-col">
         <div class="flex items-center justify-between mb-2">
           <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
-            <i data-lucide="pie-chart" class="w-4 h-4 text-blue-600"></i>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="pie-chart" aria-hidden="true" class="lucide lucide-pie-chart w-4 h-4 text-blue-600"><path d="M21 12c.552 0 1.005-.449.95-.998a10 10 0 0 0-8.953-8.951c-.55-.055-.998.398-.998.95v8a1 1 0 0 0 1 1z"></path><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path></svg>
             항목별 에너지 비용 분포 (연간 추정치)
           </h3>
-          <span class="text-xs font-mono bg-slate-100 text-slate-700 px-2 rounded font-semibold" id="lblChartTotal">합계: 계산 중</span>
+          <span class="whitespace-nowrap text-xs font-mono bg-slate-100 text-slate-700 px-2 rounded font-semibold" id="lblChartTotal">합계: 956,861,619원</span>
         </div>
         <div class="flex-grow relative min-h-[220px] flex items-center justify-center">
           <canvas id="costBreakdownChart"></canvas>
         </div>
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[10px] mt-4">
-            <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#f59e0b]"></span>기본 난방(가스)</div>
+            <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#2563eb]"></span>기본 난방(가스)</div>
             <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#0d9488]"></span>제습재열(가스)</div>
-            <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#06b6d4]"></span>융설(가스+송풍)</div>
-            <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#2563eb]"></span>여름 냉방(전기)</div>
-            <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#4f46e5]"></span>24h 송풍(전기)</div>
+            <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#06b6d4]"></span>융설(가스)</div>
+            <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#f59e0b]"></span>여름 냉방(전기)</div>
+            <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#4f46e5]"></span>24h 송풍·공조(전기)</div>
             <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#eab308]"></span>조명(전기)</div>
-            <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#059669]"></span>환기/공조(전기)</div>
         </div>
       </div>
 
@@ -359,7 +332,7 @@
       <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm h-full flex flex-col">
         <div class="flex items-center justify-between mb-4">
           <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
-            <i data-lucide="bar-chart-3" class="w-4 h-4 text-emerald-600"></i>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="bar-chart-3" aria-hidden="true" class="lucide lucide-bar-chart-3 w-4 h-4 text-emerald-600"><path d="M3 3v16a2 2 0 0 0 2 2h16"></path><path d="M18 17V9"></path><path d="M13 17V5"></path><path d="M8 17v-3"></path></svg>
             월별 전기 vs 가스 비용 추이 (시뮬레이션)
           </h3>
         </div>
@@ -370,10 +343,10 @@
     </div>
 
     <div class="mb-6 bg-slate-100 rounded-xl border border-slate-200 p-3 flex flex-wrap items-center justify-between gap-4 text-xs shadow-inner">
-        <h3 class="font-bold text-slate-700 flex items-center gap-1.5"><i data-lucide="zap-off" class="w-4 h-4 text-blue-600"></i> 설비별 전력/가스 소모원 매핑</h3>
+        <h3 class="font-bold text-slate-700 flex items-center gap-1.5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="zap-off" aria-hidden="true" class="lucide lucide-zap-off w-4 h-4 text-blue-600"><path d="M10.768 5.111 13.44 2.44a1.5 1.5 0 012.474 1.561l-1.633 4.625"></path><path d="m18.889 13.232.672-.672A1.5 1.5 0 0018.5 10h-2.844"></path><path d="m2 2 20 20"></path><path d="m7.94 7.94-3.5 3.499A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l5.5-5.5"></path></svg> 설비별 전력/가스 소모원 매핑</h3>
         <div class="flex gap-4">
-            <span class="flex items-center gap-1"><span class="px-1.5 py-0.5 rounded bg-blue-600 text-white font-bold text-[10px]">전기 100%</span> 냉방유닛, 가압송풍기, 공조기, LED조명</span>
-            <span class="flex items-center gap-1"><span class="px-1.5 py-0.5 rounded bg-amber-500 text-white font-bold text-[10px]">가스 100%</span> 난방유닛 (도시가스 100%)</span>
+            <span class="flex items-center gap-1"><span class="whitespace-nowrap px-1.5 py-0.5 rounded bg-amber-500 text-white font-bold text-[10px]">전기 100%</span> 냉방유닛, 송풍·공조기, LED조명</span>
+            <span class="flex items-center gap-1"><span class="whitespace-nowrap px-1.5 py-0.5 rounded bg-blue-600 text-white font-bold text-[10px]">가스 100%</span> 난방기 (도시가스)</span>
         </div>
     </div>
 
@@ -384,7 +357,7 @@
       <div class="lg:col-span-7 space-y-4">
         <div class="flex items-center justify-between pb-1 border-b border-slate-300">
           <h2 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
-            <i data-lucide="sliders" class="w-5 h-5 text-blue-600"></i>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="sliders" aria-hidden="true" class="lucide lucide-sliders w-5 h-5 text-blue-600"><path d="M10 8h4"></path><path d="M12 21v-9"></path><path d="M12 8V3"></path><path d="M17 16h4"></path><path d="M19 12V3"></path><path d="M19 21v-5"></path><path d="M3 14h4"></path><path d="M5 10V3"></path><path d="M5 21v-7"></path></svg>
             11대 시뮬레이션 매개변수 설정
           </h2>
           <span class="text-xs text-emerald-700 font-bold bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300 animate-pulse">실시간 연동중</span>
@@ -397,7 +370,7 @@
               <span class="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[11px] font-bold">1</span>
               에어돔 높이 및 체적 정비례 설정
             </label>
-            <span class="text-[10px] font-semibold px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-100" id="lblHeight">높이: 60 m</span>
+            <span class="whitespace-nowrap text-[10px] font-semibold px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-100" id="lblHeight">높이: 60 m</span>
           </div>
           <div class="grid grid-cols-3 gap-2">
             <button type="button" class="btn-height py-1.5 text-xs font-semibold rounded bg-slate-50 border border-slate-200 hover:bg-slate-100 transition" data-height="50">50m (약 52.2만m³)</button>
@@ -413,7 +386,7 @@
               <span class="w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-[11px] font-bold">2</span>
               운영일정 및 사용시간 (조명·냉난방 연동)
             </label>
-            <span class="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded" id="lblOperationRatio">가동률 100%</span>
+            <span class="whitespace-nowrap text-[10px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded" id="lblOperationRatio">가동률 85%</span>
           </div>
           <p class="text-[10px] text-slate-500 mb-2 leading-tight">
             일정 배분에 따라 설비 가동시간이 비례 계산됩니다. <b>단, 에어돔 형태 유지를 위한 송풍기는 365일 24시간 가동 필수</b>로 휴식일에도 전력이 소모됩니다.
@@ -421,24 +394,16 @@
           <div class="grid grid-cols-3 gap-2 text-xs mb-2">
             <div class="bg-blue-50 border border-blue-200 rounded p-1.5 text-center">
               <label class="block text-[10px] font-bold text-blue-900 mb-1">홈경기 (10h)</label>
-              <input type="number" id="inputHomeDays" value="40" min="0" max="365" class="w-full bg-white border border-blue-300 rounded px-1 py-0.5 text-center font-bold text-blue-800">
+              <input type="number" id="inputHomeDays" value="60" min="0" max="365" class="w-full bg-white border border-blue-300 rounded px-1 py-0.5 text-center font-bold text-blue-800">
             </div>
             <div class="bg-emerald-50 border border-emerald-200 rounded p-1.5 text-center">
               <label class="block text-[10px] font-bold text-emerald-900 mb-1">훈련일 (8h)</label>
-              <input type="number" id="inputTrainingDays" value="200" min="0" max="365" class="w-full bg-white border border-emerald-300 rounded px-1 py-0.5 text-center font-bold text-emerald-800">
+              <input type="number" id="inputTrainingDays" value="245" min="0" max="365" class="w-full bg-white border border-emerald-300 rounded px-1 py-0.5 text-center font-bold text-emerald-800">
             </div>
             <div class="bg-slate-50 border border-slate-300 rounded p-1.5 text-center">
               <label class="block text-[10px] font-bold text-slate-700 mb-1">휴식일 (송풍만)</label>
-              <div id="valRestDays" class="w-full bg-slate-200 rounded px-1 py-0.5 text-center font-bold text-slate-600 border border-slate-300">125</div>
+              <div id="valRestDays" class="w-full bg-slate-200 rounded px-1 py-0.5 text-center font-bold text-slate-600 border border-slate-300">60</div>
             </div>
-          </div>
-          <div class="flex justify-between items-center text-[11px]">
-            <span class="font-semibold text-slate-600">관람객 외기 환기 기준 (홈경기)</span>
-            <select id="selVentFactor" class="bg-white border border-slate-300 rounded p-0.5 font-medium">
-              <option value="25">25 CMH/인 (국내 법정기준)</option>
-              <option value="30">30 CMH/인 (일본 법정기준)</option>
-              <option value="40" selected>40 CMH/인 (도쿄돔 만석기준)</option>
-            </select>
           </div>
         </div>
 
@@ -455,7 +420,7 @@
             <div>
               <div class="flex justify-between text-[11px] text-slate-600 mb-1">
                 <span>난방도일 기후 보정 (해안풍)</span>
-                <b class="text-blue-600" id="valWeatherFactor">1.18 ×</b>
+                <b class="whitespace-nowrap text-blue-600" id="valWeatherFactor">1.18 ×</b>
               </div>
               <input type="range" id="inputWeatherFactor" min="1.0" max="1.35" step="0.01" value="1.18" class="w-full h-1.5 bg-slate-200 rounded-lg cursor-pointer">
             </div>
@@ -470,7 +435,7 @@
               <div class="bg-slate-100 p-2 rounded border border-slate-200">
                 <div class="flex justify-between text-[10px] text-slate-700 font-semibold mb-1">
                   <span>적설/제설가동 (평년)</span>
-                  <b class="text-blue-700" id="valSnowDays">22 일</b>
+                  <b class="whitespace-nowrap text-blue-700" id="valSnowDays">22 일</b>
                 </div>
                 <input type="range" id="inputSnowDays" min="0" max="40" step="1" value="22" class="w-full h-1.5 bg-blue-200 rounded cursor-pointer">
               </div>
@@ -484,57 +449,50 @@
             <span class="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[11px] font-bold">4</span>
             공조·냉난방 설비 설치 대수
           </label>
-          <div class="grid grid-cols-4 gap-2 mb-2">
+          <div class="grid grid-cols-3 gap-2 mb-2">
             <div class="bg-amber-50 p-1.5 rounded border border-amber-200 text-center">
-              <span class="text-[10px] font-bold text-amber-900 block mb-1">난방(가스)</span>
+              <span class="text-[10px] font-bold text-amber-900 block mb-1">냉방(전기)</span>
               <div class="flex items-center justify-center gap-1">
-                <button type="button" class="btn-qty w-5 h-5 rounded bg-amber-200 text-amber-900 font-bold" data-target="heatingUnits" data-delta="-1">-</button>
-                <span class="font-extrabold text-[11px] w-4" id="valHeatingUnits">2</span>
-                <button type="button" class="btn-qty w-5 h-5 rounded bg-amber-200 text-amber-900 font-bold" data-target="heatingUnits" data-delta="1">+</button>
+                <button type="button" class="btn-qty w-5 h-5 rounded bg-amber-200 text-amber-900 font-bold" data-target="coolingUnits" data-delta="-1">-</button>
+                <span class="whitespace-nowrap font-extrabold text-[11px] w-5" id="valCoolingUnits">10</span>
+                <button type="button" class="btn-qty w-5 h-5 rounded bg-amber-200 text-amber-900 font-bold" data-target="coolingUnits" data-delta="1">+</button>
               </div>
             </div>
             <div class="bg-blue-50 p-1.5 rounded border border-blue-200 text-center">
-              <span class="text-[10px] font-bold text-blue-900 block mb-1">냉방(전기)</span>
+              <span class="text-[10px] font-bold text-blue-900 block mb-1">난방(가스)</span>
               <div class="flex items-center justify-center gap-1">
-                <button type="button" class="btn-qty w-5 h-5 rounded bg-blue-200 text-blue-900 font-bold" data-target="coolingUnits" data-delta="-1">-</button>
-                <span class="font-extrabold text-[11px] w-4" id="valCoolingUnits">5</span>
-                <button type="button" class="btn-qty w-5 h-5 rounded bg-blue-200 text-blue-900 font-bold" data-target="coolingUnits" data-delta="1">+</button>
+                <button type="button" class="btn-qty w-5 h-5 rounded bg-blue-200 text-blue-900 font-bold" data-target="heatingUnits" data-delta="-1">-</button>
+                <span class="whitespace-nowrap font-extrabold text-[11px] w-5" id="valHeatingUnits">10</span>
+                <button type="button" class="btn-qty w-5 h-5 rounded bg-blue-200 text-blue-900 font-bold" data-target="heatingUnits" data-delta="1">+</button>
               </div>
             </div>
             <div class="bg-indigo-50 p-1.5 rounded border border-indigo-200 text-center">
-              <span class="text-[10px] font-bold text-indigo-900 block mb-1">송풍(전기)</span>
+              <span class="text-[10px] font-bold text-indigo-900 block mb-1">송풍/공조(전기)</span>
               <div class="flex items-center justify-center gap-1">
-                <button type="button" class="btn-qty w-5 h-5 rounded bg-indigo-200 text-indigo-900 font-bold" data-target="blowerUnits" data-delta="-1">-</button>
-                <span class="font-extrabold text-[11px] w-4" id="valBlowerUnits">2</span>
-                <button type="button" class="btn-qty w-5 h-5 rounded bg-indigo-200 text-indigo-900 font-bold" data-target="blowerUnits" data-delta="1">+</button>
-              </div>
-            </div>
-            <div class="bg-purple-50 p-1.5 rounded border border-purple-200 text-center">
-              <span class="text-[10px] font-bold text-purple-900 block mb-1">공조(전기)</span>
-              <div class="flex items-center justify-center gap-1">
-                <button type="button" class="btn-qty w-5 h-5 rounded bg-purple-200 text-purple-900 font-bold" data-target="hvacUnits" data-delta="-1">-</button>
-                <span class="font-extrabold text-[11px] w-4" id="valHvacUnits">8</span>
-                <button type="button" class="btn-qty w-5 h-5 rounded bg-purple-200 text-purple-900 font-bold" data-target="hvacUnits" data-delta="1">+</button>
+                <button type="button" class="btn-qty w-5 h-5 rounded bg-indigo-200 text-indigo-900 font-bold" data-target="fanUnits" data-delta="-1">-</button>
+                <span class="whitespace-nowrap font-extrabold text-[11px] w-5" id="valFanUnits">6</span>
+                <button type="button" class="btn-qty w-5 h-5 rounded bg-indigo-200 text-indigo-900 font-bold" data-target="fanUnits" data-delta="1">+</button>
               </div>
             </div>
           </div>
           <div class="grid grid-cols-2 gap-2 text-[11px]">
             <select id="selTargetHeatTemp" class="bg-white border border-slate-200 rounded p-1">
               <option value="15">난방 15℃ (절약/훈련용)</option>
-              <option value="18" selected>난방 18℃ (표준 경기용)</option>
+              <option value="18" selected="">난방 18℃ (표준 경기용)</option>
               <option value="21">난방 21℃ (유관중/쾌적 최대)</option>
             </select>
             <select id="selAcLoadFactor" class="bg-white border border-slate-200 rounded p-1">
               <option value="0.5">냉방 부하 50% (실내 28℃ 절전)</option>
-              <option value="0.75" selected>냉방 부하 75% (실내 26℃ 표준)</option>
+              <option value="0.75" selected="">냉방 부하 75% (실내 26℃ 표준)</option>
             </select>
             <select id="selBlowerAmps" class="bg-white border border-slate-200 rounded p-1">
-              <option value="75">송풍 75A (내부기압 150Pa)</option>
-              <option value="90" selected>송풍 90A (내부기압 250Pa 표준)</option>
+              <option value="75">송풍 가압 150Pa</option>
+              <option value="90">송풍 가압 250Pa (경주 기준)</option>
+              <option value="119" selected="">송풍 가압 400Pa (영종 설계)</option>
             </select>
             <select id="selHvacSpec" class="bg-white border border-slate-200 rounded p-1">
-              <option value="3.7">공조 3.7kW (국내 25CMH)</option>
-              <option value="5.5" selected>공조 5.5kW (도쿄돔 40CMH)</option>
+              <option value="3.7" selected="">공조 3.7kW (국내 25CMH)</option>
+              <option value="5.5">공조 5.5kW (도쿄돔 40CMH)</option>
             </select>
           </div>
         </div>
@@ -546,24 +504,24 @@
               <span class="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[11px] font-bold">5</span>
               야구장 타워형 조명 (KBO 기준)
             </label>
-            <span class="text-[10px] font-mono text-yellow-700" id="lblLightingPower">계산 중</span>
+            <span class="whitespace-nowrap text-[10px] font-mono text-yellow-700" id="lblLightingPower">396.0kW</span>
           </div>
           <div class="mb-3">
             <div class="flex justify-between text-[11px] text-slate-700 font-bold mb-1">
               <span>타워형 등기구 수량</span>
-              <b class="text-yellow-600" id="valFixtureCount">320 등</b>
+              <b class="whitespace-nowrap text-yellow-600" id="valFixtureCount">330 등</b>
             </div>
-            <input type="range" id="inputFixtureCount" min="50" max="800" step="10" value="320" class="w-full h-1.5 bg-yellow-200 rounded cursor-pointer accent-yellow-500">
+            <input type="range" id="inputFixtureCount" min="50" max="800" step="10" value="330" class="w-full h-1.5 bg-yellow-200 rounded cursor-pointer accent-yellow-500">
           </div>
           <div class="flex gap-2 items-center text-[11px] bg-yellow-50/50 p-2 rounded">
             <span class="font-bold">단일출력:</span>
             <select id="selLedFixtureWatt" class="bg-white border border-yellow-300 rounded p-0.5 text-[10px] flex-grow">
               <option value="1000">1000 W</option>
-              <option value="1200" selected>1200 W (표준)</option>
+              <option value="1200" selected="">1200 W (표준)</option>
               <option value="1500">1500 W (고출력)</option>
             </select>
           </div>
-          <div class="mt-2 text-center text-[11px] font-bold" id="lblKboCompliance">달성 조도: 계산 중</div>
+          <div class="mt-2 text-center text-[11px] font-bold text-blue-600" id="lblKboCompliance">달성 조도: 1,455 lx (KBO 2군/야간훈련 수준)</div>
         </div>
 
         <!-- 6. Monsoon Reheat -->
@@ -571,46 +529,57 @@
           <div class="flex items-center justify-between mb-2">
             <label class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
               <span class="w-5 h-5 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center text-[11px] font-bold">6</span>
-              장마철 제습 재열난방 (습도 50%)
+              장마철 제습 재열난방 (습도 50% 이하 유지 목표)
             </label>
           </div>
           <div class="flex justify-between text-[11px] text-slate-700 font-medium mb-1">
-            <span>연간 장마/고습일수</span>
-            <b class="text-teal-700" id="valMonsoonDays">30 일</b>
+            <span>연간 장마/고습일수 (인천 영종구 포함 중부지방 평년값 31.5일)</span>
+            <b class="whitespace-nowrap text-teal-700" id="valMonsoonDays">32 일</b>
           </div>
-          <input type="range" id="inputMonsoonDays" min="0" max="60" step="1" value="30" class="w-full h-1.5 bg-teal-200 rounded cursor-pointer accent-teal-600">
+          <input type="range" id="inputMonsoonDays" min="0" max="60" step="1" value="32" class="w-full h-1.5 bg-teal-200 rounded cursor-pointer accent-teal-600">
         </div>
 
         <!-- 7. Doors & Rates -->
-        <div class="grid grid-cols-2 gap-3">
-          <div class="bg-white rounded-xl border border-slate-200 p-3.5 shadow-sm">
-            <label class="text-[11px] font-bold text-slate-800 flex items-center gap-1.5 mb-2">
-              <span class="w-4 h-4 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center text-[9px] font-bold">7</span>
+        <div class="space-y-4">
+          <div class="bg-white rounded-xl border border-slate-200 p-3.5 shadow-sm transition hover:border-blue-300">
+            <label class="text-xs font-bold text-slate-800 flex items-center gap-1.5 mb-2">
+              <span class="w-5 h-5 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center text-[11px] font-bold">7</span>
               출입문 누기/단열
             </label>
-            <div class="text-[10px] space-y-2">
-              <div class="flex justify-between">주출입구: <input type="number" id="inputMainDoors" value="1" min="1" class="w-12 border rounded text-center"></div>
-              <div class="flex justify-between">비상출입구: <input type="number" id="inputExitDoors" value="24" min="4" class="w-12 border rounded text-center"></div>
-              <select id="selMembraneType" class="w-full border rounded p-1">
+            <div class="text-[11px] text-slate-700 grid grid-cols-1 sm:grid-cols-3 gap-3 items-center">
+              <div class="flex justify-between items-center gap-2">주출입구 <input type="number" id="inputMainDoors" value="1" min="1" class="w-16 border border-slate-300 rounded text-center py-0.5"></div>
+              <div class="flex justify-between items-center gap-2">비상출입구 <input type="number" id="inputExitDoors" value="24" min="4" class="w-16 border border-slate-300 rounded text-center py-0.5"></div>
+              <select id="selMembraneType" class="w-full border border-slate-300 rounded p-1">
                 <option value="1.0">2중막 (U=2.5)</option>
-                <option value="0.82" selected>3중막 고단열 (U=1.8)</option>
+                <option value="0.82" selected="">3중막 고단열 (U=1.8)</option>
               </select>
             </div>
           </div>
-          <div class="bg-white rounded-xl border border-slate-200 p-3.5 shadow-sm">
-            <label class="text-[11px] font-bold text-slate-800 flex items-center gap-1.5 mb-2">
-              <span class="w-4 h-4 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center text-[9px] font-bold">8</span>
+          <div class="bg-white rounded-xl border border-slate-200 p-3.5 shadow-sm transition hover:border-blue-300">
+            <label class="text-xs font-bold text-slate-800 flex items-center gap-1.5 mb-2">
+              <span class="w-5 h-5 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center text-[11px] font-bold">8</span>
               공공요금 인상률
             </label>
-            <div class="text-[10px] space-y-2">
-              <div>
-                <div class="flex justify-between mb-1">전기 인상률: <b id="valElecRate">0%</b></div>
-                <input type="range" id="inputElecRate" min="-10" max="40" value="0" class="w-full h-1 bg-slate-200">
+            <div class="text-[11px]">
+              <div class="overflow-x-auto -mx-1 px-1">
+                <table class="w-full border-separate border-spacing-0">
+                  <thead><tr>
+                    <th class="pr-2 pb-1.5 text-left font-semibold text-slate-500 whitespace-nowrap">단위: %</th><th class="px-1.5 pb-1.5 font-semibold text-slate-500 text-center whitespace-nowrap">2025→26</th><th class="px-1.5 pb-1.5 font-semibold text-slate-500 text-center whitespace-nowrap">2026→27</th><th class="px-1.5 pb-1.5 font-semibold text-slate-500 text-center whitespace-nowrap">2027→28</th><th class="px-1.5 pb-1.5 font-semibold text-slate-500 text-center whitespace-nowrap">2028→29</th>
+                    <th class="pl-3 pb-1.5 text-right font-bold text-slate-700 whitespace-nowrap border-l border-slate-200">누적 25→29</th>
+                  </tr></thead>
+                  <tbody>
+                  <tr>
+                    <th class="pr-2 py-1 text-left font-bold text-slate-700 whitespace-nowrap"><span class="inline-block w-2 h-2 rounded-full bg-amber-500 mr-1.5 align-middle"></span>전기</th><td class="px-1.5 py-1"><input type="number" id="inpElecRate2025" data-kind="elec" value="3" step="0.1" min="-30" max="100" aria-label="2025→2026 전기 인상률(%)" class="rate-inp w-full min-w-[3.5rem] bg-white border rounded-md px-1.5 py-1 text-right font-mono font-bold focus:outline-none focus:ring-2 text-amber-700 border-amber-200 focus:ring-amber-200"></td><td class="px-1.5 py-1"><input type="number" id="inpElecRate2026" data-kind="elec" value="3" step="0.1" min="-30" max="100" aria-label="2026→2027 전기 인상률(%)" class="rate-inp w-full min-w-[3.5rem] bg-white border rounded-md px-1.5 py-1 text-right font-mono font-bold focus:outline-none focus:ring-2 text-amber-700 border-amber-200 focus:ring-amber-200"></td><td class="px-1.5 py-1"><input type="number" id="inpElecRate2027" data-kind="elec" value="3" step="0.1" min="-30" max="100" aria-label="2027→2028 전기 인상률(%)" class="rate-inp w-full min-w-[3.5rem] bg-white border rounded-md px-1.5 py-1 text-right font-mono font-bold focus:outline-none focus:ring-2 text-amber-700 border-amber-200 focus:ring-amber-200"></td><td class="px-1.5 py-1"><input type="number" id="inpElecRate2028" data-kind="elec" value="3" step="0.1" min="-30" max="100" aria-label="2028→2029 전기 인상률(%)" class="rate-inp w-full min-w-[3.5rem] bg-white border rounded-md px-1.5 py-1 text-right font-mono font-bold focus:outline-none focus:ring-2 text-amber-700 border-amber-200 focus:ring-amber-200"></td>
+                    <td class="pl-3 py-1 text-right border-l border-slate-200"><b id="valElecRate" class="whitespace-nowrap font-mono text-sm text-amber-700">+0.0%</b></td>
+                  </tr>
+                  <tr>
+                    <th class="pr-2 py-1 text-left font-bold text-slate-700 whitespace-nowrap"><span class="inline-block w-2 h-2 rounded-full bg-blue-500 mr-1.5 align-middle"></span>가스</th><td class="px-1.5 py-1"><input type="number" id="inpGasRate2025" data-kind="gas" value="3" step="0.1" min="-30" max="100" aria-label="2025→2026 가스 인상률(%)" class="rate-inp w-full min-w-[3.5rem] bg-white border rounded-md px-1.5 py-1 text-right font-mono font-bold focus:outline-none focus:ring-2 text-blue-700 border-blue-200 focus:ring-blue-200"></td><td class="px-1.5 py-1"><input type="number" id="inpGasRate2026" data-kind="gas" value="3" step="0.1" min="-30" max="100" aria-label="2026→2027 가스 인상률(%)" class="rate-inp w-full min-w-[3.5rem] bg-white border rounded-md px-1.5 py-1 text-right font-mono font-bold focus:outline-none focus:ring-2 text-blue-700 border-blue-200 focus:ring-blue-200"></td><td class="px-1.5 py-1"><input type="number" id="inpGasRate2027" data-kind="gas" value="3" step="0.1" min="-30" max="100" aria-label="2027→2028 가스 인상률(%)" class="rate-inp w-full min-w-[3.5rem] bg-white border rounded-md px-1.5 py-1 text-right font-mono font-bold focus:outline-none focus:ring-2 text-blue-700 border-blue-200 focus:ring-blue-200"></td><td class="px-1.5 py-1"><input type="number" id="inpGasRate2028" data-kind="gas" value="3" step="0.1" min="-30" max="100" aria-label="2028→2029 가스 인상률(%)" class="rate-inp w-full min-w-[3.5rem] bg-white border rounded-md px-1.5 py-1 text-right font-mono font-bold focus:outline-none focus:ring-2 text-blue-700 border-blue-200 focus:ring-blue-200"></td>
+                    <td class="pl-3 py-1 text-right border-l border-slate-200"><b id="valGasRate" class="whitespace-nowrap font-mono text-sm text-blue-700">+0.0%</b></td>
+                  </tr>
+                  </tbody>
+                </table>
               </div>
-              <div>
-                <div class="flex justify-between mb-1">가스 인상률: <b id="valGasRate">0%</b></div>
-                <input type="range" id="inputGasRate" min="-10" max="40" value="0" class="w-full h-1 bg-slate-200">
-              </div>
+              <p class="mt-2 text-[10px] text-slate-400 leading-tight">연도별 인상률을 복리로 누적해 비용에 반영합니다. 빈칸은 0%로 계산됩니다.<br><br>전 구간 연 3% 가정: 한국은행 물가안정목표 2%에 요금 현실화 요인 1%를 더해 반영</p>
             </div>
           </div>
         </div>
@@ -622,7 +591,7 @@
         <div id="formulaExplanationCard" class="bg-slate-900 text-slate-100 rounded-2xl p-5 shadow-lg border border-slate-800 h-full flex flex-col">
           <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-3.5">
             <div class="flex items-center gap-2">
-              <i data-lucide="book-open-check" class="w-5 h-5 text-blue-400"></i>
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="book-open-check" aria-hidden="true" class="lucide lucide-book-open-check w-5 h-5 text-blue-400"><path d="M12 5v16"></path><path d="m16 12 2 2 4-4"></path><path d="M22 6V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2h4.001A2 2 0 0022 17v-1.344"></path></svg>
               <h3 class="text-sm font-bold text-white">공학적 산출 산식 (Formulas)</h3>
             </div>
           </div>
@@ -638,13 +607,13 @@
             <div class="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
               <span class="font-bold text-teal-300 block mb-1">2. 장마철 제습 재열난방 (가스)</span>
               <div class="formula-badge bg-slate-950 text-teal-400 p-2 rounded text-center mb-1">
-                Q<sub>Reheat</sub> = ρ·C<sub>p</sub>·Q<sub>air</sub>·(23℃ - 12℃) × VolumeRatio
+                G<sub>Reheat</sub> = 경주 6~10월 가스 × 체적배수 × (고습일수 / 32)
               </div>
             </div>
             <div class="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
-              <span class="font-bold text-indigo-300 block mb-1">3. 송풍 가압 부하 (380V 삼상 전기)</span>
+              <span class="font-bold text-indigo-300 block mb-1">3. 송풍·공조 부하 (송풍·공조기, 전기)</span>
               <div class="formula-badge bg-slate-950 text-indigo-400 p-2 rounded text-center">
-                P<sub>Blower</sub> = (√3 × 380V × I(A) × 0.86 / 1000) × 8760h
+                G<sub>Fan</sub> = 경주 송풍·공조 전기 × 체적배수 × (P / 250Pa)<sup>1.5</sup>
               </div>
             </div>
             <div class="bg-slate-800/80 p-3 rounded-xl border border-slate-700">
@@ -663,37 +632,37 @@
   <!-- ========================================================================= -->
   <!-- TAB 2: TOTAL COMPLEX SIMULATOR (Auxiliary facilities calculation)           -->
   <!-- ========================================================================= -->
-  <main id="paneTotal" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 hidden flex-grow">
+  <main id="paneTotal" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow hidden">
     
     <div class="bg-gradient-to-br from-slate-900 to-blue-950 rounded-2xl p-6 shadow-xl mb-8 border border-slate-800 text-white relative overflow-hidden">
         <div class="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-blue-500/10 blur-3xl"></div>
         <div class="absolute bottom-0 left-0 -ml-16 -mb-16 w-64 h-64 rounded-full bg-emerald-500/10 blur-3xl"></div>
         
         <h2 class="text-xl font-black mb-6 flex items-center gap-2 relative z-10">
-            <i data-lucide="building" class="w-6 h-6 text-blue-400"></i> 
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="building" aria-hidden="true" class="lucide lucide-building w-6 h-6 text-blue-400"><path d="M12 10h.01"></path><path d="M12 14h.01"></path><path d="M12 6h.01"></path><path d="M16 10h.01"></path><path d="M16 14h.01"></path><path d="M16 6h.01"></path><path d="M8 10h.01"></path><path d="M8 14h.01"></path><path d="M8 6h.01"></path><path d="M9 22v-3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"></path><rect x="4" y="2" width="16" height="20" rx="2"></rect></svg> 
             영종통합훈련장 전체 수도광열비 예상액 (연간)
         </h2>
         
         <div class="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8 relative z-10">
             <div class="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-4 text-center w-full md:w-1/3">
                 <div class="text-blue-200 text-xs font-bold mb-1">A. 주경기장 (에어돔)</div>
-                <div class="text-3xl font-black text-white" id="sumDomeTotal">0원</div>
+                <div class="text-3xl font-black text-white" id="sumDomeTotal">956,861,619원</div>
                 <div class="text-[11px] text-blue-300 mt-2 font-medium">전기+가스 (탭1 결과 자동연동)</div>
             </div>
             
-            <div class="text-3xl font-black text-slate-400"><i data-lucide="plus" class="w-8 h-8"></i></div>
+            <div class="text-3xl font-black text-slate-400"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="plus" aria-hidden="true" class="lucide lucide-plus w-8 h-8"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg></div>
             
             <div class="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-4 text-center w-full md:w-1/3">
                 <div class="text-emerald-200 text-xs font-bold mb-1">B. 신축 부대시설 (운영동/숙소)</div>
-                <div class="text-3xl font-black text-white" id="sumAuxTotal">0원</div>
+                <div class="text-3xl font-black text-white" id="sumAuxTotal">329,850,349원</div>
                 <div class="text-[11px] text-emerald-300 mt-2 font-medium">수도+전기+가스 (하단 변수 적용)</div>
             </div>
             
-            <div class="text-3xl font-black text-slate-400"><i data-lucide="equal" class="w-8 h-8"></i></div>
+            <div class="text-3xl font-black text-slate-400"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="equal" aria-hidden="true" class="lucide lucide-equal w-8 h-8"><line x1="5" x2="19" y1="9" y2="9"></line><line x1="5" x2="19" y1="15" y2="15"></line></svg></div>
             
             <div class="bg-blue-600 border border-blue-400 rounded-xl p-5 text-center w-full md:w-1/3 shadow-lg shadow-blue-900/50">
                 <div class="text-blue-100 text-sm font-bold mb-1">최종 통합 수도광열비</div>
-                <div class="text-3xl lg:text-4xl font-black text-white tracking-tight" id="sumGrandTotal">0원</div>
+                <div class="text-3xl lg:text-4xl font-black text-white tracking-tight" id="sumGrandTotal">1,286,711,968원</div>
             </div>
         </div>
     </div>
@@ -701,12 +670,68 @@
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
         <div class="lg:col-span-12 space-y-6">
+            <!-- 일정별 산출 -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="bg-slate-50 border-b border-slate-200 px-4 py-3">
+                    <h3 class="font-bold text-slate-900 flex items-center gap-2 text-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-600" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                        일정별 수도광열비 산출 (주경기장 + 부대시설, 연간)
+                    </h3>
+                </div>
+                <div class="p-4">
+                    <div class="overflow-x-auto">
+                        <table class="w-full min-w-[640px] text-xs border-separate border-spacing-0">
+                            <thead class="text-slate-500">
+                                <tr class="border-b border-slate-200">
+                                    <th class="py-2 px-3 text-left font-semibold border-b border-slate-200">구분</th>
+                                    <th class="py-2 px-3 text-right font-semibold border-b border-slate-200">경기일 <span class="text-slate-400 font-normal" id="schHomeDays"></span></th>
+                                    <th class="py-2 px-3 text-right font-semibold border-b border-slate-200">훈련일 <span class="text-slate-400 font-normal" id="schTrainDays"></span></th>
+                                    <th class="py-2 px-3 text-right font-semibold border-b border-slate-200">휴식일 <span class="text-slate-400 font-normal" id="schRestDays"></span></th>
+                                    <th class="py-2 px-3 text-right font-bold text-slate-700 border-b border-slate-200 bg-slate-50">연간 합계</th>
+                                </tr>
+                            </thead>
+                            <tbody class="[&>tr>*]:border-b [&>tr>*]:border-slate-100">
+                            <tr>
+                                <th class="py-3 px-3 text-left font-bold text-slate-700 whitespace-nowrap"><span class="inline-block w-2 h-2 rounded-full bg-amber-500 mr-1.5 align-middle"></span>전기요금</th>
+                                <td class="py-3 px-3 text-right"><div class="font-mono font-bold text-slate-900 text-[13px]" id="schElecHome">-</div><div class="font-mono text-[10px] text-slate-400" id="schElecHomeDay">-</div></td>
+                                <td class="py-3 px-3 text-right"><div class="font-mono font-bold text-slate-900 text-[13px]" id="schElecTrain">-</div><div class="font-mono text-[10px] text-slate-400" id="schElecTrainDay">-</div></td>
+                                <td class="py-3 px-3 text-right"><div class="font-mono font-bold text-slate-900 text-[13px]" id="schElecRest">-</div><div class="font-mono text-[10px] text-slate-400" id="schElecRestDay">-</div></td>
+                                <td class="py-3 px-3 text-right font-mono font-black text-slate-900 text-[13px] bg-slate-50" id="schElecTotal">-</td>
+                            </tr>
+                            <tr>
+                                <th class="py-3 px-3 text-left font-bold text-slate-700 whitespace-nowrap"><span class="inline-block w-2 h-2 rounded-full bg-blue-500 mr-1.5 align-middle"></span>가스요금</th>
+                                <td class="py-3 px-3 text-right"><div class="font-mono font-bold text-slate-900 text-[13px]" id="schGasHome">-</div><div class="font-mono text-[10px] text-slate-400" id="schGasHomeDay">-</div></td>
+                                <td class="py-3 px-3 text-right"><div class="font-mono font-bold text-slate-900 text-[13px]" id="schGasTrain">-</div><div class="font-mono text-[10px] text-slate-400" id="schGasTrainDay">-</div></td>
+                                <td class="py-3 px-3 text-right"><div class="font-mono font-bold text-slate-900 text-[13px]" id="schGasRest">-</div><div class="font-mono text-[10px] text-slate-400" id="schGasRestDay">-</div></td>
+                                <td class="py-3 px-3 text-right font-mono font-black text-slate-900 text-[13px] bg-slate-50" id="schGasTotal">-</td>
+                            </tr>
+                            <tr>
+                                <th class="py-3 px-3 text-left font-bold text-slate-700 whitespace-nowrap"><span class="inline-block w-2 h-2 rounded-full bg-cyan-500 mr-1.5 align-middle"></span>수도요금</th>
+                                <td class="py-3 px-3 text-right"><div class="font-mono font-bold text-slate-900 text-[13px]" id="schWaterHome">-</div><div class="font-mono text-[10px] text-slate-400" id="schWaterHomeDay">-</div></td>
+                                <td class="py-3 px-3 text-right"><div class="font-mono font-bold text-slate-900 text-[13px]" id="schWaterTrain">-</div><div class="font-mono text-[10px] text-slate-400" id="schWaterTrainDay">-</div></td>
+                                <td class="py-3 px-3 text-right"><div class="font-mono font-bold text-slate-900 text-[13px]" id="schWaterRest">-</div><div class="font-mono text-[10px] text-slate-400" id="schWaterRestDay">-</div></td>
+                                <td class="py-3 px-3 text-right font-mono font-black text-slate-900 text-[13px] bg-slate-50" id="schWaterTotal">-</td>
+                            </tr>
+                                <tr class="bg-slate-50">
+                                    <th class="py-3 px-3 text-left font-black text-slate-800">합계</th>
+                                    <td class="py-3 px-3 text-right font-mono font-black text-slate-900 text-[13px]" id="schSumHome">-</td>
+                                    <td class="py-3 px-3 text-right font-mono font-black text-slate-900 text-[13px]" id="schSumTrain">-</td>
+                                    <td class="py-3 px-3 text-right font-mono font-black text-slate-900 text-[13px]" id="schSumRest">-</td>
+                                    <td class="py-3 px-3 text-right font-mono font-black text-indigo-700 text-sm" id="schSumTotal">-</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="mt-2 text-[10px] text-slate-400 leading-tight">각 칸의 위 숫자는 해당 일수 합계, 아래 숫자는 1일 평균입니다. 배분 기준: 24h 송풍·공조·기타 전력·제습재열·융설·부대시설은 365일 균등 / 조명은 경기일 5h·훈련일 4h / 냉난방은 40%를 365일 균등, 60%를 운영시간(경기일 10h·훈련일 8h) 비례.</p>
+                </div>
+            </div>
+
             <!-- STEP 1 -->
             <div class="bg-white rounded-2xl border-2 border-emerald-500/20 shadow-sm overflow-hidden">
                 <div class="bg-emerald-50 border-b border-emerald-100 px-4 py-3 flex items-center justify-between">
                     <h3 class="font-bold text-emerald-900 flex items-center gap-2 text-sm">
-                        <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-600"></i>
-                        STEP 1. 전년도 기존 2군 훈련장 실적 (2024~2025 강화 수도광열비)
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="file-spreadsheet" aria-hidden="true" class="lucide lucide-file-spreadsheet w-4 h-4 text-emerald-600"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"></path><path d="M14 2v5a1 1 0 0 0 1 1h5"></path><path d="M8 13h2"></path><path d="M14 13h2"></path><path d="M8 17h2"></path><path d="M14 17h2"></path></svg>
+                        STEP 1. 전년도 기존 2군 훈련장 실적 (강화 수도광열비)
                     </h3>
                 </div>
                 <div class="p-4 overflow-x-auto custom-scrollbar">
@@ -747,23 +772,6 @@
                                 <td class="py-2 px-1.5 text-right border-r border-slate-300">8,748,462</td>
                                 <td class="py-2 px-1.5 text-right border-r border-slate-300">10,570,061</td>
                                 <td class="py-2 px-2 text-right font-bold text-blue-700 bg-blue-50/50">142,798,604</td>
-                            </tr>
-                            <tr class="hover:bg-slate-50">
-                                <td class="py-2 px-2 font-bold text-slate-700 bg-slate-100 border-r border-slate-300">TV수신료</td>
-                                <td class="py-2 px-2 text-left border-r border-slate-300 font-sans tracking-normal"></td>
-                                <td class="py-2 px-1.5 text-right border-r border-slate-300">140,000</td>
-                                <td class="py-2 px-1.5 text-right border-r border-slate-300">140,000</td>
-                                <td class="py-2 px-1.5 text-right border-r border-slate-300">140,000</td>
-                                <td class="py-2 px-1.5 text-right border-r border-slate-300">140,000</td>
-                                <td class="py-2 px-1.5 text-right border-r border-slate-300">140,000</td>
-                                <td class="py-2 px-1.5 text-right border-r border-slate-300">140,000</td>
-                                <td class="py-2 px-1.5 text-right border-r border-slate-300">140,000</td>
-                                <td class="py-2 px-1.5 text-right border-r border-slate-300">140,000</td>
-                                <td class="py-2 px-1.5 text-right border-r border-slate-300">140,000</td>
-                                <td class="py-2 px-1.5 text-right border-r border-slate-300">140,000</td>
-                                <td class="py-2 px-1.5 text-right border-r border-slate-300">140,000</td>
-                                <td class="py-2 px-1.5 text-right border-r border-slate-300">140,000</td>
-                                <td class="py-2 px-2 text-right font-bold text-blue-700 bg-blue-50/50">1,680,000</td>
                             </tr>
                             <tr class="hover:bg-slate-50">
                                 <td class="py-2 px-2 font-bold text-slate-700 bg-slate-100 border-r border-slate-300">상하수도요금</td>
@@ -810,30 +818,30 @@
             <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                 <div class="bg-slate-50 border-b border-slate-200 px-4 py-3">
                     <h3 class="font-bold text-slate-900 flex items-center gap-2 text-sm">
-                        <i data-lucide="users-2" class="w-4 h-4 text-blue-600"></i>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="users-2" aria-hidden="true" class="lucide lucide-users-2 w-4 h-4 text-blue-600"><path d="M18 21a8 8 0 0 0-16 0"></path><circle cx="10" cy="8" r="5"></circle><path d="M22 20c0-3.37-2-6.5-4-8a5 5 0 0 0-.45-8.3"></path></svg>
                         STEP 2. 면적 및 사용인원 매개변수
                     </h3>
                 </div>
                 <div class="p-4 space-y-4">
                     <p class="text-[11px] text-slate-500 mb-2 leading-tight">
-                        부대시설(임원실/감독실 등) 면적 확대 및 숙소 증설(35실→49실)에 따른 기초 비례값을 산출합니다.
+                        부대시설(임원실/감독실 등) 면적 확대 및 숙소 증설(35실→48실)에 따른 기초 비례값을 산출합니다.
                     </p>
                     <div class="space-y-3 text-xs">
                         <!-- Area -->
                         <div class="bg-blue-50/40 p-2.5 rounded-lg border border-blue-100">
                             <div class="flex items-center justify-between mb-2">
                                 <span class="font-bold text-slate-700">부대시설 연면적 변동 (m²)</span>
-                                <span class="text-[10px] font-bold text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded" id="lblAreaRatio">+20%</span>
+                                <span class="whitespace-nowrap text-[10px] font-bold text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded" id="lblAreaRatio">+50%</span>
                             </div>
                             <div class="flex items-center gap-2">
                                 <div class="flex-1">
                                     <label class="text-[10px] text-slate-500 block mb-0.5">기존 훈련장</label>
-                                    <input type="number" id="inpBaseArea" value="5000" class="w-full border border-slate-300 rounded px-2 py-1 text-right font-mono bg-white">
+                                    <input type="number" id="inpBaseArea" value="8576" class="w-full border border-slate-300 rounded px-2 py-1 text-right font-mono bg-white">
                                 </div>
-                                <i data-lucide="arrow-right" class="w-4 h-4 text-slate-400 mt-3"></i>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="arrow-right" aria-hidden="true" class="lucide lucide-arrow-right w-4 h-4 text-slate-400 mt-3"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
                                 <div class="flex-1">
                                     <label class="text-[10px] text-slate-500 block mb-0.5">신축 훈련장</label>
-                                    <input type="number" id="inpNewArea" value="6000" class="w-full border border-blue-300 rounded px-2 py-1 text-right font-mono font-bold text-blue-700 bg-white">
+                                    <input type="number" id="inpNewArea" value="12823" class="w-full border border-blue-300 rounded px-2 py-1 text-right font-mono font-bold text-blue-700 bg-white">
                                 </div>
                             </div>
                         </div>
@@ -842,17 +850,17 @@
                         <div class="bg-purple-50/40 p-2.5 rounded-lg border border-purple-100">
                             <div class="flex items-center justify-between mb-2">
                                 <span class="font-bold text-slate-700">사용인원/숙소 변동 (명/실)</span>
-                                <span class="text-[10px] font-bold text-purple-600 bg-purple-100 px-1.5 py-0.5 rounded" id="lblUserRatio">+40%</span>
+                                <span class="whitespace-nowrap text-[10px] font-bold text-purple-600 bg-purple-100 px-1.5 py-0.5 rounded" id="lblUserRatio">+37%</span>
                             </div>
                             <div class="flex items-center gap-2">
                                 <div class="flex-1">
                                     <label class="text-[10px] text-slate-500 block mb-0.5">기존 인원(35실)</label>
                                     <input type="number" id="inpBaseUsers" value="35" class="w-full border border-slate-300 rounded px-2 py-1 text-right font-mono bg-white">
                                 </div>
-                                <i data-lucide="arrow-right" class="w-4 h-4 text-slate-400 mt-3"></i>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="arrow-right" aria-hidden="true" class="lucide lucide-arrow-right w-4 h-4 text-slate-400 mt-3"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
                                 <div class="flex-1">
-                                    <label class="text-[10px] text-slate-500 block mb-0.5">신축 인원(49실)</label>
-                                    <input type="number" id="inpNewUsers" value="49" class="w-full border border-purple-300 rounded px-2 py-1 text-right font-mono font-bold text-purple-700 bg-white">
+                                    <label class="text-[10px] text-slate-500 block mb-0.5">신축 인원(48실)</label>
+                                    <input type="number" id="inpNewUsers" value="48" class="w-full border border-purple-300 rounded px-2 py-1 text-right font-mono font-bold text-purple-700 bg-white">
                                 </div>
                             </div>
                         </div>
@@ -860,45 +868,51 @@
                 </div>
             </div>
 
-            <!-- STEP 3 (Formerly STEP 2) -->
+            <!-- STEP 3: 공공요금 인상률 (부대시설) -->
             <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                 <div class="bg-slate-50 border-b border-slate-200 px-4 py-3">
                     <h3 class="font-bold text-slate-900 flex items-center gap-2 text-sm">
-                        <i data-lucide="settings-2" class="w-4 h-4 text-emerald-600"></i>
-                        STEP 3. 신축 부대시설 특수 변수
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-emerald-600" aria-hidden="true"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
+                        STEP 3. 공공요금 인상률
                     </h3>
                 </div>
-                <div class="p-4 space-y-4">
-                    <div class="bg-amber-50/50 p-3 rounded-lg border border-amber-100">
-                        <div class="flex justify-between items-center mb-2">
-                            <label class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                                <span class="w-4 h-4 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-[10px]">1</span> 원정팀 및 홈팀 샤워시설 신설
-                            </label>
-                            <input type="checkbox" id="chkShowers" checked class="w-4 h-4 accent-amber-600">
-                        </div>
-                        <p class="text-[10px] text-slate-500 leading-tight">다수 인원의 동시 샤워로 <b>급수(수도비) 및 온수 가열(가스비) 부하가 비약적으로 증가</b>하는 특수 요인입니다.</p>
+                <div class="p-4 text-[11px]">
+                    <div class="overflow-x-auto -mx-1 px-1">
+                        <table class="w-full border-separate border-spacing-0">
+                            <thead><tr>
+                                <th class="pr-1.5 pb-1.5 text-left font-semibold text-slate-500 whitespace-nowrap">단위: %</th><th class="px-1 pb-1.5 font-semibold text-slate-500 text-center whitespace-nowrap">2024→25</th><th class="px-1 pb-1.5 font-semibold text-slate-500 text-center whitespace-nowrap">2025→26</th><th class="px-1 pb-1.5 font-semibold text-slate-500 text-center whitespace-nowrap">2026→27</th><th class="px-1 pb-1.5 font-semibold text-slate-500 text-center whitespace-nowrap">2027→28</th><th class="px-1 pb-1.5 font-semibold text-slate-500 text-center whitespace-nowrap">2028→29</th>
+                                <th class="pl-2 pb-1.5 text-right font-bold text-slate-700 whitespace-nowrap border-l border-slate-200">누적</th>
+                            </tr></thead>
+                            <tbody>
+                                <tr>
+                                    <th class="pr-1.5 py-1 text-left font-bold text-slate-700 whitespace-nowrap"><span class="inline-block w-2 h-2 rounded-full bg-amber-500 mr-1.5 align-middle"></span>전기</th><td class="px-1 py-1"><input type="number" id="auxElecRate2024" data-kind="elec" value="3" step="0.1" min="-30" max="100" aria-label="2024→2025 전기 인상률(%)" class="aux-rate-inp w-full min-w-[3.25rem] bg-white border rounded-md px-1 py-1 text-right font-mono font-bold focus:outline-none focus:ring-2 text-amber-700 border-amber-200 focus:ring-amber-200"></td><td class="px-1 py-1"><input type="number" id="auxElecRate2025" data-kind="elec" value="3" step="0.1" min="-30" max="100" aria-label="2025→2026 전기 인상률(%)" class="aux-rate-inp w-full min-w-[3.25rem] bg-white border rounded-md px-1 py-1 text-right font-mono font-bold focus:outline-none focus:ring-2 text-amber-700 border-amber-200 focus:ring-amber-200"></td><td class="px-1 py-1"><input type="number" id="auxElecRate2026" data-kind="elec" value="3" step="0.1" min="-30" max="100" aria-label="2026→2027 전기 인상률(%)" class="aux-rate-inp w-full min-w-[3.25rem] bg-white border rounded-md px-1 py-1 text-right font-mono font-bold focus:outline-none focus:ring-2 text-amber-700 border-amber-200 focus:ring-amber-200"></td><td class="px-1 py-1"><input type="number" id="auxElecRate2027" data-kind="elec" value="3" step="0.1" min="-30" max="100" aria-label="2027→2028 전기 인상률(%)" class="aux-rate-inp w-full min-w-[3.25rem] bg-white border rounded-md px-1 py-1 text-right font-mono font-bold focus:outline-none focus:ring-2 text-amber-700 border-amber-200 focus:ring-amber-200"></td><td class="px-1 py-1"><input type="number" id="auxElecRate2028" data-kind="elec" value="3" step="0.1" min="-30" max="100" aria-label="2028→2029 전기 인상률(%)" class="aux-rate-inp w-full min-w-[3.25rem] bg-white border rounded-md px-1 py-1 text-right font-mono font-bold focus:outline-none focus:ring-2 text-amber-700 border-amber-200 focus:ring-amber-200"></td>
+                                    <td class="pl-2 py-1 text-right border-l border-slate-200"><b id="valAuxElecRate" class="whitespace-nowrap font-mono text-[13px] text-amber-700">+0.0%</b></td>
+                                </tr>
+                                <tr>
+                                    <th class="pr-1.5 py-1 text-left font-bold text-slate-700 whitespace-nowrap"><span class="inline-block w-2 h-2 rounded-full bg-blue-500 mr-1.5 align-middle"></span>가스</th><td class="px-1 py-1"><input type="number" id="auxGasRate2024" data-kind="gas" value="3" step="0.1" min="-30" max="100" aria-label="2024→2025 가스 인상률(%)" class="aux-rate-inp w-full min-w-[3.25rem] bg-white border rounded-md px-1 py-1 text-right font-mono font-bold focus:outline-none focus:ring-2 text-blue-700 border-blue-200 focus:ring-blue-200"></td><td class="px-1 py-1"><input type="number" id="auxGasRate2025" data-kind="gas" value="3" step="0.1" min="-30" max="100" aria-label="2025→2026 가스 인상률(%)" class="aux-rate-inp w-full min-w-[3.25rem] bg-white border rounded-md px-1 py-1 text-right font-mono font-bold focus:outline-none focus:ring-2 text-blue-700 border-blue-200 focus:ring-blue-200"></td><td class="px-1 py-1"><input type="number" id="auxGasRate2026" data-kind="gas" value="3" step="0.1" min="-30" max="100" aria-label="2026→2027 가스 인상률(%)" class="aux-rate-inp w-full min-w-[3.25rem] bg-white border rounded-md px-1 py-1 text-right font-mono font-bold focus:outline-none focus:ring-2 text-blue-700 border-blue-200 focus:ring-blue-200"></td><td class="px-1 py-1"><input type="number" id="auxGasRate2027" data-kind="gas" value="3" step="0.1" min="-30" max="100" aria-label="2027→2028 가스 인상률(%)" class="aux-rate-inp w-full min-w-[3.25rem] bg-white border rounded-md px-1 py-1 text-right font-mono font-bold focus:outline-none focus:ring-2 text-blue-700 border-blue-200 focus:ring-blue-200"></td><td class="px-1 py-1"><input type="number" id="auxGasRate2028" data-kind="gas" value="3" step="0.1" min="-30" max="100" aria-label="2028→2029 가스 인상률(%)" class="aux-rate-inp w-full min-w-[3.25rem] bg-white border rounded-md px-1 py-1 text-right font-mono font-bold focus:outline-none focus:ring-2 text-blue-700 border-blue-200 focus:ring-blue-200"></td>
+                                    <td class="pl-2 py-1 text-right border-l border-slate-200"><b id="valAuxGasRate" class="whitespace-nowrap font-mono text-[13px] text-blue-700">+0.0%</b></td>
+                                </tr>
+                                <tr>
+                                    <th class="pr-1.5 py-1 text-left font-bold text-slate-700 whitespace-nowrap"><span class="inline-block w-2 h-2 rounded-full bg-cyan-500 mr-1.5 align-middle"></span>수도</th><td class="px-1 py-1"><input type="number" id="auxWaterRate2024" data-kind="water" value="3" step="0.1" min="-30" max="100" aria-label="2024→2025 수도 인상률(%)" class="aux-rate-inp w-full min-w-[3.25rem] bg-white border rounded-md px-1 py-1 text-right font-mono font-bold focus:outline-none focus:ring-2 text-cyan-700 border-cyan-200 focus:ring-cyan-200"></td><td class="px-1 py-1"><input type="number" id="auxWaterRate2025" data-kind="water" value="3" step="0.1" min="-30" max="100" aria-label="2025→2026 수도 인상률(%)" class="aux-rate-inp w-full min-w-[3.25rem] bg-white border rounded-md px-1 py-1 text-right font-mono font-bold focus:outline-none focus:ring-2 text-cyan-700 border-cyan-200 focus:ring-cyan-200"></td><td class="px-1 py-1"><input type="number" id="auxWaterRate2026" data-kind="water" value="3" step="0.1" min="-30" max="100" aria-label="2026→2027 수도 인상률(%)" class="aux-rate-inp w-full min-w-[3.25rem] bg-white border rounded-md px-1 py-1 text-right font-mono font-bold focus:outline-none focus:ring-2 text-cyan-700 border-cyan-200 focus:ring-cyan-200"></td><td class="px-1 py-1"><input type="number" id="auxWaterRate2027" data-kind="water" value="3" step="0.1" min="-30" max="100" aria-label="2027→2028 수도 인상률(%)" class="aux-rate-inp w-full min-w-[3.25rem] bg-white border rounded-md px-1 py-1 text-right font-mono font-bold focus:outline-none focus:ring-2 text-cyan-700 border-cyan-200 focus:ring-cyan-200"></td><td class="px-1 py-1"><input type="number" id="auxWaterRate2028" data-kind="water" value="3" step="0.1" min="-30" max="100" aria-label="2028→2029 수도 인상률(%)" class="aux-rate-inp w-full min-w-[3.25rem] bg-white border rounded-md px-1 py-1 text-right font-mono font-bold focus:outline-none focus:ring-2 text-cyan-700 border-cyan-200 focus:ring-cyan-200"></td>
+                                    <td class="pl-2 py-1 text-right border-l border-slate-200"><b id="valAuxWaterRate" class="whitespace-nowrap font-mono text-[13px] text-cyan-700">+0.0%</b></td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
-                    <div class="bg-emerald-50/50 p-3 rounded-lg border border-emerald-100">
-                        <div class="flex justify-between items-center mb-1">
-                            <label class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                                <span class="w-4 h-4 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px]">2</span> 신축 고효율/친환경 설계 감면
-                            </label>
-                            <span class="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded" id="lblEco">효율 -15% 적용</span>
-                        </div>
-                        <input type="range" id="inpEco" min="0" max="30" step="1" value="15" class="w-full accent-emerald-600">
-                    </div>
+                    <p class="mt-2 text-[10px] text-slate-400 leading-tight">연도별 인상률을 복리로 누적해 부대시설 비용에 반영합니다.<br>빈칸은 0%로 계산됩니다.<br><br>전 구간 연 3% 가정: 한국은행 물가안정목표 2%에 요금 현실화 요인 1%를 더해 반영</p>
                 </div>
             </div>
+
         </div>
 
         <div class="lg:col-span-7 space-y-6">
             <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                 <div class="px-5 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
                     <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
-                        <i data-lucide="clipboard-list" class="w-4 h-4 text-emerald-600"></i> 부대시설(운영동/숙소) 세부 산출 내역
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="clipboard-list" aria-hidden="true" class="lucide lucide-clipboard-list w-4 h-4 text-emerald-600"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><path d="M12 11h4"></path><path d="M12 16h4"></path><path d="M8 11h.01"></path><path d="M8 16h.01"></path></svg> 부대시설(운영동/숙소) 세부 산출 내역
                     </h3>
                 </div>
-                <table class="w-full text-xs text-left">
+                <div class="overflow-x-auto"><table class="w-full min-w-[520px] text-xs text-left">
                     <thead class="bg-slate-100 text-slate-600 font-bold border-b border-slate-200">
                         <tr>
                             <th class="py-2.5 px-4">항목</th>
@@ -909,34 +923,34 @@
                     </thead>
                     <tbody class="divide-y divide-slate-100">
                         <tr class="hover:bg-slate-50">
-                            <td class="py-3 px-4 font-bold text-slate-700 flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-blue-500"></div> 전기비</td>
-                            <td class="py-3 px-4 text-right font-mono text-[11px]" id="tdBaseElec">142,798,604</td>
-                            <td class="py-3 px-4 text-[10px] text-slate-500 text-center leading-tight">건물 면적 비례 적용<br>× 친환경 고효율 할인</td>
-                            <td class="py-3 px-4 text-right font-bold text-blue-700 font-mono text-sm" id="tdNewElec">0</td>
+                            <td class="py-3 px-4 font-bold text-slate-700 flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-amber-500"></div> 전기비</td>
+                            <td class="py-3 px-4 text-right font-mono text-[11px]" id="tdBaseElec">142,798,604원</td>
+                            <td class="py-3 px-4 text-[10px] text-slate-500 text-center leading-tight">건물 면적 비례 적용<br>× 전기요금 인상률(누적)</td>
+                            <td class="py-3 px-4 text-right font-bold text-amber-600 font-mono text-sm" id="tdNewElec">213,515,217원</td>
                         </tr>
                         <tr class="hover:bg-slate-50">
-                            <td class="py-3 px-4 font-bold text-slate-700 flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-amber-500"></div> 가스비</td>
-                            <td class="py-3 px-4 text-right font-mono text-[11px]" id="tdBaseGas">51,641,568</td>
-                            <td class="py-3 px-4 text-[10px] text-slate-500 text-center leading-tight">면적(난방)/인원(온수) 복합비례<br><span class="text-amber-600 font-semibold">+ 팀 샤워실 대량 온수 부하 (특수)</span></td>
-                            <td class="py-3 px-4 text-right font-bold text-amber-600 font-mono text-sm" id="tdNewGas">0</td>
+                            <td class="py-3 px-4 font-bold text-slate-700 flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-blue-500"></div> 가스비</td>
+                            <td class="py-3 px-4 text-right font-mono text-[11px]" id="tdBaseGas">51,641,568원</td>
+                            <td class="py-3 px-4 text-[10px] text-slate-500 text-center leading-tight">건물 면적 비례 적용<br>× 가스요금 인상률(누적)</td>
+                            <td class="py-3 px-4 text-right font-bold text-blue-700 font-mono text-sm" id="tdNewGas">75,740,284원</td>
                         </tr>
                         <tr class="hover:bg-slate-50">
                             <td class="py-3 px-4 font-bold text-slate-700 flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-cyan-500"></div> 수도비</td>
-                            <td class="py-3 px-4 text-right font-mono text-[11px]" id="tdBaseWater">28,996,320</td>
-                            <td class="py-3 px-4 text-[10px] text-slate-500 text-center leading-tight">상주인원(숙소) 정비례 증가<br><span class="text-cyan-600 font-semibold">+ 팀 샤워실 급수 부하 (특수)</span></td>
-                            <td class="py-3 px-4 text-right font-bold text-cyan-600 font-mono text-sm" id="tdNewWater">0</td>
+                            <td class="py-3 px-4 text-right font-mono text-[11px]" id="tdBaseWater">28,996,320원</td>
+                            <td class="py-3 px-4 text-[10px] text-slate-500 text-center leading-tight">상주인원(숙소) 정비례 증가<br>× 수도요금 인상률(누적)</td>
+                            <td class="py-3 px-4 text-right font-bold text-cyan-600 font-mono text-sm" id="tdNewWater">40,594,848원</td>
                         </tr>
                         <tr class="bg-slate-50 border-t-2 border-slate-200">
                             <td class="py-3 px-4 font-black text-slate-800" colspan="3">신축 부대시설(운영동/숙소) 합계</td>
-                            <td class="py-3 px-4 text-right font-black text-slate-900 text-base font-mono" id="tdNewTotal">0</td>
+                            <td class="py-3 px-4 text-right font-black text-slate-900 text-base font-mono" id="tdNewTotal">329,850,349원</td>
                         </tr>
                     </tbody>
-                </table>
+                </table></div>
             </div>
 
             <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
                 <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2 mb-4">
-                    <i data-lucide="bar-chart-2" class="w-4 h-4 text-indigo-600"></i> 영종통합훈련장 시설별 예산 비중
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="bar-chart-2" aria-hidden="true" class="lucide lucide-bar-chart-2 w-4 h-4 text-indigo-600"><path d="M5 21v-6"></path><path d="M12 21V3"></path><path d="M19 21V9"></path></svg> 영종통합훈련장 시설별 예산 비중
                 </h3>
                 <div class="h-[250px] relative">
                     <canvas id="totalComplexChart"></canvas>
@@ -984,24 +998,26 @@
     const GYEONGJU = {
       length: 120, width: 78, height: 25,
       volume: 120 * 78 * 25 * SHAPE_K, 
-      elecCost: 56000000,
-      gasCost: 67000000,
-      totalCost: 123000000,
+      // 2025년 실적 (원, 월별 고지서 합계)
+      monthlyElec: [5546990, 5436170, 4711310, 3666220, 2731170, 3269880, 5121090, 5260280, 5597360, 3154130, 2937780, 4077900],
+      monthlyGas:  [8545520, 6376980, 2766230, 502140, 238790, 1684430, 3057940, 3233920, 1178480, 111210, 785450, 9328600],
+      elecCost: 51510280,
+      gasCost: 37809690,
+      totalCost: 89319970,
     };
 
     let state = {
       // 11 params from ver3
       height: 60, width: 140, length: 140,
-      homeGameDays: 40, trainingDays: 200, 
+      homeGameDays: 60, trainingDays: 245, 
       weatherFactor: 1.18, coldWaveDays: 16, targetHeatTemp: 18,
-      acLoadFactor: 0.75, blowerAmps: 90,
-      monsoonDays: 30, monsoonHoursDaily: 14,
-      heatingUnits: 2, coolingUnits: 5, blowerUnits: 2, hvacUnits: 8, hvacMotorKW: 5.5,
-      ledFixtureWatts: 1200, fixtureCount: 320, lightingPowerKW: 384,
+      acLoadFactor: 0.75, blowerAmps: 119,
+      monsoonDays: 32, monsoonHoursDaily: 14,
+      heatingUnits: 10, coolingUnits: 10, fanUnits: 6, hvacMotorKW: 3.7,
+      ledFixtureWatts: 1200, fixtureCount: 330, lightingPowerKW: 396,
       mainDoors: 1, exitDoors: 24, vehicleDoors: 1,
       elecRatePct: 0, gasRatePct: 0,
       snowDays: 22, 
-      ventCMHPerPerson: 40,
       membraneFactor: 0.82, doorAirtightFactor: 1.00
     };
 
@@ -1016,6 +1032,27 @@
     // ==========================================
     // MAIN SIMULATION LOGIC
     // ==========================================
+    // 경주 2025 월별 실적 분해
+    //  - 전기 기저 = 최저월(5월) × 12 → 송풍·공조 24h + 조명 + 기타
+    //  - 조명 = 55kW × 연 3,432h(평일 12h·주말 9h, 월요일 휴관) × 145원
+    //  - 냉방 = 6~10월 기저 초과분 / 동절기 증가분(11~4월) = 난방 모드 송풍·공조 가동분
+    //  - 가스: 11~5월 = 난방, 6~10월 = 제습재열
+    function decomposeGyeongju() {
+      const e = GYEONGJU.monthlyElec, g = GYEONGJU.monthlyGas;
+      const base = Math.min(...e);
+      const summer = [5, 6, 7, 8, 9];             // 6~10월 (0-index)
+      let elecCool = 0, elecWinter = 0, gasReheat = 0, gasHeat = 0;
+      for (let m = 0; m < 12; m++) {
+        const over = Math.max(0, e[m] - base);
+        if (summer.includes(m)) { elecCool += over; gasReheat += g[m]; }
+        else { elecWinter += over; gasHeat += g[m]; }
+      }
+      const elecBase = base * 12;
+      const elecLighting = Math.min(elecBase, 55 * 3432 * 145);
+      const elecFan = (elecBase - elecLighting) + elecWinter;
+      return { base, elecBase, elecLighting, elecFan, elecCool, elecWinter, gasHeat, gasReheat };
+    }
+
     function runSimulation() {
       // --- PART 1: DOME SIMULATION (Exactly as in ver3) ---
       const fieldArea = state.length * state.width;
@@ -1033,49 +1070,58 @@
       const effectiveLoadScale = volumeRatio;
 
       let heatingTempMultiplier = state.targetHeatTemp === 15 ? 0.80 : (state.targetHeatTemp === 21 ? 1.25 : 1.0);
-      const heatUnitScale = state.heatingUnits / 2.0;
-      const coolUnitScale = state.coolingUnits / 5.0;
-      const blowerUnitScale = state.blowerUnits / 2.0;
-      const hvacUnitScale = state.hvacUnits / 8.0;
+      // 설비 구성: 냉방 10대 + 일체형 난방 6대(송풍·공조 포함)를 설계 기준(배수 1.0)으로 둔다.
+      // 에너지는 건물 부하가 결정하므로, 대수 변경은 설계 기준 대비 상대 배수로만 반영한다.
+      // 설계 기준(배수 1.0): 냉방 10대 · 난방 10대 · 송풍/공조 일체형 6대
+      const heatUnitScale = state.heatingUnits / 10.0;
+      const coolUnitScale = state.coolingUnits / 10.0;
+      const blowerUnitScale = state.fanUnits / 6.0;   // 송풍/공조 일체형
+      const hvacUnitScale = blowerUnitScale;
 
       const doorLeakageRatio = ((state.mainDoors * 600 + state.exitDoors * 180) * state.doorAirtightFactor) / 4920;
       const coldWaveLoadFactor = 1.0 + (state.coldWaveDays / 120) * 0.52;
       const doorGasInfiltrationMultiplier = 1 + (doorLeakageRatio - 1) * 0.12;
 
-      // Gas
-      const baseGasHeat = GYEONGJU.gasCost * effectiveLoadScale * state.weatherFactor * heatingTempMultiplier * state.membraneFactor * doorGasInfiltrationMultiplier * heatUnitScale * coldWaveLoadFactor * (0.4 + 0.6 * operationFactor);
+      // ===== 경주 2025 실적 분해 (경주: 난방=가스 / 냉방·송풍·공조·조명=전기) =====
+      const gj = decomposeGyeongju();
+
+      // ===== 영종: 난방(가스) / 송풍·공조·냉방·조명(전기) =====
+      // (1) 기본 난방: 경주 난방가스(11~5월) × 체적 · 기후 · 설정온도 · 막 단열 · 출입문 · 혹한 · 운영일정 보정
+      const baseGasHeat = gj.gasHeat * effectiveLoadScale * state.weatherFactor * heatingTempMultiplier * state.membraneFactor * doorGasInfiltrationMultiplier * heatUnitScale * coldWaveLoadFactor * (0.4 + 0.6 * operationFactor);
+
+      // (2) 송풍·공조(24h): 경주 송풍·공조 전기 × 체적 배수 × 내부기압 보정(팬 동력 ∝ 압력^1.5, 경주 250Pa) × 공조 사양
+      //     영종 송풍/공조 일체형 6대(전기)
+      const pressurePa = ({ 75: 150, 90: 250, 119: 400 })[state.blowerAmps] || 400;
+      const pressureFactor = Math.pow(pressurePa / 250, 1.5);
+      const hvacSpecFactor = 0.7 + 0.3 * (state.hvacMotorKW / 3.7);
+      const costInflationElec = gj.elecFan * volumeRatio * pressureFactor * hvacSpecFactor * blowerUnitScale * (1 + (doorLeakageRatio - 1) * 0.15);
+      const costSnowElec = costInflationElec * (state.snowDays / 365) * 0.35;   // 제설일 송풍 증가분
+
+      // (3) 장마철 제습재열: 경주 여름철 가스(6~10월) × 체적 배수 × (고습일수 / 32일)
+      const monsoonGasCost = gj.gasReheat * effectiveLoadScale * (state.monsoonDays / 32) * Math.max(0.7, heatUnitScale * 0.85);
+      // (4) 융설: 영종 고유 부하 (경주는 연 1~2일 수준)
       const snowMeltCost = state.snowDays * (1450000 * (fieldArea / 19600) * state.weatherFactor) * Math.max(0.7, heatUnitScale * 0.85);
-      const audienceGasWinter = state.homeGameDays * (1000 * state.ventCMHPerPerson * 0.45 * (state.weatherFactor - 0.8) * 12 / 30) * Math.max(0.6, hvacUnitScale);
-      const monsoonGasCost = state.monsoonDays * 360000 * effectiveLoadScale * (state.monsoonHoursDaily / 14) * Math.max(0.7, heatUnitScale * 0.85);
-      const totalGas = (baseGasHeat + snowMeltCost + audienceGasWinter + monsoonGasCost) * (1 + state.gasRatePct / 100);
 
-      // Elec
-      const unitElecRate = 145; 
-      const singleBlowerPowerKW = (1.732 * 380 * state.blowerAmps * 0.86) / 1000;
-      const effectiveBlowerKW = singleBlowerPowerKW * Math.max(0.7, blowerUnitScale) * (1 + (doorLeakageRatio - 1) * 0.15) * (1.0 + (state.coldWaveDays / 365) * 0.15);
-      const costInflationElec = effectiveBlowerKW * 8760 * unitElecRate;
+      const unitElecRate = 145;
 
-      const acPowerKW = (210 * coolUnitScale * 1.15) * 1.4;
-      const monsoonChillerExtraKWh = state.monsoonDays * (acPowerKW * 0.32 * state.monsoonHoursDaily);
-      const annualCoolingKWh = ((acPowerKW * (90 * 8) * state.acLoadFactor * (1 + (doorLeakageRatio - 1) * 0.08)) * operationFactor) + monsoonChillerExtraKWh;
-      const costCooling = annualCoolingKWh * unitElecRate * 1.15;
-
+      // ===== 영종 전기 (냉방 + 조명 + 기타) =====
+      // 냉방: 경주 여름철 전기 증가분(6~10월, 기저 초과분) × 체적 배수 × 냉방부하 설정 × 운영일정 × 냉방 대수
+      const costCooling = gj.elecCool * effectiveLoadScale * (state.acLoadFactor / 0.75) * coolUnitScale * (1 + (doorLeakageRatio - 1) * 0.08) * (0.4 + 0.6 * operationFactor);
+      // 조명: 영종 타워조명 사양으로 직접 계산
       const totalLightingHours = (state.homeGameDays * 5) + (state.trainingDays * 4);
       const costLighting = state.lightingPowerKW * totalLightingHours * unitElecRate;
+      const costAuxElec = 25000 * unitElecRate; // 기타 보조전력(제어·CCTV 등)
 
-      const annualHvacCircKWh = (state.hvacMotorKW * state.hvacUnits) * (365 * 12) * operationFactor;
-      const audienceVentKWh = (state.homeGameDays * 4 * 1000 * 0.04 * (state.ventCMHPerPerson / 25)) * 200 * hvacUnitScale;
-      const costVentAndAux = (annualHvacCircKWh + audienceVentKWh + 25000) * unitElecRate;
-
-      const costSnowElec = state.snowDays * (effectiveBlowerKW * 0.35 * 24 * unitElecRate);
-
-      const totalElec = (costInflationElec + costCooling + costLighting + costVentAndAux + costSnowElec) * (1 + state.elecRatePct / 100);
+      // 전기: 냉방 + 조명 + 기타 + 송풍·공조(24h) + 제설일 송풍 증가분
+      const totalElec = (costCooling + costLighting + costAuxElec + costInflationElec + costSnowElec) * (1 + state.elecRatePct / 100);
+      // 가스: 난방 + 융설 + 제습재열 + 관람객 외기 가열
+      const totalGas = (baseGasHeat + snowMeltCost + monsoonGasCost) * (1 + state.gasRatePct / 100);
       const totalAnnualCost = totalElec + totalGas;
 
       currentCalc = {
         incheonVolume, volumeRatio, operationFactor, achievedLux,
-        baseGasHeat, monsoonGasCost, snowMeltCost, audienceGasWinter,
-        costInflationElec, costCooling, costLighting, costVentAndAux, costSnowElec,
+        baseGasHeat, monsoonGasCost, snowMeltCost,
+        costInflationElec, costCooling, costLighting, costSnowElec, costAuxElec,
         totalElec, totalGas, totalAnnualCost
       };
 
@@ -1093,9 +1139,11 @@
       
       document.getElementById('topResVol').innerHTML = `140m × 140m × ${state.height}m <span class="text-slate-400 font-normal ml-1">(${fmtNum(d.incheonVolume, 0)}m³)</span>`;
       document.getElementById('topResTemp').innerText = `여름철 26℃, 겨울철 ${state.targetHeatTemp}℃`;
-      document.getElementById('topResEquip').innerText = `난방 ${state.heatingUnits}대, 냉방 ${state.coolingUnits}대, 송풍 ${state.blowerUnits}대, 공조 ${state.hvacUnits}대`;
+      document.getElementById('topResEquip').innerHTML = `냉방 ${state.coolingUnits}대, 난방 ${state.heatingUnits}대, 송풍/공조 일체형 ${state.fanUnits}대<br><span class="text-slate-500 font-normal text-[11px]">*비상용발전기 有</span>`;
       
       const rDays = Math.max(0, 365 - state.homeGameDays - state.trainingDays);
+      const pressurePa = { 75: 150, 90: 250, 119: 400 }[state.blowerAmps] || 400;
+      document.getElementById('topResPressure').innerText = `${pressurePa}Pa (비상 시 600Pa)`;
       document.getElementById('topResHours').innerHTML = `홈경기 ${state.homeGameDays}일 / 훈련 ${state.trainingDays}일<br><span class="text-blue-700/70 font-normal text-[11px]">휴식 ${rDays}일 (송풍 24h 가동)</span>`;
       document.getElementById('topResLux').innerText = `${fmtNum(d.achievedLux, 0)} lux (LED 타워형)`;
 
@@ -1114,9 +1162,9 @@
       document.getElementById('tblSpecDim').innerText = `140m × 140m × ${state.height}m`;
       document.getElementById('tblSpecVolumeDiff').innerText = `체적 스케일 ${fmtNum(d.volumeRatio, 2)}배`;
       document.getElementById('tblSpecWeather').innerText = `난방도일 ${state.weatherFactor}배`;
-      document.getElementById('tblSpecEquip').innerText = `난방${state.heatingUnits} 냉방${state.coolingUnits} 송풍${state.blowerUnits} 공조${state.hvacUnits}`;
+      document.getElementById('tblSpecEquip').innerHTML = `냉방${state.coolingUnits} 난방${state.heatingUnits} 송풍·공조${state.fanUnits}<br><span class="text-slate-500 font-normal text-[10px]">*비상용발전기 有</span>`;
       document.getElementById('tblSpecLight').innerText = `야구장 LED ${state.fixtureCount}등`;
-      document.getElementById('tblSpecMonsoon').innerText = `연 ${state.monsoonDays}일 제습 재열`;
+      document.getElementById('tblSpecMonsoon').innerHTML = `연 ${state.monsoonDays}일 제습 재열<br><span class="text-slate-500 font-normal text-[10px] whitespace-nowrap">*인천 영종구 포함 중부지방 평년값 31.5일</span>`;
       document.getElementById('tblSpecHours').innerText = `홈${state.homeGameDays}/훈련${state.trainingDays}/휴식${rDays}`;
       document.getElementById('tblSpecHoursDiff').innerText = `송풍 24h 고정 / 가동률 ${Math.round(d.operationFactor*100)}%`;
       document.getElementById('tblSpecSnow').innerText = `인천 평년 ${state.snowDays}일 기준`;
@@ -1128,9 +1176,8 @@
       document.getElementById('valColdDays').innerText = `${state.coldWaveDays} 일`;
       document.getElementById('valSnowDays').innerText = `${state.snowDays} 일`;
       document.getElementById('valHeatingUnits').innerText = state.heatingUnits;
+      document.getElementById('valFanUnits').innerText = state.fanUnits;
       document.getElementById('valCoolingUnits').innerText = state.coolingUnits;
-      document.getElementById('valBlowerUnits').innerText = state.blowerUnits;
-      document.getElementById('valHvacUnits').innerText = state.hvacUnits;
       
       document.getElementById('lblLightingPower').innerText = `${fmtNum(state.lightingPowerKW, 1)}kW`;
       document.getElementById('valFixtureCount').innerText = `${state.fixtureCount} 등`;
@@ -1146,8 +1193,8 @@
       complianceEl.innerText = `달성 조도: ${fmtNum(d.achievedLux, 0)} lx (${compLabel})`;
       
       document.getElementById('valMonsoonDays').innerText = `${state.monsoonDays} 일`;
-      document.getElementById('valElecRate').innerText = `${state.elecRatePct >= 0 ? '+' : ''}${state.elecRatePct}%`;
-      document.getElementById('valGasRate').innerText = `${state.gasRatePct >= 0 ? '+' : ''}${state.gasRatePct}%`;
+      document.getElementById('valElecRate').innerText = `${state.elecRatePct >= 0 ? '+' : ''}${state.elecRatePct.toFixed(1)}%`;
+      document.getElementById('valGasRate').innerText = `${state.gasRatePct >= 0 ? '+' : ''}${state.gasRatePct.toFixed(1)}%`;
       
       document.getElementById('lblChartTotal').innerText = `합계: ${fmtKRW(d.totalAnnualCost)}`;
     }
@@ -1162,14 +1209,14 @@
         const baseWater = 28996320;
         
         // STEP 2 values (Area and Users)
-        const baseArea = parseFloat(document.getElementById('inpBaseArea').value) || 5000;
-        const newArea = parseFloat(document.getElementById('inpNewArea').value) || 6000;
+        const baseArea = parseFloat(document.getElementById('inpBaseArea').value) || 8576;
+        const newArea = parseFloat(document.getElementById('inpNewArea').value) || 12823;
         const baseUsers = parseInt(document.getElementById('inpBaseUsers').value) || 35;
-        const newUsers = parseInt(document.getElementById('inpNewUsers').value) || 49;
+        const newUsers = parseInt(document.getElementById('inpNewUsers').value) || 48;
         
         // STEP 3 values (Special parameters)
-        const hasShowers = document.getElementById('chkShowers').checked;
-        const ecoEff = parseInt(document.getElementById('inpEco').value) || 0;
+        const hasShowers = false; // STEP 3 removed
+        const ecoEff = 0;         // STEP 3 removed
 
         // Ratio Calculations
         const areaRatio = newArea / baseArea;
@@ -1182,7 +1229,6 @@
         
         document.getElementById('lblAreaRatio').innerText = `${areaPct >= 0 ? '+' : ''}${areaPct}%`;
         document.getElementById('lblUserRatio').innerText = `${userPct >= 0 ? '+' : ''}${userPct}%`;
-        document.getElementById('lblEco').innerText = `효율 -${ecoEff}% 적용`;
 
         // Engineering Cost Projections
         // 1. Electricity depends mostly on building area & HVAC
@@ -1190,14 +1236,72 @@
         
         // 2. Gas depends on heating (Area) + hot water usage (Users). Using 70/30 weight.
         let showerGasPenalty = hasShowers ? 25000000 : 0; 
-        let auxGas = (baseGas * (areaRatio * 0.7 + userRatio * 0.3) * ecoFactor) + showerGasPenalty;
+        let auxGas = (baseGas * areaRatio * ecoFactor) + showerGasPenalty; // 면적 비례 100%
         
         // 3. Water depends entirely on people
         let showerWaterPenalty = hasShowers ? 15000000 : 0; 
         let auxWater = (baseWater * userRatio) + showerWaterPenalty;
 
+        // STEP 3: 연도별 공공요금 인상률 (복리 누적)
+        const auxF = { elec: 1, gas: 1, water: 1 };
+        document.querySelectorAll('.aux-rate-inp').forEach(inp => {
+            const v = parseFloat(inp.value);
+            auxF[inp.dataset.kind] *= 1 + (isFinite(v) ? v : 0) / 100;
+        });
+        auxElec *= auxF.elec; auxGas *= auxF.gas; auxWater *= auxF.water;
+        const fmtPct = (f) => { const v = (f - 1) * 100; return `${v >= 0 ? '+' : ''}${v.toFixed(1)}%`; };
+        document.getElementById('valAuxElecRate').innerText = fmtPct(auxF.elec);
+        document.getElementById('valAuxGasRate').innerText = fmtPct(auxF.gas);
+        document.getElementById('valAuxWaterRate').innerText = fmtPct(auxF.water);
+
         const auxTotal = auxElec + auxGas + auxWater;
         const grandTotal = currentCalc.totalAnnualCost + auxTotal;
+
+        // ===== 일정별 산출 (경기일 / 훈련일 / 휴식일) =====
+        (function () {
+            const d = currentCalc;
+            const H = state.homeGameDays, T = state.trainingDays, Rr = Math.max(0, 365 - H - T);
+            const byDay = [H / 365, T / 365, Rr / 365];
+            const opHrs = H * 10 + T * 8;
+            const byOp = opHrs > 0 ? [H * 10 / opHrs, T * 8 / opHrs, 0] : [0, 0, 0];
+            const lightHrs = H * 5 + T * 4;
+            const byLight = lightHrs > 0 ? [H * 5 / lightHrs, T * 4 / lightHrs, 0] : [0, 0, 0];
+            const fixedShare = 0.4 / (0.4 + 0.6 * d.operationFactor);       // 냉난방 중 365일 균등분
+            const mix = byDay.map((v, i) => fixedShare * v + (1 - fixedShare) * byOp[i]);
+            const add = (acc, amt, w) => acc.map((v, i) => v + amt * w[i]);
+            const fE = 1 + state.elecRatePct / 100, fG = 1 + state.gasRatePct / 100;
+
+            let elec = [0, 0, 0];
+            elec = add(elec, (d.costInflationElec + d.costSnowElec + d.costAuxElec) * fE, byDay);
+            elec = add(elec, d.costLighting * fE, byLight);
+            elec = add(elec, d.costCooling * fE, mix);
+            elec = add(elec, auxElec, byDay);
+
+            let gas = [0, 0, 0];
+            gas = add(gas, d.baseGasHeat * fG, mix);
+            gas = add(gas, (d.monsoonGasCost + d.snowMeltCost) * fG, byDay);
+            gas = add(gas, auxGas, byDay);
+
+            const water = add([0, 0, 0], auxWater, byDay);
+            const days = [H, T, Rr];
+            const keys = ['Home', 'Train', 'Rest'];
+            const put = (k, arr) => {
+                arr.forEach((v, i) => {
+                    document.getElementById(`sch${k}${keys[i]}`).innerText = fmtKRW(v);
+                    document.getElementById(`sch${k}${keys[i]}Day`).innerText = days[i] > 0 ? `일 ${fmtKRW(v / days[i])}` : '-';
+                });
+                document.getElementById(`sch${k}Total`).innerText = fmtKRW(arr[0] + arr[1] + arr[2]);
+            };
+            put('Elec', elec); put('Gas', gas); put('Water', water);
+            const sum = [0, 1, 2].map(i => elec[i] + gas[i] + water[i]);
+            document.getElementById('schSumHome').innerText = fmtKRW(sum[0]);
+            document.getElementById('schSumTrain').innerText = fmtKRW(sum[1]);
+            document.getElementById('schSumRest').innerText = fmtKRW(sum[2]);
+            document.getElementById('schSumTotal').innerText = fmtKRW(sum[0] + sum[1] + sum[2]);
+            document.getElementById('schHomeDays').innerText = `(${H}일)`;
+            document.getElementById('schTrainDays').innerText = `(${T}일)`;
+            document.getElementById('schRestDays').innerText = `(${Rr}일)`;
+        })();
 
         // Update Table
         document.getElementById('tdBaseElec').innerText = fmtKRW(baseElec);
@@ -1229,10 +1333,10 @@
       costBreakdownChart = new Chart(ctxPie, {
         type: 'doughnut',
         data: {
-          labels: ['기본 난방', '제습재열', '제설 융설', '여름 냉방', '24h 송풍', '야구장 조명', '환기/공조'],
+          labels: ['기본 난방', '제습재열', '제설 융설', '여름 냉방', '24h 송풍·공조', '조명·기타'],
           datasets: [{
             data: [1, 1, 1, 1, 1, 1, 1],
-            backgroundColor: ['#f59e0b', '#0d9488', '#06b6d4', '#2563eb', '#4f46e5', '#eab308', '#059669'],
+            backgroundColor: ['#2563eb', '#0d9488', '#06b6d4', '#f59e0b', '#4f46e5', '#eab308'],
             borderWidth: 2, borderColor: '#ffffff'
           }]
         },
@@ -1245,8 +1349,8 @@
         data: {
           labels: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'],
           datasets: [
-            { label: '전기요금', data: new Array(12).fill(0), backgroundColor: '#3b82f6', borderRadius: 4 },
-            { label: '가스요금', data: new Array(12).fill(0), backgroundColor: '#f59e0b', borderRadius: 4 }
+            { label: '전기요금', data: new Array(12).fill(0), backgroundColor: '#f59e0b', borderRadius: 4 },
+            { label: '가스요금', data: new Array(12).fill(0), backgroundColor: '#3b82f6', borderRadius: 4 }
           ]
         },
         options: {
@@ -1265,8 +1369,8 @@
           data: {
               labels: ['주경기장(에어돔)', '신축 부대시설(운영/숙소)'],
               datasets: [
-                  { label: '전기요금', data: [0, 0], backgroundColor: '#3b82f6', stack: 'Stack 0', borderRadius: 4 },
-                  { label: '가스요금', data: [0, 0], backgroundColor: '#f59e0b', stack: 'Stack 0', borderRadius: 4 },
+                  { label: '전기요금', data: [0, 0], backgroundColor: '#f59e0b', stack: 'Stack 0', borderRadius: 4 },
+                  { label: '가스요금', data: [0, 0], backgroundColor: '#3b82f6', stack: 'Stack 0', borderRadius: 4 },
                   { label: '수도요금', data: [0, 0], backgroundColor: '#06b6d4', stack: 'Stack 0', borderRadius: 4 }
               ]
           },
@@ -1287,7 +1391,7 @@
 
       costBreakdownChart.data.datasets[0].data = [
         d.baseGasHeat, d.monsoonGasCost, (d.snowMeltCost + d.costSnowElec),
-        d.costCooling, d.costInflationElec, d.costLighting, d.costVentAndAux
+        d.costCooling, d.costInflationElec, d.costLighting + d.costAuxElec
       ];
       costBreakdownChart.update();
 
@@ -1295,13 +1399,14 @@
       const coolW = [0, 0, 0, 0, 0.05, 0.20, 0.38, 0.32, 0.05, 0, 0, 0];
       const monW = [0, 0, 0, 0, 0, 0.05, 0.60, 0.35, 0, 0, 0, 0];
 
-      const baseElec = (d.costInflationElec + d.costLighting + d.costVentAndAux) / 12;
+      const baseElec = (d.costLighting + d.costAuxElec) / 12;
       const wGas = d.baseGasHeat + d.snowMeltCost;
+      const fanElecMonthly = (d.costInflationElec + d.costSnowElec) / 12;
 
       const mGasData = [], mElecData = [];
       for (let m = 0; m < 12; m++) {
         mGasData.push(Math.round((wGas * gasW[m]) + (d.monsoonGasCost * monW[m])));
-        mElecData.push(Math.round(baseElec + (d.costCooling * coolW[m])));
+        mElecData.push(Math.round(baseElec + fanElecMonthly + (d.costCooling * coolW[m])));
       }
       monthlyTrendChart.data.datasets[0].data = mElecData;
       monthlyTrendChart.data.datasets[1].data = mGasData;
@@ -1309,88 +1414,10 @@
     }
 
     // ==========================================
-    // EXCEL EXPORT (TAB 1)
-    // ==========================================
-    function generateAndDownloadExcel() {
-      if (!currentCalc) runSimulation();
-      const wb = XLSX.utils.book_new();
-
-      const wsEngineData = [
-        ['에어돔 시뮬레이션 인터랙티브 계산 엔진 (엑셀 수식 연동 시트)'],
-        ['※ 회색 셀의 숫자를 변경하면 엑셀 수식에 의해 비용이 자동 갱신됩니다.'],
-        [''],
-        ['1. 입력 매개변수 (Input Parameters)', '', '값', '단위', '비고'],
-        ['에어돔 가로 길이 (Length)', '', state.length, 'm', '설계값'],
-        ['에어돔 세로 폭 (Width)', '', state.width, 'm', '설계값'],
-        ['에어돔 최고 높이 (Height)', '', state.height, 'm', '선택값'],
-        ['바닥 면적 (Area)', '', null, 'm²', '=C5*C6'],
-        ['인천 돔구장 체적 (Volume)', '', null, 'm³', '=ROUND(C8*C7*(8/15),0)'],
-        ['체적 정비례 스케일 배수', '', null, '배', '=ROUND(C9/124800,2)'],
-        ['지역 기후 가중치 (Weather)', '', state.weatherFactor, '배', '인천 해안풍 보정'],
-        ['겨울철 혹한일수', '', state.coldWaveDays, '일/년', '피크 난방 보정'],
-        ['실내 난방 목표온도', '', state.targetHeatTemp, '℃', '난방 설정'],
-        ['장마 및 집중제습 일수', '', state.monsoonDays, '일/년', '습도 50% 유지'],
-        ['홈경기 일수 (10시간 가동)', '', state.homeGameDays, '일', '조명,냉난방 비례'],
-        ['훈련 일수 (8시간 가동)', '', state.trainingDays, '일', '조명,냉난방 비례'],
-        ['운영 가동률 (Op Factor)', '', null, '비율', '=MAX(0.2,(C15*10+C16*8)/3000)'],
-        ['난방 유닛 대수', '', state.heatingUnits, '대', '기준 2대'],
-        ['냉방 유닛 대수', '', state.coolingUnits, '대', '기준 5대'],
-        ['가압 송풍기 대수', '', state.blowerUnits, '대', '기준 2대 (24h)'],
-        ['공조기 대수', '', state.hvacUnits, '대', '기준 8대'],
-        ['야구장 LED 수량', '', state.fixtureCount, '개', '조명 개수'],
-        ['LED 1개당 소비전력', '', state.ledFixtureWatts, 'W', '조명 출력'],
-        ['주출입구 (회전문)', '', state.mainDoors, '개소', '누기 연동'],
-        ['비상출입구 (패닉도어)', '', state.exitDoors, '개소', '누기 연동'],
-        ['겨울철 제설(융설) 가동일', '', state.snowDays, '일/년', '평년 22일 기준'],
-        ['전기 단위 단가', '', 145, '원/kWh', '고압 환산치'],
-        [''],
-        ['2. 부문별 비용 산출 (Formula Results)', '', '계산값', '', '비고'],
-        ['① 동절기 난방 가스비', '', null, '=ROUND(67000000*C10*C11*(IF(C13=15,0.8,IF(C13=21,1.25,1)))*0.82*(C18/2)*(1+(C12/120)*0.52)*(0.4+0.6*C17),0)', '가스 100%'],
-        ['② 제습 재열난방 가스비', '', null, '=ROUND(C14*360000*C10*(14/14)*MAX(0.7,C18*0.425),0)', '가스'],
-        ['③ 제설 승온 가스비', '', null, '=ROUND(C26*(1450000*(C8/19600)*C11)*MAX(0.7,C18*0.425),0)', '가스'],
-        ['④ 24h 송풍 전기료', '', null, '=ROUND(((1.732*380*90*0.86)/1000)*(C20/2)*8760*C27*(1+(C12/365)*0.15),0)', '전기 (100%가동)'],
-        ['⑤ 하절기 냉방기 전기료', '', null, '=ROUND(((C19/5)*210*1.15*1.4*(90*8)*0.75*C17+C14*(((C19/5)*210*1.15*1.4)*0.32*14))*C27*1.15,0)', '전기 (Op Factor)'],
-        ['⑥ KBO 스포츠 조명 전기료', '', null, '=ROUND(((C22*C23)/1000)*(C15*5+C16*4)*C27,0)', '전기 (경기+훈련시간)'],
-        ['⑦ 공조 및 환기 전기료', '', null, `=ROUND((${state.hvacMotorKW}*C21*(365*12)*C17+25000)*C27,0)`, '전기 (Op Factor)'],
-        ['⑧ 제설 송풍 할증 전기료', '', null, '=ROUND(C26*(((1.732*380*90*0.86)/1000)*0.35*24*C27),0)', '전기'],
-        [''],
-        ['3. 최종 합산 연간 운영 예산', '', '', '', ''],
-        ['전기요금 원가 합계', '', null, '=SUM(C33:C37)', '원'],
-        ['도시가스 원가 합계', '', null, '=SUM(C30:C32)', '원'],
-        ['연간 총 운영비용', '', null, '=C40+C41', '원']
-      ];
-
-      const wsEngine = XLSX.utils.aoa_to_sheet(wsEngineData);
-      
-      wsEngine['C8'] = {t:'n', f:'C5*C6'}; wsEngine['C9'] = {t:'n', f:'ROUND(C8*C7*(8/15),0)'};
-      wsEngine['C10'] = {t:'n', f:'ROUND(C9/124800,2)'}; wsEngine['C17'] = {t:'n', f:'MAX(0.2,(C15*10+C16*8)/3000)'};
-      
-      wsEngine['C30'] = {t:'n', f:'ROUND(67000000*C10*C11*(IF(C13=15,0.8,IF(C13=21,1.25,1)))*0.82*(C18/2)*(1+(C12/120)*0.52)*(0.4+0.6*C17),0)'};
-      wsEngine['C31'] = {t:'n', f:'ROUND(C14*360000*C10*(14/14)*MAX(0.7,C18*0.425),0)'};
-      wsEngine['C32'] = {t:'n', f:'ROUND(C26*(1450000*(C8/19600)*C11)*MAX(0.7,C18*0.425),0)'};
-      wsEngine['C33'] = {t:'n', f:'ROUND(((1.732*380*90*0.86)/1000)*(C20/2)*8760*C27*(1+(C12/365)*0.15),0)'};
-      wsEngine['C34'] = {t:'n', f:'ROUND(((C19/5)*210*1.15*1.4*(90*8)*0.75*C17+C14*(((C19/5)*210*1.15*1.4)*0.32*14))*C27*1.15,0)'};
-      wsEngine['C35'] = {t:'n', f:'ROUND(((C22*C23)/1000)*(C15*5+C16*4)*C27,0)'};
-      wsEngine['C36'] = {t:'n', f:`ROUND((${state.hvacMotorKW}*C21*(365*12)*C17+25000)*C27,0)`};
-      wsEngine['C37'] = {t:'n', f:'ROUND(C26*(((1.732*380*90*0.86)/1000)*0.35*24*C27),0)'};
-      wsEngine['C40'] = {t:'n', f:'SUM(C33:C37)'}; wsEngine['C41'] = {t:'n', f:'SUM(C30:C32)'};
-      wsEngine['C42'] = {t:'n', f:'C40+C41'};
-
-      XLSX.utils.book_append_sheet(wb, wsEngine, '시뮬레이션_계산엔진');
-      const dateStr = new Date().toISOString().slice(0, 10);
-      XLSX.writeFile(wb, `인천_영종도_에어돔_통합운영비용_시뮬레이션_${dateStr}.xlsx`);
-    }
-
-    // ==========================================
     // EVENT LISTENERS
     // ==========================================
     function setupEventListeners() {
       // Modals and Headers
-      document.getElementById('btnDownloadExcel').addEventListener('click', generateAndDownloadExcel);
-      const modal = document.getElementById('excelGuideModal');
-      document.getElementById('btnToggleExcelGuide').addEventListener('click', () => modal.classList.remove('hidden'));
-      document.getElementById('btnCloseExcelGuide').addEventListener('click', () => modal.classList.add('hidden'));
-      document.getElementById('btnModalClose').addEventListener('click', () => modal.classList.add('hidden'));
       document.getElementById('btnReset').addEventListener('click', () => location.reload());
 
       // TAB 1: Dome Listeners
@@ -1398,10 +1425,9 @@
         btn.addEventListener('click', () => {
           const t = btn.getAttribute('data-target');
           const d = parseInt(btn.getAttribute('data-delta'), 10);
-          if (t === 'heatingUnits') state.heatingUnits = Math.max(1, Math.min(6, state.heatingUnits + d));
-          if (t === 'coolingUnits') state.coolingUnits = Math.max(1, Math.min(12, state.coolingUnits + d));
-          if (t === 'blowerUnits') state.blowerUnits = Math.max(1, Math.min(6, state.blowerUnits + d));
-          if (t === 'hvacUnits') state.hvacUnits = Math.max(2, Math.min(16, state.hvacUnits + d));
+          if (t === 'heatingUnits') state.heatingUnits = Math.max(1, Math.min(20, state.heatingUnits + d));
+          if (t === 'coolingUnits') state.coolingUnits = Math.max(1, Math.min(20, state.coolingUnits + d));
+          if (t === 'fanUnits') state.fanUnits = Math.max(1, Math.min(12, state.fanUnits + d));
           runSimulation();
         });
       });
@@ -1433,7 +1459,6 @@
       inpHome.addEventListener('input', updateDays);
       inpTrain.addEventListener('input', updateDays);
       
-      document.getElementById('selVentFactor').addEventListener('change', (e) => { state.ventCMHPerPerson = parseInt(e.target.value, 10); runSimulation(); });
       document.getElementById('inputWeatherFactor').addEventListener('input', (e) => { state.weatherFactor = parseFloat(e.target.value); runSimulation(); });
       document.getElementById('inputColdDays').addEventListener('input', (e) => { state.coldWaveDays = parseInt(e.target.value, 10); runSimulation(); });
       document.getElementById('inputSnowDays').addEventListener('input', (e) => { state.snowDays = parseInt(e.target.value, 10); runSimulation(); });
@@ -1445,8 +1470,20 @@
       document.getElementById('selMembraneType').addEventListener('change', (e) => { state.membraneFactor = parseFloat(e.target.value); runSimulation(); });
       document.getElementById('inputMainDoors').addEventListener('input', (e) => { state.mainDoors = parseInt(e.target.value, 10) || 1; runSimulation(); });
       document.getElementById('inputExitDoors').addEventListener('input', (e) => { state.exitDoors = parseInt(e.target.value, 10) || 4; runSimulation(); });
-      document.getElementById('inputElecRate').addEventListener('input', (e) => { state.elecRatePct = parseInt(e.target.value, 10); runSimulation(); });
-      document.getElementById('inputGasRate').addEventListener('input', (e) => { state.gasRatePct = parseInt(e.target.value, 10); runSimulation(); });
+      // 연도별 인상률 → 복리 누적 인상률(%)로 환산해 기존 산식(elecRatePct/gasRatePct)에 그대로 연결
+      function updateCumulativeRates() {
+        let fe = 1, fg = 1;
+        document.querySelectorAll('.rate-inp').forEach(inp => {
+          const v = parseFloat(inp.value);
+          const r = isFinite(v) ? v : 0;
+          if (inp.dataset.kind === 'elec') fe *= (1 + r / 100); else fg *= (1 + r / 100);
+        });
+        state.elecRatePct = (fe - 1) * 100;
+        state.gasRatePct = (fg - 1) * 100;
+        runSimulation();
+      }
+      document.querySelectorAll('.rate-inp').forEach(inp => inp.addEventListener('input', updateCumulativeRates));
+      updateCumulativeRates();
       document.getElementById('inputFixtureCount').addEventListener('input', (e) => { state.fixtureCount = parseInt(e.target.value, 10); runSimulation(); });
       document.getElementById('selLedFixtureWatt').addEventListener('change', (e) => { state.ledFixtureWatts = parseInt(e.target.value, 10); runSimulation(); });
 
@@ -1455,8 +1492,7 @@
       document.getElementById('inpNewArea').addEventListener('input', runSimulation);
       document.getElementById('inpBaseUsers').addEventListener('input', runSimulation);
       document.getElementById('inpNewUsers').addEventListener('input', runSimulation);
-      document.getElementById('chkShowers').addEventListener('change', runSimulation);
-      document.getElementById('inpEco').addEventListener('input', runSimulation);
+      document.querySelectorAll('.aux-rate-inp').forEach(inp => inp.addEventListener('input', runSimulation));
     }
 
     // Initialize
@@ -1466,5 +1502,7 @@
       runSimulation();
     };
   </script>
-</body>
-</html>
+
+</div>
+
+</body></html>
