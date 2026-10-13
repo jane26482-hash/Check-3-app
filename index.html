@@ -136,7 +136,7 @@
               </tr>
               <tr class="hover:bg-slate-50 transition-colors">
                 <th class="w-1/3 py-3 px-5 text-slate-500 font-semibold bg-slate-50/50">내부설비</th>
-                <td class="w-2/3 py-3 px-5 text-slate-900 font-bold">일체형 공조기 2대, 이중필터</td>
+                <td class="w-2/3 py-3 px-5 text-slate-900 font-bold leading-snug">일체형 공조기 2대, 이중필터<br><span class="text-slate-500 font-normal text-[11px]">*비상용발전기 有(등유사용)</span></td>
               </tr>
               <tr class="hover:bg-slate-50 transition-colors">
                 <th class="w-1/3 py-3 px-5 text-slate-500 font-semibold bg-slate-50/50">운영시간</th>
@@ -294,7 +294,7 @@
             </tr>
             <tr class="hover:bg-slate-50">
               <td class="py-3 px-4 font-bold text-slate-800">공조 및 송풍 장비</td>
-              <td class="py-3 px-4">일체형 공조기 2대</td>
+              <td class="py-3 px-4 leading-snug">일체형 공조기 2대<br><span class="text-slate-500 font-normal text-[10px]">*비상용발전기 有(등유사용)</span></td>
               <td class="py-3 px-4 bg-yellow-50/50 text-slate-800" id="tblSpecEquip">설비 연동</td>
               <td class="py-3 px-4 font-mono text-slate-700" id="tblSpecEquipRatio">장비 대수 운전</td>
               <td class="py-3 px-4">난방(도시가스) 및 냉방·송풍·공조(전기) 분리 운전</td>
@@ -377,7 +377,7 @@
         <h3 class="font-bold text-slate-700 flex items-center gap-1.5"><i data-lucide="zap-off" class="w-4 h-4 text-blue-600"></i> 설비별 전력/가스 소모원 매핑</h3>
         <div class="flex gap-4">
             <span class="flex items-center gap-1"><span class="px-1.5 py-0.5 rounded bg-blue-600 text-white font-bold text-[10px]">전기 100%</span> 냉방유닛, 가압송풍기, 공조기, LED조명</span>
-            <span class="flex items-center gap-1"><span class="px-1.5 py-0.5 rounded bg-amber-500 text-white font-bold text-[10px]">가스 92%</span> 난방유닛 (버너+송풍결합)</span>
+            <span class="flex items-center gap-1"><span class="px-1.5 py-0.5 rounded bg-amber-500 text-white font-bold text-[10px]">가스 100%</span> 난방유닛 (도시가스 100%)</span>
         </div>
     </div>
 
@@ -441,8 +441,9 @@
           <div class="flex justify-between items-center text-[11px]">
             <span class="font-semibold text-slate-600">관람객 외기 환기 기준 (홈경기)</span>
             <select id="selVentFactor" class="bg-white border border-slate-300 rounded p-0.5 font-medium">
-              <option value="25">25 CMH/인</option>
-              <option value="40" selected>40 CMH/인 (도쿄돔 만석)</option>
+              <option value="25">25 CMH/인 (국내 법정기준)</option>
+              <option value="30">30 CMH/인 (일본 법정기준)</option>
+              <option value="40" selected>40 CMH/인 (도쿄돔 만석기준)</option>
             </select>
           </div>
         </div>
@@ -453,6 +454,9 @@
             <span class="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[11px] font-bold">3</span>
             기후 보정 및 영종도 적설일수
           </label>
+          <p class="text-[10px] text-slate-500 mb-3 leading-tight bg-slate-50 p-2 rounded border border-slate-100">
+            <b>기준 근거:</b> 기상청 기후평년값(최근 10년) 기준, 경주(내륙) 대비 영종도(해안가)의 <b>해풍에 의한 대류열손실 증가 및 난방도일(HDD) 차이를 1.18배 가중치</b>로 반영했습니다. 혹한일 16일 및 적설일 22일 역시 인천 기상관측소의 평년 데이터 기준치입니다.
+          </p>
           <div class="space-y-3">
             <div>
               <div class="flex justify-between text-[11px] text-slate-600 mb-1">
@@ -486,6 +490,9 @@
             <span class="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[11px] font-bold">4</span>
             공조·냉난방 설비 설치 대수
           </label>
+          <p class="text-[10px] text-slate-500 mb-3 leading-tight bg-slate-50 p-2 rounded border border-slate-100">
+            <b>운영 기준:</b> <b>냉방</b>은 여름철 실내 26℃, <b>난방</b>은 겨울철 18℃ 유지를 목표로 합니다. <b>송풍</b>은 에어돔 구조 유지를 위한 내부 기압 250Pa (비상 600Pa) 가압이 목적이며, <b>공조</b>는 실내 공기질 확보(관람객 40CMH/인 환기량)를 기준으로 스펙이 설정됩니다.
+          </p>
           <div class="grid grid-cols-4 gap-2 mb-2">
             <div class="bg-amber-50 p-1.5 rounded border border-amber-200 text-center">
               <span class="text-[10px] font-bold text-amber-900 block mb-1">난방(가스)</span>
@@ -522,21 +529,22 @@
           </div>
           <div class="grid grid-cols-2 gap-2 text-[11px]">
             <select id="selTargetHeatTemp" class="bg-white border border-slate-200 rounded p-1">
-              <option value="15">난방 15℃ (절약)</option>
-              <option value="18" selected>난방 18℃ (표준)</option>
-              <option value="21">난방 21℃ (쾌적)</option>
+              <option value="15">난방 15℃ (절약/훈련용)</option>
+              <option value="18" selected>난방 18℃ (표준 경기용)</option>
+              <option value="21">난방 21℃ (유관중/쾌적 최대)</option>
             </select>
             <select id="selAcLoadFactor" class="bg-white border border-slate-200 rounded p-1">
-              <option value="0.5">냉방 부하 50%</option>
-              <option value="0.75" selected>냉방 부하 75%</option>
+              <option value="0.5">냉방 부하 50% (실내 28℃ 절전)</option>
+              <option value="0.75" selected>냉방 부하 75% (실내 26℃ 표준)</option>
             </select>
             <select id="selBlowerAmps" class="bg-white border border-slate-200 rounded p-1">
-              <option value="75">송풍 75A 절전</option>
-              <option value="90" selected>송풍 90A 표준가압</option>
+              <option value="75">송풍 75A (내부기압 150Pa)</option>
+              <option value="90" selected>송풍 90A (내부기압 250Pa 표준)</option>
             </select>
             <select id="selHvacSpec" class="bg-white border border-slate-200 rounded p-1">
-              <option value="3.7">공조 3.7kW 모터</option>
-              <option value="5.5" selected>공조 5.5kW 모터</option>
+              <option value="3.7">공조 3.7kW (국내 법정 25CMH)</option>
+              <option value="4.5">공조 4.5kW (일본 법정 30CMH)</option>
+              <option value="5.5" selected>공조 5.5kW (도쿄돔 40CMH)</option>
             </select>
           </div>
         </div>
@@ -758,7 +766,7 @@
 
       // Gas (Heating)
       // Applying operationFactor to Heating (40% structural baseline, 60% operational load)
-      const baseGasHeat = (GYEONGJU.gasCost * 0.88) * effectiveLoadScale * state.weatherFactor * heatingTempMultiplier * state.membraneFactor * doorGasInfiltrationMultiplier * heatUnitScale * coldWaveLoadFactor * (0.4 + 0.6 * operationFactor);
+      const baseGasHeat = GYEONGJU.gasCost * effectiveLoadScale * state.weatherFactor * heatingTempMultiplier * state.membraneFactor * doorGasInfiltrationMultiplier * heatUnitScale * coldWaveLoadFactor * (0.4 + 0.6 * operationFactor);
       
       const snowMeltCost = state.snowDays * (1450000 * (fieldArea / 19600) * state.weatherFactor) * Math.max(0.7, heatUnitScale * 0.85);
       const audienceGasWinter = state.homeGameDays * (1000 * state.ventCMHPerPerson * 0.45 * (state.weatherFactor - 0.8) * 12 / 30) * Math.max(0.6, hvacUnitScale);
@@ -983,13 +991,13 @@
         ['전기 단위 단가', '', 145, '원/kWh', '고압 환산치'], // C27
         [''],
         ['2. 부문별 비용 산출 (Formula Results)', '', '계산값', '', '비고'],
-        ['① 동절기 난방 가스비', '', null, '=ROUND((67000000*0.88)*C10*C11*(IF(C13=15,0.8,IF(C13=21,1.25,1)))*0.82*(C18/2)*(1+(C12/120)*0.52)*(0.4+0.6*C17),0)', '가스'], // C30
+        ['① 동절기 난방 가스비', '', null, '=ROUND(67000000*C10*C11*(IF(C13=15,0.8,IF(C13=21,1.25,1)))*0.82*(C18/2)*(1+(C12/120)*0.52)*(0.4+0.6*C17),0)', '가스 100%'], // C30
         ['② 제습 재열난방 가스비', '', null, '=ROUND(C14*360000*C10*(14/14)*MAX(0.7,C18*0.425),0)', '가스'], // C31
         ['③ 제설 승온 가스비', '', null, '=ROUND(C26*(1450000*(C8/19600)*C11)*MAX(0.7,C18*0.425),0)', '가스'], // C32
         ['④ 24h 송풍 전기료', '', null, '=ROUND(((1.732*380*90*0.86)/1000)*(C20/2)*8760*C27*(1+(C12/365)*0.15),0)', '전기 (100%가동)'], // C33
         ['⑤ 하절기 냉방기 전기료', '', null, '=ROUND(((C19/5)*210*1.15*1.4*(90*8)*0.75*C17+C14*(((C19/5)*210*1.15*1.4)*0.32*14))*C27*1.15,0)', '전기 (Op Factor)'], // C34
         ['⑥ KBO 스포츠 조명 전기료', '', null, '=ROUND(((C22*C23)/1000)*(C15*5+C16*4)*C27,0)', '전기 (경기+훈련시간)'], // C35
-        ['⑦ 공조 및 환기 전기료', '', null, '=ROUND((5.5*C21*(365*12)*C17+25000)*C27,0)', '전기 (Op Factor)'], // C36
+        ['⑦ 공조 및 환기 전기료', '', null, `=ROUND((${state.hvacMotorKW}*C21*(365*12)*C17+25000)*C27,0)`, '전기 (Op Factor)'], // C36
         ['⑧ 제설 송풍 할증 전기료', '', null, '=ROUND(C26*(((1.732*380*90*0.86)/1000)*0.35*24*C27),0)', '전기'], // C37
         [''],
         ['3. 최종 합산 연간 운영 예산', '', '', '', ''],
@@ -1003,13 +1011,13 @@
       wsEngine['C8'] = {t:'n', f:'C5*C6'}; wsEngine['C9'] = {t:'n', f:'ROUND(C8*C7*(8/15),0)'};
       wsEngine['C10'] = {t:'n', f:'ROUND(C9/124800,2)'}; wsEngine['C17'] = {t:'n', f:'MAX(0.2,(C15*10+C16*8)/3000)'};
       
-      wsEngine['C30'] = {t:'n', f:'ROUND((67000000*0.88)*C10*C11*(IF(C13=15,0.8,IF(C13=21,1.25,1)))*0.82*(C18/2)*(1+(C12/120)*0.52)*(0.4+0.6*C17),0)'};
+      wsEngine['C30'] = {t:'n', f:'ROUND(67000000*C10*C11*(IF(C13=15,0.8,IF(C13=21,1.25,1)))*0.82*(C18/2)*(1+(C12/120)*0.52)*(0.4+0.6*C17),0)'};
       wsEngine['C31'] = {t:'n', f:'ROUND(C14*360000*C10*(14/14)*MAX(0.7,C18*0.425),0)'};
       wsEngine['C32'] = {t:'n', f:'ROUND(C26*(1450000*(C8/19600)*C11)*MAX(0.7,C18*0.425),0)'};
       wsEngine['C33'] = {t:'n', f:'ROUND(((1.732*380*90*0.86)/1000)*(C20/2)*8760*C27*(1+(C12/365)*0.15),0)'};
       wsEngine['C34'] = {t:'n', f:'ROUND(((C19/5)*210*1.15*1.4*(90*8)*0.75*C17+C14*(((C19/5)*210*1.15*1.4)*0.32*14))*C27*1.15,0)'};
       wsEngine['C35'] = {t:'n', f:'ROUND(((C22*C23)/1000)*(C15*5+C16*4)*C27,0)'};
-      wsEngine['C36'] = {t:'n', f:'ROUND((5.5*C21*(365*12)*C17+25000)*C27,0)'};
+      wsEngine['C36'] = {t:'n', f:`ROUND((${state.hvacMotorKW}*C21*(365*12)*C17+25000)*C27,0)`};
       wsEngine['C37'] = {t:'n', f:'ROUND(C26*(((1.732*380*90*0.86)/1000)*0.35*24*C27),0)'};
       wsEngine['C40'] = {t:'n', f:'SUM(C33:C37)'}; wsEngine['C41'] = {t:'n', f:'SUM(C30:C32)'};
       wsEngine['C42'] = {t:'n', f:'C40+C41'};
