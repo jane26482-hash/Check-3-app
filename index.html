@@ -89,7 +89,7 @@
           <div class="flex items-center gap-3 mb-1.5">
             <span class="px-2.5 py-0.5 bg-slate-600 text-white text-[11px] font-bold rounded-md">기준치 (고정)</span>
           </div>
-          <h2 class="text-xl font-black text-slate-900 tracking-tight">경주 스마트에어돔 <span class="text-xs font-semibold text-slate-500 tracking-normal">*25년 수도광열비 실적 반영</span></h2>
+          <h2 class="text-xl font-black text-slate-900 tracking-tight">경주 스마트에어돔 <span class="text-xs font-medium text-slate-500 tracking-normal align-middle">*25년 수도광열비 실적 반영</span></h2>
         </div>
         
         <div class="flex-grow">
@@ -269,7 +269,7 @@
               <td class="py-3 px-4 leading-snug">냉방2 난방2 송풍·공조2<br><span class="text-slate-500 font-normal text-[10px]">*비상용발전기 有(등유사용)</span></td>
               <td class="py-3 px-4 bg-yellow-50/50 text-slate-800 leading-snug" id="tblSpecEquip">냉방10 난방10 송풍·공조6<br><span class="text-slate-500 font-normal text-[10px]">*비상용발전기 有</span></td>
               <td class="py-3 px-4 font-mono text-slate-700" id="tblSpecEquipRatio">장비 대수 운전</td>
-              <td class="py-3 px-4">냉방·송풍·공조(전기) / 난방(도시가스) 분리 운전</td>
+              <td class="py-3 px-4">송풍·공조(전기) / 냉방·난방(도시가스) 분리 운전</td>
             </tr>
             <tr class="hover:bg-slate-50">
               <td class="py-3 px-4 font-bold text-slate-800">스포츠 조명 스펙</td>
@@ -322,7 +322,7 @@
             <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#2563eb]"></span>기본 난방(가스)</div>
             <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#0d9488]"></span>제습재열(가스)</div>
             <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#06b6d4]"></span>융설(가스)</div>
-            <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#f59e0b]"></span>여름 냉방(전기)</div>
+            <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#f59e0b]"></span>여름 냉방(가스)</div>
             <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#4f46e5]"></span>24h 송풍·공조(전기)</div>
             <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#eab308]"></span>조명(전기)</div>
         </div>
@@ -345,8 +345,8 @@
     <div class="mb-6 bg-slate-100 rounded-xl border border-slate-200 p-3 flex flex-wrap items-center justify-between gap-4 text-xs shadow-inner">
         <h3 class="font-bold text-slate-700 flex items-center gap-1.5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="zap-off" aria-hidden="true" class="lucide lucide-zap-off w-4 h-4 text-blue-600"><path d="M10.768 5.111 13.44 2.44a1.5 1.5 0 012.474 1.561l-1.633 4.625"></path><path d="m18.889 13.232.672-.672A1.5 1.5 0 0018.5 10h-2.844"></path><path d="m2 2 20 20"></path><path d="m7.94 7.94-3.5 3.499A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l5.5-5.5"></path></svg> 설비별 전력/가스 소모원 매핑</h3>
         <div class="flex gap-4">
-            <span class="flex items-center gap-1"><span class="whitespace-nowrap px-1.5 py-0.5 rounded bg-amber-500 text-white font-bold text-[10px]">전기 100%</span> 냉방유닛, 송풍·공조기, LED조명</span>
-            <span class="flex items-center gap-1"><span class="whitespace-nowrap px-1.5 py-0.5 rounded bg-blue-600 text-white font-bold text-[10px]">가스 100%</span> 난방기 (도시가스)</span>
+            <span class="flex items-center gap-1"><span class="whitespace-nowrap px-1.5 py-0.5 rounded bg-amber-500 text-white font-bold text-[10px]">전기 100%</span> 송풍·공조기, LED조명</span>
+            <span class="flex items-center gap-1"><span class="whitespace-nowrap px-1.5 py-0.5 rounded bg-blue-600 text-white font-bold text-[10px]">가스 100%</span> 냉방기·난방기 (도시가스)</span>
         </div>
     </div>
 
@@ -451,7 +451,7 @@
           </label>
           <div class="grid grid-cols-3 gap-2 mb-2">
             <div class="bg-amber-50 p-1.5 rounded border border-amber-200 text-center">
-              <span class="text-[10px] font-bold text-amber-900 block mb-1">냉방(전기)</span>
+              <span class="text-[10px] font-bold text-amber-900 block mb-1">냉방(가스)</span>
               <div class="flex items-center justify-center gap-1">
                 <button type="button" class="btn-qty w-5 h-5 rounded bg-amber-200 text-amber-900 font-bold" data-target="coolingUnits" data-delta="-1">-</button>
                 <span class="whitespace-nowrap font-extrabold text-[11px] w-5" id="valCoolingUnits">10</span>
@@ -731,7 +731,7 @@
                 <div class="bg-emerald-50 border-b border-emerald-100 px-4 py-3 flex items-center justify-between">
                     <h3 class="font-bold text-emerald-900 flex items-center gap-2 text-sm">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="file-spreadsheet" aria-hidden="true" class="lucide lucide-file-spreadsheet w-4 h-4 text-emerald-600"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"></path><path d="M14 2v5a1 1 0 0 0 1 1h5"></path><path d="M8 13h2"></path><path d="M14 13h2"></path><path d="M8 17h2"></path><path d="M14 17h2"></path></svg>
-                        STEP 1. 전년도(2025년) 강화 2군 훈련장 수도광열비 실적
+                        STEP 1. 2025년 강화SSG퓨처스필드 수도광열비 실적
                     </h3>
                 </div>
                 <div class="p-4 overflow-x-auto custom-scrollbar">
@@ -1032,25 +1032,24 @@
     // ==========================================
     // MAIN SIMULATION LOGIC
     // ==========================================
-    // 경주 2025 월별 실적 분해
-    //  - 전기 기저 = 최저월(5월) × 12 → 송풍·공조 24h + 조명 + 기타
-    //  - 조명 = 55kW × 연 3,432h(평일 12h·주말 9h, 월요일 휴관) × 145원
-    //  - 냉방 = 6~10월 기저 초과분 / 동절기 증가분(11~4월) = 난방 모드 송풍·공조 가동분
-    //  - 가스: 11~5월 = 난방, 6~10월 = 제습재열
+    // 경주 2025 월별 실적 분해 (경주: 냉방·난방 = 가스 / 송풍·공조·조명 = 전기)
+    //  - 전기: 조명 = 55kW × 연 3,432h(평일 12h·주말 9h, 월요일 휴관) × 145원, 나머지 = 송풍·공조(24h)
+    //  - 가스: 11~5월 = 난방 / 6~10월 = 냉방 + 장마철 제습재열
+    //          6~10월 가스 중 제습재열 몫 = 고습일수 32일 ÷ 6~10월 153일 (일수 비례 가정)
     function decomposeGyeongju() {
       const e = GYEONGJU.monthlyElec, g = GYEONGJU.monthlyGas;
-      const base = Math.min(...e);
       const summer = [5, 6, 7, 8, 9];             // 6~10월 (0-index)
-      let elecCool = 0, elecWinter = 0, gasReheat = 0, gasHeat = 0;
+      let gasSummer = 0, gasHeat = 0;
       for (let m = 0; m < 12; m++) {
-        const over = Math.max(0, e[m] - base);
-        if (summer.includes(m)) { elecCool += over; gasReheat += g[m]; }
-        else { elecWinter += over; gasHeat += g[m]; }
+        if (summer.includes(m)) gasSummer += g[m]; else gasHeat += g[m];
       }
-      const elecBase = base * 12;
-      const elecLighting = Math.min(elecBase, 55 * 3432 * 145);
-      const elecFan = (elecBase - elecLighting) + elecWinter;
-      return { base, elecBase, elecLighting, elecFan, elecCool, elecWinter, gasHeat, gasReheat };
+      const REHEAT_SHARE = 32 / 153;
+      const gasReheat = gasSummer * REHEAT_SHARE;
+      const gasCool = gasSummer - gasReheat;
+      const elecTotal = e.reduce((a, b) => a + b, 0);
+      const elecLighting = Math.min(elecTotal, 55 * 3432 * 145);
+      const elecFan = elecTotal - elecLighting;
+      return { elecTotal, elecLighting, elecFan, gasHeat, gasCool, gasReheat, gasSummer };
     }
 
     function runSimulation() {
@@ -1082,10 +1081,10 @@
       const coldWaveLoadFactor = 1.0 + (state.coldWaveDays / 120) * 0.52;
       const doorGasInfiltrationMultiplier = 1 + (doorLeakageRatio - 1) * 0.12;
 
-      // ===== 경주 2025 실적 분해 (경주: 난방=가스 / 냉방·송풍·공조·조명=전기) =====
+      // ===== 경주 2025 실적 분해 (경주: 냉방·난방=가스 / 송풍·공조·조명=전기) =====
       const gj = decomposeGyeongju();
 
-      // ===== 영종: 난방(가스) / 송풍·공조·냉방·조명(전기) =====
+      // ===== 영종: 냉방·난방(가스) / 송풍·공조·조명(전기) =====
       // (1) 기본 난방: 경주 난방가스(11~5월) × 체적 · 기후 · 설정온도 · 막 단열 · 출입문 · 혹한 · 운영일정 보정
       const baseGasHeat = gj.gasHeat * effectiveLoadScale * state.weatherFactor * heatingTempMultiplier * state.membraneFactor * doorGasInfiltrationMultiplier * heatUnitScale * coldWaveLoadFactor * (0.4 + 0.6 * operationFactor);
 
@@ -1097,25 +1096,25 @@
       const costInflationElec = gj.elecFan * volumeRatio * pressureFactor * hvacSpecFactor * blowerUnitScale * (1 + (doorLeakageRatio - 1) * 0.15);
       const costSnowElec = costInflationElec * (state.snowDays / 365) * 0.35;   // 제설일 송풍 증가분
 
-      // (3) 장마철 제습재열: 경주 여름철 가스(6~10월) × 체적 배수 × (고습일수 / 32일)
+      // (3) 장마철 제습재열: 경주 6~10월 가스 중 제습재열 몫 × 체적 배수 × (고습일수 / 32일)
       const monsoonGasCost = gj.gasReheat * effectiveLoadScale * (state.monsoonDays / 32) * Math.max(0.7, heatUnitScale * 0.85);
       // (4) 융설: 영종 고유 부하 (경주는 연 1~2일 수준)
       const snowMeltCost = state.snowDays * (1450000 * (fieldArea / 19600) * state.weatherFactor) * Math.max(0.7, heatUnitScale * 0.85);
 
       const unitElecRate = 145;
 
-      // ===== 영종 전기 (냉방 + 조명 + 기타) =====
-      // 냉방: 경주 여름철 전기 증가분(6~10월, 기저 초과분) × 체적 배수 × 냉방부하 설정 × 운영일정 × 냉방 대수
-      const costCooling = gj.elecCool * effectiveLoadScale * (state.acLoadFactor / 0.75) * coolUnitScale * (1 + (doorLeakageRatio - 1) * 0.08) * (0.4 + 0.6 * operationFactor);
+      // ===== 냉방 (가스) =====
+      // 경주 6~10월 가스 중 냉방 몫 × 체적 배수 × 냉방부하 설정 × 냉방 대수 × 출입문 × 운영일정
+      const costCooling = gj.gasCool * effectiveLoadScale * (state.acLoadFactor / 0.75) * coolUnitScale * (1 + (doorLeakageRatio - 1) * 0.08) * (0.4 + 0.6 * operationFactor);
       // 조명: 영종 타워조명 사양으로 직접 계산
       const totalLightingHours = (state.homeGameDays * 5) + (state.trainingDays * 4);
       const costLighting = state.lightingPowerKW * totalLightingHours * unitElecRate;
       const costAuxElec = 25000 * unitElecRate; // 기타 보조전력(제어·CCTV 등)
 
-      // 전기: 냉방 + 조명 + 기타 + 송풍·공조(24h) + 제설일 송풍 증가분
-      const totalElec = (costCooling + costLighting + costAuxElec + costInflationElec + costSnowElec) * (1 + state.elecRatePct / 100);
-      // 가스: 난방 + 융설 + 제습재열 + 관람객 외기 가열
-      const totalGas = (baseGasHeat + snowMeltCost + monsoonGasCost) * (1 + state.gasRatePct / 100);
+      // 전기: 송풍·공조(24h) + 제설일 송풍 증가분 + 조명 + 기타
+      const totalElec = (costInflationElec + costSnowElec + costLighting + costAuxElec) * (1 + state.elecRatePct / 100);
+      // 가스: 난방 + 냉방 + 제습재열 + 융설
+      const totalGas = (baseGasHeat + costCooling + monsoonGasCost + snowMeltCost) * (1 + state.gasRatePct / 100);
       const totalAnnualCost = totalElec + totalGas;
 
       currentCalc = {
@@ -1274,11 +1273,10 @@
             let elec = [0, 0, 0];
             elec = add(elec, (d.costInflationElec + d.costSnowElec + d.costAuxElec) * fE, byDay);
             elec = add(elec, d.costLighting * fE, byLight);
-            elec = add(elec, d.costCooling * fE, mix);
             elec = add(elec, auxElec, byDay);
 
             let gas = [0, 0, 0];
-            gas = add(gas, d.baseGasHeat * fG, mix);
+            gas = add(gas, (d.baseGasHeat + d.costCooling) * fG, mix);
             gas = add(gas, (d.monsoonGasCost + d.snowMeltCost) * fG, byDay);
             gas = add(gas, auxGas, byDay);
 
@@ -1405,8 +1403,8 @@
 
       const mGasData = [], mElecData = [];
       for (let m = 0; m < 12; m++) {
-        mGasData.push(Math.round((wGas * gasW[m]) + (d.monsoonGasCost * monW[m])));
-        mElecData.push(Math.round(baseElec + fanElecMonthly + (d.costCooling * coolW[m])));
+        mGasData.push(Math.round((wGas * gasW[m]) + (d.monsoonGasCost * monW[m]) + (d.costCooling * coolW[m])));
+        mElecData.push(Math.round(baseElec + fanElecMonthly));
       }
       monthlyTrendChart.data.datasets[0].data = mElecData;
       monthlyTrendChart.data.datasets[1].data = mGasData;
