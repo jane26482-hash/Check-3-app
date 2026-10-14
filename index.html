@@ -113,7 +113,7 @@
               </tr>
               <tr class="hover:bg-slate-50 transition-colors">
                 <th class="w-1/3 py-3 px-5 text-slate-500 font-semibold bg-slate-50/50">내부설비</th>
-                <td class="w-2/3 py-3 px-5 text-slate-900 font-bold leading-snug">냉방 2대, 난방 2대, 송풍/공조 일체형 2대<br><span class="text-slate-500 font-normal text-[11px]">*비상용발전기 有(등유사용)</span></td>
+                <td class="w-2/3 py-3 px-5 text-slate-900 font-bold leading-snug">냉난방기 2대, 송풍/공조 2대<br><span class="text-slate-500 font-normal text-[11px]">*냉난방기(일체형), 송풍/공조(일체형)<br>*비상용 발전기 有</span></td>
               </tr>
               <tr class="hover:bg-slate-50 transition-colors">
                 <th class="w-1/3 py-3 px-5 text-slate-500 font-semibold bg-slate-50/50">운영시간</th>
@@ -186,7 +186,7 @@
               </tr>
               <tr class="hover:bg-blue-50/40 transition-colors">
                 <th class="w-1/3 py-3 px-5 text-slate-500 font-semibold bg-slate-50/50">내부설비</th>
-                <td class="w-2/3 py-3 px-5 text-blue-900 font-bold leading-snug" id="topResEquip">냉방 10대, 난방 10대, 송풍/공조 일체형 6대<br><span class="text-slate-500 font-normal text-[11px]">*비상용발전기 有</span></td>
+                <td class="w-2/3 py-3 px-5 text-blue-900 font-bold leading-snug" id="topResEquip">냉난방기 10대, 송풍/공조 6대<br><span class="text-slate-500 font-normal text-[11px]">*냉난방기(일체형), 송풍/공조(일체형)<br>*비상용 발전기 有</span></td>
               </tr>
               <tr class="hover:bg-blue-50/40 transition-colors">
                 <th class="w-1/3 py-3 px-5 text-slate-500 font-semibold bg-slate-50/50">운영시간</th>
@@ -266,8 +266,8 @@
             </tr>
             <tr class="hover:bg-slate-50">
               <td class="py-3 px-4 font-bold text-slate-800">공조 및 송풍 장비</td>
-              <td class="py-3 px-4 leading-snug">냉방2 난방2 송풍·공조2<br><span class="text-slate-500 font-normal text-[10px]">*비상용발전기 有(등유사용)</span></td>
-              <td class="py-3 px-4 bg-yellow-50/50 text-slate-800 leading-snug" id="tblSpecEquip">냉방10 난방10 송풍·공조6<br><span class="text-slate-500 font-normal text-[10px]">*비상용발전기 有</span></td>
+              <td class="py-3 px-4 leading-snug">냉난방기2 송풍·공조2<br><span class="text-slate-500 font-normal text-[10px]">*비상용 발전기 有(등유사용)</span></td>
+              <td class="py-3 px-4 bg-yellow-50/50 text-slate-800 leading-snug" id="tblSpecEquip">냉난방기10 송풍·공조6<br><span class="text-slate-500 font-normal text-[10px]">*비상용 발전기 有</span></td>
               <td class="py-3 px-4 font-mono text-slate-700" id="tblSpecEquipRatio">장비 대수 운전</td>
               <td class="py-3 px-4">송풍·공조(전기) / 냉방·난방(도시가스) 분리 운전</td>
             </tr>
@@ -346,7 +346,7 @@
         <h3 class="font-bold text-slate-700 flex items-center gap-1.5"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="zap-off" aria-hidden="true" class="lucide lucide-zap-off w-4 h-4 text-blue-600"><path d="M10.768 5.111 13.44 2.44a1.5 1.5 0 012.474 1.561l-1.633 4.625"></path><path d="m18.889 13.232.672-.672A1.5 1.5 0 0018.5 10h-2.844"></path><path d="m2 2 20 20"></path><path d="m7.94 7.94-3.5 3.499A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l5.5-5.5"></path></svg> 설비별 전력/가스 소모원 매핑</h3>
         <div class="flex gap-4">
             <span class="flex items-center gap-1"><span class="whitespace-nowrap px-1.5 py-0.5 rounded bg-amber-500 text-white font-bold text-[10px]">전기 100%</span> 송풍·공조기, LED조명</span>
-            <span class="flex items-center gap-1"><span class="whitespace-nowrap px-1.5 py-0.5 rounded bg-blue-600 text-white font-bold text-[10px]">가스 100%</span> 냉방기·난방기 (도시가스)</span>
+            <span class="flex items-center gap-1"><span class="whitespace-nowrap px-1.5 py-0.5 rounded bg-blue-600 text-white font-bold text-[10px]">가스 100%</span> 냉난방기 (도시가스)</span>
         </div>
     </div>
 
@@ -449,17 +449,9 @@
             <span class="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[11px] font-bold">4</span>
             공조·냉난방 설비 설치 대수
           </label>
-          <div class="grid grid-cols-3 gap-2 mb-2">
-            <div class="bg-amber-50 p-1.5 rounded border border-amber-200 text-center">
-              <span class="text-[10px] font-bold text-amber-900 block mb-1">냉방(가스)</span>
-              <div class="flex items-center justify-center gap-1">
-                <button type="button" class="btn-qty w-5 h-5 rounded bg-amber-200 text-amber-900 font-bold" data-target="coolingUnits" data-delta="-1">-</button>
-                <span class="whitespace-nowrap font-extrabold text-[11px] w-5" id="valCoolingUnits">10</span>
-                <button type="button" class="btn-qty w-5 h-5 rounded bg-amber-200 text-amber-900 font-bold" data-target="coolingUnits" data-delta="1">+</button>
-              </div>
-            </div>
+          <div class="grid grid-cols-2 gap-2 mb-2">
             <div class="bg-blue-50 p-1.5 rounded border border-blue-200 text-center">
-              <span class="text-[10px] font-bold text-blue-900 block mb-1">난방(가스)</span>
+              <span class="text-[10px] font-bold text-blue-900 block mb-1">냉난방기(가스)</span>
               <div class="flex items-center justify-center gap-1">
                 <button type="button" class="btn-qty w-5 h-5 rounded bg-blue-200 text-blue-900 font-bold" data-target="heatingUnits" data-delta="-1">-</button>
                 <span class="whitespace-nowrap font-extrabold text-[11px] w-5" id="valHeatingUnits">10</span>
@@ -824,14 +816,14 @@
                 </div>
                 <div class="p-4 space-y-4">
                     <p class="text-[11px] text-slate-500 mb-2 leading-tight">
-                        부대시설(임원실/감독실 등) 면적 확대 및 숙소 증설(35실→48실)에 따른 기초 비례값을 산출합니다.
+                        부대시설(임원실/감독실 등) 면적 확대 및 숙소 증설(강화 35실·47명 → 영종 48실)에 따른 기초 비례값을 산출합니다.
                     </p>
                     <div class="space-y-3 text-xs">
                         <!-- Area -->
                         <div class="bg-blue-50/40 p-2.5 rounded-lg border border-blue-100">
                             <div class="flex items-center justify-between mb-2">
                                 <span class="font-bold text-slate-700">부대시설 연면적 변동 (m²)</span>
-                                <span class="whitespace-nowrap text-[10px] font-bold text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded" id="lblAreaRatio">+50%</span>
+                                <span class="whitespace-nowrap text-[10px] font-bold text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded" id="lblAreaRatio">+56%</span>
                             </div>
                             <div class="flex items-center gap-2">
                                 <div class="flex-1">
@@ -841,7 +833,7 @@
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="arrow-right" aria-hidden="true" class="lucide lucide-arrow-right w-4 h-4 text-slate-400 mt-3"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
                                 <div class="flex-1">
                                     <label class="text-[10px] text-slate-500 block mb-0.5">신축 훈련장</label>
-                                    <input type="number" id="inpNewArea" value="12823" class="w-full border border-blue-300 rounded px-2 py-1 text-right font-mono font-bold text-blue-700 bg-white">
+                                    <input type="number" id="inpNewArea" value="13362" class="w-full border border-blue-300 rounded px-2 py-1 text-right font-mono font-bold text-blue-700 bg-white">
                                 </div>
                             </div>
                         </div>
@@ -849,20 +841,28 @@
                         <!-- Users -->
                         <div class="bg-purple-50/40 p-2.5 rounded-lg border border-purple-100">
                             <div class="flex items-center justify-between mb-2">
-                                <span class="font-bold text-slate-700">사용인원/숙소 변동 (명/실)</span>
-                                <span class="whitespace-nowrap text-[10px] font-bold text-purple-600 bg-purple-100 px-1.5 py-0.5 rounded" id="lblUserRatio">+37%</span>
+                                <span class="font-bold text-slate-700">숙소 수용인원 변동 (명)</span>
+                                <span class="whitespace-nowrap text-[10px] font-bold text-purple-600 bg-purple-100 px-1.5 py-0.5 rounded" id="lblUserRatio">-</span>
                             </div>
-                            <div class="flex items-center gap-2">
-                                <div class="flex-1">
-                                    <label class="text-[10px] text-slate-500 block mb-0.5">기존 인원(35실)</label>
-                                    <input type="number" id="inpBaseUsers" value="35" class="w-full border border-slate-300 rounded px-2 py-1 text-right font-mono bg-white">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <div class="bg-white/70 rounded border border-slate-100 p-2">
+                                    <div class="text-[10px] font-bold text-slate-600 mb-1">기존 (강화)</div>
+                                    <div class="grid grid-cols-2 gap-1.5">
+                                        <label class="text-[10px] text-slate-500">1인실 (실)<input type="number" min="0" id="inpBaseSingle" value="23" class="w-full border rounded px-1.5 py-1 text-right font-mono bg-white border-slate-200 mt-0.5"></label>
+                                        <label class="text-[10px] text-slate-500">2인실 (실)<input type="number" min="0" id="inpBaseDouble" value="12" class="w-full border rounded px-1.5 py-1 text-right font-mono bg-white border-slate-200 mt-0.5"></label>
+                                    </div>
+                                    <div class="mt-1.5 text-[10px] text-slate-500 flex justify-between"><span id="lblBaseRooms">-</span><b class="font-mono text-slate-700" id="lblBasePersons">-</b></div>
                                 </div>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="arrow-right" aria-hidden="true" class="lucide lucide-arrow-right w-4 h-4 text-slate-400 mt-3"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
-                                <div class="flex-1">
-                                    <label class="text-[10px] text-slate-500 block mb-0.5">신축 인원(48실)</label>
-                                    <input type="number" id="inpNewUsers" value="48" class="w-full border border-purple-300 rounded px-2 py-1 text-right font-mono font-bold text-purple-700 bg-white">
+                                <div class="bg-white/70 rounded border border-purple-100 p-2">
+                                    <div class="text-[10px] font-bold text-slate-600 mb-1">신축 (영종)</div>
+                                    <div class="grid grid-cols-2 gap-1.5">
+                                        <label class="text-[10px] text-slate-500">1인실 (실)<input type="number" min="0" id="inpNewSingle" value="48" class="w-full border rounded px-1.5 py-1 text-right font-mono bg-white border-purple-200 mt-0.5"></label>
+                                        <label class="text-[10px] text-slate-500">2인실 (실)<input type="number" min="0" id="inpNewDouble" value="0" class="w-full border rounded px-1.5 py-1 text-right font-mono bg-white border-purple-200 mt-0.5"></label>
+                                    </div>
+                                    <div class="mt-1.5 text-[10px] text-slate-500 flex justify-between"><span id="lblNewRooms">-</span><b class="font-mono text-purple-700" id="lblNewPersons">-</b></div>
                                 </div>
                             </div>
+                            <p class="mt-1.5 text-[10px] text-slate-400 leading-tight">수용인원 = 1인실 × 1 + 2인실 × 2</p>
                         </div>
                     </div>
                 </div>
@@ -937,7 +937,7 @@
                         <tr class="hover:bg-slate-50">
                             <td class="py-3 px-4 font-bold text-slate-700 flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-cyan-500"></div> 수도비</td>
                             <td class="py-3 px-4 text-right font-mono text-[11px]" id="tdBaseWater">28,996,320원</td>
-                            <td class="py-3 px-4 text-[10px] text-slate-500 text-center leading-tight">상주인원(숙소) 정비례 증가<br>× 수도요금 인상률(누적)</td>
+                            <td class="py-3 px-4 text-[10px] text-slate-500 text-center leading-tight">숙소 수용인원 정비례 증가<br>× 수도요금 인상률(누적)</td>
                             <td class="py-3 px-4 text-right font-bold text-cyan-600 font-mono text-sm" id="tdNewWater">40,594,848원</td>
                         </tr>
                         <tr class="bg-slate-50 border-t-2 border-slate-200">
@@ -1013,7 +1013,7 @@
       weatherFactor: 1.18, coldWaveDays: 16, targetHeatTemp: 18,
       acLoadFactor: 0.75, blowerAmps: 119,
       monsoonDays: 32, monsoonHoursDaily: 14,
-      heatingUnits: 10, coolingUnits: 10, fanUnits: 6, hvacMotorKW: 3.7,
+      heatingUnits: 10, fanUnits: 6, hvacMotorKW: 3.7,   // heatingUnits = 냉난방기(가스) 대수
       ledFixtureWatts: 1200, fixtureCount: 330, lightingPowerKW: 396,
       mainDoors: 1, exitDoors: 24, vehicleDoors: 1,
       elecRatePct: 0, gasRatePct: 0,
@@ -1069,11 +1069,11 @@
       const effectiveLoadScale = volumeRatio;
 
       let heatingTempMultiplier = state.targetHeatTemp === 15 ? 0.80 : (state.targetHeatTemp === 21 ? 1.25 : 1.0);
-      // 설비 구성: 냉방 10대 + 일체형 난방 6대(송풍·공조 포함)를 설계 기준(배수 1.0)으로 둔다.
+
       // 에너지는 건물 부하가 결정하므로, 대수 변경은 설계 기준 대비 상대 배수로만 반영한다.
-      // 설계 기준(배수 1.0): 냉방 10대 · 난방 10대 · 송풍/공조 일체형 6대
+      // 설계 기준(배수 1.0): 냉난방기(가스) 10대 · 송풍/공조(전기) 6대
       const heatUnitScale = state.heatingUnits / 10.0;
-      const coolUnitScale = state.coolingUnits / 10.0;
+      const coolUnitScale = heatUnitScale;            // 냉방·난방은 같은 냉난방기
       const blowerUnitScale = state.fanUnits / 6.0;   // 송풍/공조 일체형
       const hvacUnitScale = blowerUnitScale;
 
@@ -1138,7 +1138,7 @@
       
       document.getElementById('topResVol').innerHTML = `140m × 140m × ${state.height}m <span class="text-slate-400 font-normal ml-1">(${fmtNum(d.incheonVolume, 0)}m³)</span>`;
       document.getElementById('topResTemp').innerText = `여름철 26℃, 겨울철 ${state.targetHeatTemp}℃`;
-      document.getElementById('topResEquip').innerHTML = `냉방 ${state.coolingUnits}대, 난방 ${state.heatingUnits}대, 송풍/공조 일체형 ${state.fanUnits}대<br><span class="text-slate-500 font-normal text-[11px]">*비상용발전기 有</span>`;
+      document.getElementById('topResEquip').innerHTML = `냉난방기 ${state.heatingUnits}대, 송풍/공조 ${state.fanUnits}대<br><span class="text-slate-500 font-normal text-[11px]">*냉난방기(일체형), 송풍/공조(일체형)<br>*비상용 발전기 有</span>`;
       
       const rDays = Math.max(0, 365 - state.homeGameDays - state.trainingDays);
       const pressurePa = { 75: 150, 90: 250, 119: 400 }[state.blowerAmps] || 400;
@@ -1161,7 +1161,7 @@
       document.getElementById('tblSpecDim').innerText = `140m × 140m × ${state.height}m`;
       document.getElementById('tblSpecVolumeDiff').innerText = `체적 스케일 ${fmtNum(d.volumeRatio, 2)}배`;
       document.getElementById('tblSpecWeather').innerText = `난방도일 ${state.weatherFactor}배`;
-      document.getElementById('tblSpecEquip').innerHTML = `냉방${state.coolingUnits} 난방${state.heatingUnits} 송풍·공조${state.fanUnits}<br><span class="text-slate-500 font-normal text-[10px]">*비상용발전기 有</span>`;
+      document.getElementById('tblSpecEquip').innerHTML = `냉난방기${state.heatingUnits} 송풍·공조${state.fanUnits}<br><span class="text-slate-500 font-normal text-[10px]">*비상용 발전기 有</span>`;
       document.getElementById('tblSpecLight').innerText = `야구장 LED ${state.fixtureCount}등`;
       document.getElementById('tblSpecMonsoon').innerHTML = `연 ${state.monsoonDays}일 제습 재열<br><span class="text-slate-500 font-normal text-[10px] whitespace-nowrap">*인천 영종구 포함 중부지방 평년값 31.5일</span>`;
       document.getElementById('tblSpecHours').innerText = `홈${state.homeGameDays}/훈련${state.trainingDays}/휴식${rDays}`;
@@ -1176,7 +1176,6 @@
       document.getElementById('valSnowDays').innerText = `${state.snowDays} 일`;
       document.getElementById('valHeatingUnits').innerText = state.heatingUnits;
       document.getElementById('valFanUnits').innerText = state.fanUnits;
-      document.getElementById('valCoolingUnits').innerText = state.coolingUnits;
       
       document.getElementById('lblLightingPower').innerText = `${fmtNum(state.lightingPowerKW, 1)}kW`;
       document.getElementById('valFixtureCount').innerText = `${state.fixtureCount} 등`;
@@ -1209,9 +1208,17 @@
         
         // STEP 2 values (Area and Users)
         const baseArea = parseFloat(document.getElementById('inpBaseArea').value) || 8576;
-        const newArea = parseFloat(document.getElementById('inpNewArea').value) || 12823;
-        const baseUsers = parseInt(document.getElementById('inpBaseUsers').value) || 35;
-        const newUsers = parseInt(document.getElementById('inpNewUsers').value) || 48;
+        const newArea = parseFloat(document.getElementById('inpNewArea').value) || 13362;
+        // 숙소 수용인원 = 1인실 × 1 + 2인실 × 2
+        const num = (id) => Math.max(0, parseInt(document.getElementById(id).value, 10) || 0);
+        const baseSingle = num('inpBaseSingle'), baseDouble = num('inpBaseDouble');
+        const newSingle = num('inpNewSingle'), newDouble = num('inpNewDouble');
+        const baseUsers = Math.max(1, baseSingle + baseDouble * 2);
+        const newUsers = newSingle + newDouble * 2;
+        document.getElementById('lblBaseRooms').innerText = `${baseSingle + baseDouble}실`;
+        document.getElementById('lblBasePersons').innerText = `${baseUsers}명`;
+        document.getElementById('lblNewRooms').innerText = `${newSingle + newDouble}실`;
+        document.getElementById('lblNewPersons').innerText = `${newUsers}명`;
         
         // STEP 3 values (Special parameters)
         const hasShowers = false; // STEP 3 removed
@@ -1424,7 +1431,6 @@
           const t = btn.getAttribute('data-target');
           const d = parseInt(btn.getAttribute('data-delta'), 10);
           if (t === 'heatingUnits') state.heatingUnits = Math.max(1, Math.min(20, state.heatingUnits + d));
-          if (t === 'coolingUnits') state.coolingUnits = Math.max(1, Math.min(20, state.coolingUnits + d));
           if (t === 'fanUnits') state.fanUnits = Math.max(1, Math.min(12, state.fanUnits + d));
           runSimulation();
         });
@@ -1488,8 +1494,7 @@
       // TAB 2: Auxiliary Facility Listeners
       document.getElementById('inpBaseArea').addEventListener('input', runSimulation);
       document.getElementById('inpNewArea').addEventListener('input', runSimulation);
-      document.getElementById('inpBaseUsers').addEventListener('input', runSimulation);
-      document.getElementById('inpNewUsers').addEventListener('input', runSimulation);
+      ['inpBaseSingle', 'inpBaseDouble', 'inpNewSingle', 'inpNewDouble'].forEach(id => document.getElementById(id).addEventListener('input', runSimulation));
       document.querySelectorAll('.aux-rate-inp').forEach(inp => inp.addEventListener('input', runSimulation));
     }
 
