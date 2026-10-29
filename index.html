@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<title>KBO ABS 트래킹 시스템 - 좌/우 측면 프레임별 궤적 추적 & 흔들림 보정</title>
+<title>KBO ABS 트래킹 시스템 - 30cm 초근접 백색 야구공 즉시 인식 & 10인 로스터</title>
 <!-- Tailwind CSS CDN -->
 <script src="https://cdn.tailwindcss.com"></script>
-<!-- Google Fonts: Pretendard / Orbitron / Noto Sans KR -->
+<!-- Google Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Orbitron:wght@600;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
@@ -14,6 +14,8 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 
 <script>
+try {
+if (typeof tailwind !== 'undefined') {
 tailwind.config = {
 darkMode: 'class',
 theme: {
@@ -22,35 +24,46 @@ fontFamily: {
 sans: ['"Noto Sans KR"', 'sans-serif'],
 display: ['"Orbitron"', '"Noto Sans KR"', 'sans-serif'],
 mono: ['"JetBrains Mono"', 'monospace'],
-},
-colors: {
-abs: {
-bg: '#060a12',
-panel: '#0d1526',
-cyan: '#00f0ff',
-strike: '#ffb800',
-strikeRed: '#ff2a5f',
-ball: '#00e676',
-ballBlue: '#00b0ff',
 }
 }
 }
+};
 }
-}
+} catch (e) {}
 </script>
 
 <style>
 * {
 box-sizing: border-box;
 -webkit-tap-highlight-color: transparent;
-user-select: none;
 }
 
 body {
 background-color: #050811;
 color: #f1f5f9;
-font-family: 'Noto Sans KR', sans-serif;
+font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
 overflow-x: hidden;
+margin: 0;
+padding: 0;
+}
+
+/* Tailwind CDN이 차단되거나 느릴 때도 레이아웃과 클릭이 100% 작동하도록 보장하는 핵심 폴백 스타일 */
+.hidden {
+display: none !important;
+}
+
+button, select, input {
+pointer-events: auto !important;
+touch-action: manipulation;
+}
+
+button {
+cursor: pointer;
+}
+
+input[type="text"], input[type="number"] {
+user-select: text !important;
+-webkit-user-select: text !important;
 }
 
 .cyber-bg {
@@ -64,10 +77,10 @@ background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
 }
 
 .neon-card {
-background: rgba(11, 19, 35, 0.86);
-backdrop-filter: blur(16px);
--webkit-backdrop-filter: blur(16px);
-border: 1px solid rgba(0, 240, 255, 0.22);
+background: rgba(11, 19, 35, 0.9);
+backdrop-filter: blur(12px);
+-webkit-backdrop-filter: blur(12px);
+border: 1px solid rgba(0, 240, 255, 0.25);
 box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55), inset 0 0 18px rgba(0, 240, 255, 0.04);
 }
 
@@ -99,10 +112,6 @@ background: #00f0ff;
 border: 2px solid #ffffff;
 box-shadow: 0 0 10px #00f0ff;
 cursor: pointer;
-transition: transform 0.15s ease;
-}
-input[type="range"]::-webkit-slider-thumb:hover {
-transform: scale(1.15);
 }
 
 @keyframes callBannerPop {
@@ -168,31 +177,32 @@ border-radius: 9999px;
 </style>
 </head>
 
-<body class="cyber-bg min-h-screen flex flex-col justify-between">
+<body class="cyber-bg min-h-screen flex flex-col justify-between relative">
 
-<!-- 숨김 미디어 엘리먼트 -->
-<input id="nativeCameraVideoInput" type="file" accept="video/" capture="environment" class="hidden" onchange="handleNativeCameraFile(event)" />
-<input id="galleryMediaInput" type="file" accept="video/,image/*" class="hidden" onchange="handleNativeCameraFile(event)" />
-<video id="pipOutputVideo" autoplay muted playsinline class="fixed -left-[9999px] -top-[9999px] w-1 h-1 pointer-events-none opacity-0"></video>
+<!-- 숨김 미디어 엘리먼트 (화면 터치를 절대 방해하지 않도록 완전히 격리) -->
+<div style="display:none !important; width:0; height:0; overflow:hidden; pointer-events:none;">
+<input id="nativeCameraVideoInput" type="file" accept="video/" capture="environment" onchange="handleNativeCameraFile(event)" />
+<input id="galleryMediaInput" type="file" accept="video/,image/*" onchange="handleNativeCameraFile(event)" />
+<video id="pipOutputVideo" autoplay muted playsinline></video>
+</div>
 
 <!-- =========================================================================
 1. 시작 화면 (초기 설정 화면 - SETUP VIEW)
 ========================================================================== -->
-<main id="setupView" class="w-full max-w-6xl mx-auto px-4 py-5 md:py-7 flex-1 flex flex-col justify-center">
+<main id="setupView" class="w-full max-w-6xl mx-auto px-4 py-5 md:py-7 flex-1 flex flex-col justify-center relative z-10">
 
 <!-- 상단 타이틀 헤더 -->
 <header class="text-center mb-5 md:mb-6">
 <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-400/40 text-emerald-300 text-xs font-mono tracking-widest uppercase mb-2">
 <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-SIDE & REAR FRAME-BY-FRAME TRACKER · CAMERA SHAKE REJECTION
+30CM ULTRA-CLOSE READY · WHITE BASEBALL BLOB TRACKER
 </div>
 <h1 class="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight text-white flex items-center justify-center gap-2.5 flex-wrap">
-<span class="font-display text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-sky-300 to-amber-400">KBO ABS</span>
-<span>좌/우 측면 1프레임 궤적 추적 판정 시스템</span>
+<span class="font-display text-cyan-400">KBO ABS</span>
+<span>야구공 전용 실시간 판정 시스템</span>
 </h1>
 <p class="text-slate-400 text-xs sm:text-sm md:text-base mt-2 max-w-3xl mx-auto leading-relaxed">
-실제 ABS처럼 <strong class="text-amber-300">좌/우 측면(또는 후면)에서 날아오는 공을 1프레임씩 연속 추적</strong>하여 스트라이크 존(홈플레이트 전면·중간면) 통과 높이를 정밀 판정합니다!
-<strong class="text-emerald-300">카메라 흔들림 자동 보정(Ego-Motion Rejection)</strong>으로 가만히 있는 물체는 절대 오인식하지 않습니다.
+홈플레이트 뒤 <strong class="text-amber-300">30cm(0.3m) 초근접 거리</strong>를 기본 지원하며, 카메라에 <strong class="text-emerald-300">하얀색 야구공이 딱 찍히는 순간(1프레임 포착) 즉시 볼/스트라이크를 판정</strong>합니다!
 </p>
 </header>
 
@@ -229,9 +239,8 @@ class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-rose-950/70 border border-sl
 <div class="col-span-2 text-center">신장(cm)</div>
 </div>
 
-<!-- 10명 일괄 입력 스크롤 영역 -->
+<!-- 10명 일괄 입력 스크롤 영역 (초기 정적 렌더링 포함으로 절대 멈추지 않음) -->
 <div id="batterRosterTableBody" class="max-h-[250px] overflow-y-auto divide-y divide-slate-800/60 pr-1 my-1">
-<!-- JS renderBatterRosterTable() 에서 10개 행 생성 -->
 </div>
 
 <!-- 현재 선택된 타자 신장 미세 조절 바 -->
@@ -253,7 +262,7 @@ oninput="updateActiveBatterHeight(this.value)" class="w-full my-1" />
 </div>
 </section>
 
-<!-- 카드 2: 카메라 촬영 방향(좌/우 측면·후면) 및 홈플레이트 거리 설정 -->
+<!-- 카드 2: 카메라 위치 (기본 30cm = 0.3m) 및 백색 야구공 전용 필터 안내 -->
 <section class="neon-card rounded-2xl p-4 sm:p-5">
 <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
 <div class="flex items-center gap-2.5">
@@ -261,89 +270,61 @@ oninput="updateActiveBatterHeight(this.value)" class="w-full my-1" />
 <i class="fa-solid fa-video"></i>
 </div>
 <div>
-<h2 class="text-base sm:text-lg font-bold text-white leading-tight">2. ABS 카메라 촬영 방향(좌/우 측면) 및 거리 설정</h2>
-<p class="text-xs text-slate-400">좌/우 측면에서 찍으면 공이 날아오는 궤적을 1프레임씩 추적하여 홈플레이트 통과 높이를 정확히 판정합니다</p>
+<h2 class="text-base sm:text-lg font-bold text-white leading-tight">2. 홈플레이트-카메라 거리 (기본 30cm) 설정</h2>
+<p class="text-xs text-slate-400">홈플레이트에서 30cm(0.3m) 떨어진 초근접 거리부터 원거리까지 자유롭게 설정됩니다</p>
 </div>
 </div>
-<span class="text-[11px] font-mono text-emerald-300 bg-emerald-950/60 px-2.5 py-1 rounded border border-emerald-500/30">측면 1프레임 추적</span>
-</div>
-
-<!-- [핵심 추가] 카메라 촬영 방향 선택 (좌측면 / 우측면 / 포수후면) -->
-<div class="bg-slate-900/70 rounded-xl p-3.5 border border-slate-800 mb-3.5">
-<label class="block text-xs font-bold text-cyan-300 mb-2 flex items-center gap-1.5">
-<i class="fa-solid fa-arrows-left-right"></i>
-카메라 촬영 위치 및 공 진행 방향 선택 (ABS 좌/우 트래킹)
-</label>
-<div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-<button type="button" id="camAngleBtn_sideL2R" onclick="setCameraViewDirection('sideL2R')"
-class="p-2.5 rounded-xl border border-cyan-400 bg-cyan-500/20 text-left transition shadow">
-<div class="text-xs font-black text-white flex items-center justify-between">
-<span>👉 측면 (좌 → 우 투구)</span>
-<span class="text-[10px] font-mono text-cyan-300">권장</span>
-</div>
-<div class="text-[10px] text-slate-300 mt-0.5">공이 왼쪽에서 오른쪽(홈)으로 비행</div>
-</button>
-
-<button type="button" id="camAngleBtn_sideR2L" onclick="setCameraViewDirection('sideR2L')"
-class="p-2.5 rounded-xl border border-slate-700 bg-slate-800/70 hover:border-cyan-400/50 text-left transition">
-<div class="text-xs font-bold text-white flex items-center justify-between">
-<span>👈 측면 (우 → 좌 투구)</span>
-</div>
-<div class="text-[10px] text-slate-400 mt-0.5">공이 오른쪽에서 왼쪽(홈)으로 비행</div>
-</button>
-
-<button type="button" id="camAngleBtn_catcher" onclick="setCameraViewDirection('catcher')"
-class="p-2.5 rounded-xl border border-slate-700 bg-slate-800/70 hover:border-amber-400/50 text-left transition">
-<div class="text-xs font-bold text-white flex items-center justify-between">
-<span>🎯 포수/심판 후면</span>
-</div>
-<div class="text-[10px] text-slate-400 mt-0.5">정면에서 다가오는 공 추적</div>
-</button>
-</div>
+<span class="text-[11px] font-mono text-amber-300 bg-amber-950/60 px-2.5 py-1 rounded border border-amber-500/30">기본 30cm (0.3m)</span>
 </div>
 
-<!-- 카메라-홈플레이트 거리 (m) -->
+<!-- 카메라-홈플레이트 거리 (m) - 기본 0.3m (30cm) -->
 <div class="bg-slate-900/70 rounded-xl p-3.5 border border-slate-800 mb-3.5">
 <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
 <label class="text-sm font-bold text-white flex items-center gap-2">
 <i class="fa-solid fa-arrows-left-right-to-line text-amber-400"></i>
 카메라 - 홈플레이트 거리
-<span id="distCmBadge" class="text-xs font-mono text-emerald-300 bg-emerald-500/15 px-2 py-0.5 rounded border border-emerald-400/30">(= 150 cm)</span>
+<span id="distCmBadge" class="text-xs font-mono text-emerald-300 bg-emerald-500/15 px-2 py-0.5 rounded border border-emerald-400/30">(= 30 cm)</span>
 </label>
 <div class="flex items-center gap-1.5">
-<input id="numCameraDist" type="number" value="1.5" min="0.3" max="10.0" step="0.1"
+<input id="numCameraDist" type="number" value="0.3" min="0.1" max="25.0" step="0.05"
 oninput="updateCameraDist(this.value)"
 class="w-20 bg-slate-950 border border-amber-500/50 rounded-lg px-2.5 py-1 text-right font-mono font-bold text-amber-300 text-base outline-none" />
 <span class="text-xs font-mono text-slate-400">m (미터)</span>
 </div>
 </div>
 
-<!-- 거리 프리셋 -->
-<div class="grid grid-cols-4 gap-2 mb-2.5">
-<button type="button" onclick="setCameraPreset(0.5, null)" id="presetBtn_0.5"
-class="preset-dist-btn px-2.5 py-2 rounded-xl border border-slate-700 bg-slate-800/70 hover:border-amber-400/60 text-left transition">
-<div class="text-[10px] text-slate-400">근접</div>
-<div class="text-xs font-mono font-bold text-white">0.5 m</div>
-</button>
-<button type="button" onclick="setCameraPreset(1.1, null)" id="presetBtn_1.1"
-class="preset-dist-btn px-2.5 py-2 rounded-xl border border-slate-700 bg-slate-800/70 hover:border-amber-400/60 text-left transition">
-<div class="text-[10px] text-slate-400">단거리</div>
-<div class="text-xs font-mono font-bold text-white">1.1 m</div>
-</button>
-<button type="button" onclick="setCameraPreset(1.5, null)" id="presetBtn_1.5"
+<!-- 시점 프리셋 버튼들 (0.3m 30cm 기본 활성화) -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2.5">
+<button type="button" onclick="setCameraPreset(0.3, 0.6, 'catcher')" id="presetBtn_0.3"
 class="preset-dist-btn px-2.5 py-2 rounded-xl border border-amber-400 bg-amber-500/15 text-left transition">
-<div class="text-[10px] text-amber-300 font-semibold">측면 권장</div>
-<div class="text-xs font-mono font-bold text-white">1.5 m</div>
+<div class="text-[11px] text-amber-300 font-semibold">홈플레이트 직후방</div>
+<div class="text-xs font-mono font-bold text-white">30 cm <span class="text-[10px] text-amber-300">(0.3m 기본)</span></div>
 </button>
-<button type="button" onclick="setCameraPreset(3.0, null)" id="presetBtn_3"
+<button type="button" onclick="setCameraPreset(1.5, 1.2, 'umpire')" id="presetBtn_1.5"
 class="preset-dist-btn px-2.5 py-2 rounded-xl border border-slate-700 bg-slate-800/70 hover:border-amber-400/60 text-left transition">
-<div class="text-[10px] text-slate-400">타석 밖 측면</div>
-<div class="text-xs font-mono font-bold text-white">3.0 m</div>
+<div class="text-[11px] text-slate-400">심판/포수 시점</div>
+<div class="text-xs font-mono font-bold text-white">1.5 m <span class="text-[10px] text-amber-400">근접</span></div>
+</button>
+<button type="button" onclick="setCameraPreset(3.0, 1.2, 'catcher')" id="presetBtn_3"
+class="preset-dist-btn px-2.5 py-2 rounded-xl border border-slate-700 bg-slate-800/70 hover:border-amber-400/60 text-left transition">
+<div class="text-[11px] text-slate-400">포수 후면</div>
+<div class="text-xs font-mono font-bold text-white">3.0 m <span class="text-[10px] text-cyan-400">표준</span></div>
+</button>
+<button type="button" onclick="setCameraPreset(18.44, 1.6, 'pitcher')" id="presetBtn_18.44"
+class="preset-dist-btn px-2.5 py-2 rounded-xl border border-slate-700 bg-slate-800/70 hover:border-amber-400/60 text-left transition">
+<div class="text-[11px] text-slate-400">투수 마운드 시점</div>
+<div class="text-xs font-mono font-bold text-white">18.44 m <span class="text-[10px] text-emerald-400">정면</span></div>
 </button>
 </div>
 
-<input id="sliderCameraDist" type="range" min="0.3" max="10.0" step="0.1" value="1.5"
+<input id="sliderCameraDist" type="range" min="0.1" max="25.0" step="0.05" value="0.3"
 oninput="updateCameraDist(this.value)" class="w-full my-1" />
+<div class="flex justify-between text-[11px] font-mono text-slate-500 mt-0.5">
+<span class="text-amber-300 font-bold">0.3m (30cm 초근접)</span>
+<span>1.5m (심판)</span>
+<span>3.0m (포수후면)</span>
+<span>18.44m (투수판)</span>
+</div>
 </div>
 
 <!-- 카메라 지면 높이 (m) & 순수 백색 야구공 전용 필터 고정 안내 -->
@@ -354,16 +335,16 @@ oninput="updateCameraDist(this.value)" class="w-full my-1" />
 <i class="fa-solid fa-up-down text-cyan-400"></i> 스마트폰 카메라 높이
 </span>
 <div class="flex items-center gap-1">
-<input id="numCameraHeight" type="number" value="0.8" min="0.2" max="3.0" step="0.1"
+<input id="numCameraHeight" type="number" value="0.6" min="0.2" max="3.0" step="0.1"
 oninput="updateCameraHeight(this.value)"
 class="w-16 bg-slate-950 border border-slate-700 rounded px-2 py-0.5 text-right font-mono font-bold text-cyan-300 text-sm outline-none" />
 <span class="text-xs font-mono text-slate-400">m</span>
 </div>
 </div>
-<input id="sliderCameraHeight" type="range" min="0.2" max="3.0" step="0.05" value="0.8"
+<input id="sliderCameraHeight" type="range" min="0.2" max="3.0" step="0.05" value="0.6"
 oninput="updateCameraHeight(this.value)" class="w-full my-1" />
 <div class="text-[11px] text-slate-400 mt-1 flex justify-between">
-<span>허리/삼각대(0.8m)</span>
+<span>미니삼각대(0.6m)</span>
 <span>가슴높이(1.2m)</span>
 <span>눈높이(1.7m)</span>
 </div>
@@ -373,13 +354,13 @@ oninput="updateCameraHeight(this.value)" class="w-full my-1" />
 <div class="bg-emerald-950/30 rounded-xl p-3 border border-emerald-500/40 flex flex-col justify-between">
 <div class="flex items-center justify-between mb-1">
 <span class="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
-<i class="fa-solid fa-baseball text-white"></i> 감지 엔진 (단일 고정)
+<i class="fa-solid fa-baseball text-white"></i> 감지 모드 (단일 고정)
 </span>
-<span class="text-[10px] font-mono font-bold text-slate-950 bg-emerald-400 px-2 py-0.5 rounded-full">SHAKE-PROOF</span>
+<span class="text-[10px] font-mono font-bold text-slate-950 bg-emerald-400 px-2 py-0.5 rounded-full">1-FRAME LOCK</span>
 </div>
-<div class="text-xs font-bold text-white">⚾ 1프레임 궤적 추적 + 카메라 흔들림 배제</div>
+<div class="text-xs font-bold text-white">⚾ 백색 야구공 즉시 포착 엔진</div>
 <p class="text-[11px] text-slate-300 leading-snug mt-1">
-카메라가 흔들려 움직이는 것처럼 보이는 정지 물체는 <strong class="text-amber-300">전역 모션 역보정</strong>으로 완벽 제거하고, <strong class="text-emerald-300">실제 날아가는 흰색 야구공만 1프레임씩 추적</strong>합니다.
+30cm 근접에서도 공이 화면에 <strong class="text-emerald-300">단 1프레임만 찍혀도 원형 백색 군집(Blob)을 즉시 분리해 판정</strong>하며, 살색(손)이나 큰 물체는 자동 제외합니다.
 </p>
 </div>
 </div>
@@ -410,7 +391,7 @@ ABS 스트라이크 존 산출 규격
 <div class="sm:col-span-6 flex flex-col items-center justify-center bg-slate-950/90 rounded-xl p-2.5 border border-slate-800/90 relative">
 <canvas id="setupPreviewCanvas" width="220" height="235" class="w-full max-w-[195px] h-auto"></canvas>
 <div class="text-[11px] font-mono text-slate-400 mt-1 text-center">
-존 가로폭 <span class="text-cyan-300 font-bold">47.18cm</span> / 깊이 <span class="text-amber-300 font-bold">43.18cm</span>
+존 가로폭 <span class="text-cyan-300 font-bold">47.18cm</span> (좌우+2cm)
 </div>
 </div>
 
@@ -451,8 +432,8 @@ ABS 스트라이크 존 산출 규격
 <span class="text-amber-300 font-bold">±3.65 cm</span>
 </div>
 <div class="flex justify-between font-mono">
-<span class="text-slate-400">카메라 설정:</span>
-<span id="calcCamSummary" class="text-amber-300 font-bold">1.50m (측면 좌→우)</span>
+<span class="text-slate-400">카메라 거리:</span>
+<span id="calcCamSummary" class="text-amber-300 font-bold">30cm (0.30m 초근접)</span>
 </div>
 </div>
 </div>
@@ -462,10 +443,10 @@ ABS 스트라이크 존 산출 규격
 <!-- 4가지 실시간 자동 판정 시작 버튼 그룹 -->
 <div class="mt-4 pt-3 border-t border-slate-800/90 space-y-2">
 <button type="button" onclick="startABSTracking('live')"
-class="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-slate-950 font-black text-sm sm:text-base tracking-wide shadow-[0_0_25px_rgba(0,240,255,0.4)] transition transform active:scale-[0.99] flex items-center justify-center gap-2">
+class="w-full py-3.5 px-4 rounded-2xl bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-black text-sm sm:text-base tracking-wide shadow-[0_0_25px_rgba(0,240,255,0.4)] transition flex items-center justify-center gap-2">
 <i class="fa-solid fa-video text-base"></i>
 <span>1. 실시간 카메라 켜놓고 자동 판정 시작</span>
-<span class="px-1.5 py-0.5 text-[10px] rounded bg-slate-950 text-cyan-300 font-mono">⚾1프레임추적</span>
+<span class="px-1.5 py-0.5 text-[10px] rounded bg-slate-950 text-cyan-300 font-mono">⚾30cm대응</span>
 </button>
 
 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -505,7 +486,7 @@ class="w-full py-2 px-3 rounded-xl bg-slate-800/90 hover:bg-slate-700 border bor
 <!-- =========================================================================
 2. 메인 트래킹 및 실시간 자동 판정 화면 (ABS TRACKING & AUTO-DETECT VIEW)
 ========================================================================== -->
-<section id="trackingView" class="hidden w-full min-h-screen flex flex-col justify-between relative overflow-hidden select-none">
+<section id="trackingView" class="hidden w-full min-h-screen flex flex-col justify-between relative overflow-hidden select-none z-10">
 
 <!-- 상단 브로드캐스트 HUD 헤더 바 -->
 <header id="trackingHeaderBar" class="w-full bg-slate-950/90 backdrop-blur-md border-b border-cyan-500/25 px-2.5 sm:px-4 py-2 z-30">
@@ -534,7 +515,7 @@ class="bg-slate-950 border border-cyan-500/40 rounded-lg px-2 py-0.5 text-xs fon
 <span class="hidden md:inline-block h-3.5 w-[1px] bg-slate-700"></span>
 <span id="hudZoneRange" class="hidden md:inline-block text-[11px] font-mono text-cyan-300">존: 49.8~101.4cm</span>
 <span class="h-3.5 w-[1px] bg-slate-700"></span>
-<span id="hudCameraDist" class="text-[11px] font-mono text-amber-300"><i class="fa-solid fa-video mr-1"></i>1.50m</span>
+<span id="hudCameraDist" class="text-[11px] font-mono text-amber-300"><i class="fa-solid fa-video mr-1"></i>30cm (0.3m)</span>
 </div>
 </div>
 
@@ -568,7 +549,7 @@ class="px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center j
 <!-- 우측: 듀얼화면/PiP 팝업 핵심 버튼 + 카메라/사운드 도구 -->
 <div class="flex items-center gap-1.5 order-2 xl:order-3">
 <button type="button" id="btnTogglePiP" onclick="togglePiPFloatingWindow()" title="다른 카메라·동영상 앱 위에 ABS 자동판정 팝업창(PiP) 띄우기"
-class="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 text-xs font-black flex items-center gap-1.5 shadow-lg transition">
+class="px-2.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black flex items-center gap-1.5 shadow-lg transition">
 <i class="fa-solid fa-up-right-from-square"></i>
 <span>PiP 팝업창</span>
 </button>
@@ -620,8 +601,8 @@ class="p-2 rounded-xl bg-emerald-500/20 border border-emerald-400/50 text-emeral
 <!-- 통합 메인 ABS 캔버스 -->
 <canvas id="absMainCanvas" class="absolute inset-0 w-full h-full block cursor-crosshair touch-none"></canvas>
 
-<!-- 고속 광학 백색 야구공 감지용 숨김 연산 캔버스 -->
-<canvas id="opticalProcCanvas" width="320" height="240" class="hidden"></canvas>
+<!-- 고속 광학 백색 야구공 감지용 숨김 연산 캔버스 (160x120) -->
+<canvas id="opticalProcCanvas" width="160" height="120" class="hidden"></canvas>
 
 <!-- 상단 좌측: KBO 볼카운트(BSO) 전광판 HUD 오버레이 -->
 <div class="absolute top-3 left-3 z-20 neon-card rounded-xl px-3 py-2 border border-slate-700/80 flex items-center gap-3 pointer-events-auto">
@@ -664,13 +645,13 @@ class="text-[10px] text-cyan-300 hover:text-cyan-200 underline">리셋</button>
 <div class="absolute top-3 right-3 z-20 flex flex-col items-end gap-1.5 pointer-events-auto">
 <div id="cameraStatusBadge" class="px-3 py-1 rounded-full bg-slate-950/90 border border-emerald-500/50 text-[11px] font-mono text-emerald-300 flex items-center gap-1.5 shadow-lg">
 <span id="camDot" class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-<span id="camStatusText">측면 1프레임 궤적 추적 대기 중</span>
+<span id="camStatusText">백색 야구공 즉시 포착 대기 중</span>
 </div>
 
 <div class="bg-slate-950/90 border border-slate-700/90 rounded-lg px-2.5 py-1 flex items-center gap-2 text-[10px] font-mono">
-<span class="text-slate-400">⚾궤적 추적:</span>
+<span class="text-slate-400">⚾백색구 신호:</span>
 <div class="w-20 h-2 bg-slate-800 rounded-full overflow-hidden">
-<div id="opticalSignalBar" class="h-full bg-gradient-to-r from-cyan-400 via-emerald-400 to-amber-400 transition-all duration-75" style="width: 5%"></div>
+<div id="opticalSignalBar" class="h-full bg-emerald-400 transition-all duration-75" style="width: 5%"></div>
 </div>
 <span id="opticalStateLabel" class="text-cyan-300 font-bold w-14 text-right">SCAN</span>
 </div>
@@ -682,10 +663,9 @@ class="px-2 py-1 rounded-lg bg-slate-900/90 hover:bg-slate-800 border border-amb
 <span id="txtDragAlignMode">존 위치 이동: OFF</span>
 </button>
 
-<!-- 촬영 방향(측면 좌→우 / 측면 우→좌 / 포수시점) 즉시 전환 버튼 -->
 <button type="button" id="btnViewDirectionToggle" onclick="cycleViewDirection()"
-class="px-2.5 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/60 text-[11px] font-bold text-cyan-300 transition shadow">
-👉 측면(좌→우)
+class="px-2 py-1 rounded-lg bg-slate-900/90 border border-slate-700 text-[11px] font-bold text-cyan-300 transition">
+포수시점
 </button>
 </div>
 </div>
@@ -710,7 +690,7 @@ style="writing-mode: vertical-lr; direction: rtl; width: 6px; height: 88px;" />
 <div id="judgmentSubText" class="text-[11px] font-mono tracking-widest uppercase text-amber-300 font-bold">
 KBO ABS REALTIME AUTO CALL
 </div>
-<div id="judgmentMainText" class="text-4xl sm:text-5xl font-display font-black tracking-wider text-amber-400 drop-shadow-[0_0_20px_rgba(255,184,0,0.8)]">
+<div id="judgmentMainText" class="text-4xl sm:text-5xl font-display font-black tracking-wider text-amber-400">
 STRIKE
 </div>
 <div id="judgmentDetailText" class="text-xs font-mono text-white mt-1 bg-slate-900/90 px-3 py-0.5 rounded-full border border-slate-700">
@@ -752,21 +732,14 @@ STRIKE
 </div>
 <input id="sliderCalibScale" type="range" min="45" max="200" value="100" oninput="updateCalibration()" class="w-full" />
 </div>
-<div>
-<div class="flex justify-between text-[11px] text-slate-300 mb-0.5">
-<span>판정면 공 크기 보정</span>
-<span id="lblBallScale" class="font-mono text-emerald-300">100%</span>
-</div>
-<input id="sliderBallScale" type="range" min="50" max="200" value="100" oninput="updateCalibration()" class="w-full" />
-</div>
 </div>
 </div>
 
-<!-- 카메라 하단 액션 오버레이 바 -->
-<div class="absolute bottom-3 inset-x-3 z-20 flex flex-wrap items-center justify-between gap-2 pointer-events-auto">
+<!-- 카메라 하단 액션 오버레이 바 (야구공 전용 모드 배지 고정) -->
+<div class="absolute bottom-3 inset-x-3 z-20 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
 
 <!-- 좌측: 실시간 광학 자동 공 추적 ON/OFF 및 순수 백색 야구공 전용 표시 -->
-<div class="flex items-center gap-1.5 bg-slate-950/90 backdrop-blur-md border border-emerald-500/50 rounded-full px-3 py-1.5 shadow-lg">
+<div class="flex items-center gap-1.5 bg-slate-950/90 backdrop-blur-md border border-emerald-500/50 rounded-full px-3 py-1.5 shadow-lg pointer-events-auto">
 <button type="button" id="btnAutoOpticalToggle" onclick="toggleOpticalAutoDetect()"
 class="flex items-center gap-1.5 text-xs font-black text-emerald-300">
 <span id="dotAutoOptical" class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
@@ -774,12 +747,12 @@ class="flex items-center gap-1.5 text-xs font-black text-emerald-300">
 </button>
 <span class="h-3 w-[1px] bg-slate-700 mx-0.5"></span>
 <span class="text-[11px] font-bold text-cyan-300 flex items-center gap-1">
-⚾ 1프레임 궤적추적 · 흔들림보정
+⚾ 백색 야구공 전용 (즉시인식)
 </span>
 </div>
 
 <!-- 중앙: [ABS 영상 녹화] + [PiP 플로팅 팝업] + [동영상 열기] -->
-<div class="flex items-center gap-2 bg-slate-950/90 backdrop-blur-md border border-slate-700/90 rounded-full px-3 py-1.5 shadow-xl">
+<div class="flex items-center gap-2 bg-slate-950/90 backdrop-blur-md border border-slate-700/90 rounded-full px-3 py-1.5 shadow-xl pointer-events-auto">
 <button type="button" id="btnRecordComposite" onclick="toggleCompositeRecording()"
 class="px-3.5 py-1.5 rounded-full bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs flex items-center gap-1.5 transition shadow">
 <span class="w-2 h-2 rounded-full bg-white"></span>
@@ -800,7 +773,7 @@ class="px-3 py-1.5 rounded-full bg-emerald-500/20 hover:bg-emerald-500/30 border
 </div>
 
 <!-- 우측: 녹화 파일 다운로드 링크 -->
-<div id="recordedDownloadWrap" class="hidden items-center gap-1.5 bg-emerald-950/90 border border-emerald-400/60 rounded-full px-3 py-1.5">
+<div id="recordedDownloadWrap" class="hidden items-center gap-1.5 bg-emerald-950/90 border border-emerald-400/60 rounded-full px-3 py-1.5 pointer-events-auto">
 <a id="downloadRecordedLink" href="#" download="kbo_abs_pitch.webm"
 class="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
 <i class="fa-solid fa-download"></i>
@@ -818,9 +791,9 @@ class="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
 <div class="flex items-center gap-2">
 <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/50 text-emerald-300 text-[11px] font-bold flex items-center gap-1.5">
 <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-동영상 1프레임 궤적 추적 작동 중
+동영상 백색 야구공 실시간 자동 판정 작동 중
 </span>
-<span class="text-xs text-slate-300">영상을 틀어놓거나 1프레임씩 이동하면 야구공 궤적을 추적해 STRIKE/BALL을 자동 판정합니다!</span>
+<span class="text-xs text-slate-300">영상을 틀어놓으시면 하얀 야구공이 찍히는 즉시 STRIKE/BALL이 자동으로 뜹니다!</span>
 </div>
 <div class="flex items-center gap-1.5">
 <button type="button" onclick="launchGalleryPicker()"
@@ -834,29 +807,17 @@ class="px-2.5 py-1 rounded-lg bg-amber-500 text-slate-950 font-bold text-xs hove
 </div>
 </div>
 
-<div class="flex flex-wrap items-center gap-2">
+<div class="flex items-center gap-2.5">
 <button type="button" onclick="toggleRecordedVideoPlay()" id="btnVideoPlayPause"
 class="px-3 py-1 rounded-xl bg-cyan-500 text-slate-950 font-black text-xs flex items-center gap-1.5 whitespace-nowrap">
 <i id="iconVideoPlay" class="fa-solid fa-pause"></i>
 <span id="txtVideoPlay">일시정지</span>
 </button>
-<!-- 1프레임 단위 정밀 이동 버튼 추가 -->
-<button type="button" onclick="stepVideoFrame(-1)"
-class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs font-mono text-cyan-300">
--1F
-</button>
-<button type="button" onclick="stepVideoFrame(1)"
-class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs font-mono text-cyan-300">
-+1F
-</button>
-
 <span id="videoCurTime" class="text-xs font-mono text-cyan-300 w-12 text-right">0.00s</span>
 <input id="videoSeekSlider" type="range" min="0" max="100" step="0.1" value="0"
-oninput="seekRecordedVideo(this.value)" class="flex-1 min-w-[100px]" />
+oninput="seekRecordedVideo(this.value)" class="flex-1" />
 <span id="videoDurTime" class="text-xs font-mono text-slate-400 w-12">0.00s</span>
 <div class="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800">
-<button type="button" onclick="setRecordedVideoRate(0.25)" id="rateBtn_0.25"
-class="vid-rate-btn px-2 py-0.5 rounded text-[11px] font-mono text-slate-300">0.25x</button>
 <button type="button" onclick="setRecordedVideoRate(0.5)" id="rateBtn_0.5"
 class="vid-rate-btn px-2 py-0.5 rounded text-[11px] font-mono text-slate-300">0.5x</button>
 <button type="button" onclick="setRecordedVideoRate(1.0)" id="rateBtn_1"
@@ -873,7 +834,7 @@ class="vid-rate-btn px-2 py-0.5 rounded text-[11px] font-mono bg-cyan-500/25 tex
 <div class="flex items-center gap-2 bg-slate-900 px-3 py-1.5 rounded-xl border border-emerald-500/30 text-xs">
 <i class="fa-solid fa-baseball text-emerald-400"></i>
 <span class="text-slate-200 font-bold">백색 야구공 인식 감도:</span>
-<input id="opticalSensitivity" type="range" min="25" max="95" value="82" class="w-24 sm:w-28" />
+<input id="opticalSensitivity" type="range" min="25" max="95" value="80" class="w-24 sm:w-28" />
 </div>
 
 <div class="flex items-center gap-1.5 bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-700 text-xs">
@@ -898,7 +859,7 @@ class="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border borde
 </button>
 
 <button type="button" onclick="throwPresetPitch('random')"
-class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 text-xs font-black transition flex items-center gap-1 shadow">
+class="px-3 py-1.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-black transition flex items-center gap-1 shadow">
 <i class="fa-solid fa-baseball"></i> 즉시 투구
 </button>
 </div>
@@ -919,7 +880,7 @@ class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-sl
 <h3 class="text-sm font-bold text-white">ABS 실시간 자동 판정 데이터</h3>
 </div>
 <span id="lastCallBadge" class="px-2.5 py-0.5 rounded-full text-xs font-display font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/40">
-FRAME TRACK READY
+WHITE BALL READY
 </span>
 </div>
 
@@ -948,8 +909,8 @@ FRAME TRACK READY
 
 <div class="bg-slate-900/90 rounded-xl p-2.5 border border-slate-800/90">
 <div class="text-[11px] text-slate-400 flex justify-between">
-<span>홈플레이트 통과 편차</span>
-<span class="font-mono text-slate-500">Plane</span>
+<span>홈플레이트 좌우 편차</span>
+<span class="font-mono text-slate-500">X-Axis</span>
 </div>
 <div class="text-base font-mono font-bold text-white mt-1">
 <span id="metricHoriz">--.- cm</span>
@@ -958,11 +919,11 @@ FRAME TRACK READY
 
 <div class="bg-slate-900/90 rounded-xl p-2.5 border border-slate-800/90">
 <div class="text-[11px] text-slate-400 flex justify-between">
-<span>존 상하 마진</span>
+<span>존 경계선 마진</span>
 <span id="metricSpin" class="font-mono text-amber-300">---- rpm</span>
 </div>
 <div class="text-xs font-mono font-bold text-amber-300 mt-1.5 truncate" id="metricBorderMargin">
-1프레임 궤적 감지 대기 중
+백색 야구공 감지 대기 중
 </div>
 </div>
 </div>
@@ -974,12 +935,12 @@ FRAME TRACK READY
 </div>
 <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden relative">
 <div id="zoneBarRange" class="h-full bg-cyan-500/40 absolute left-[28%] w-[32%]"></div>
-<div id="zoneBarMarker" class="w-2.5 h-2.5 rounded-full bg-amber-400 absolute top-1/2 -translate-y-1/2 left-1/2 hidden shadow-[0_0_8px_#ffb800]"></div>
+<div id="zoneBarMarker" class="w-2.5 h-2.5 rounded-full bg-amber-400 absolute top-1/2 -translate-y-1/2 left-1/2 hidden"></div>
 </div>
 </div>
 </section>
 
-<!-- 2. 탄착군 미니 맵 & 투구 히스토리 로그 -->
+<!-- 2. 9분할 탄착군 미니 맵 & 투구 히스토리 로그 -->
 <section class="neon-card rounded-2xl p-4 border border-slate-800 flex-1 flex flex-col justify-between min-h-[260px]">
 <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-2.5">
 <div class="flex items-center gap-2">
@@ -1004,7 +965,7 @@ class="px-2 py-0.5 rounded bg-slate-800 hover:bg-rose-950/80 text-slate-300 hove
 <div id="pitchHistoryList" class="col-span-7 overflow-y-auto space-y-1.5 max-h-[165px] pr-1">
 <div class="h-32 flex flex-col items-center justify-center text-slate-400 text-xs text-center px-2 leading-relaxed">
 <i class="fa-solid fa-baseball text-lg mb-1.5 text-emerald-400"></i>
-<span>좌/우에서 날아오는 야구공을 1프레임씩 추적하여 존을 통과할 때 자동 기록됩니다!</span>
+<span>하얀색 야구공이 카메라에 찍히는 순간 즉시 자동으로 판정이 기록됩니다!</span>
 </div>
 </div>
 </div>
@@ -1031,7 +992,7 @@ class="px-2 py-0.5 rounded bg-slate-800 hover:bg-rose-950/80 text-slate-300 hove
 <div class="flex items-center justify-between border-b border-slate-800 pb-3">
 <div class="flex items-center gap-2">
 <i class="fa-solid fa-clone text-cyan-400 text-lg"></i>
-<h3 class="text-base sm:text-lg font-black text-white">측면 1프레임 궤적 추적 & 흔들림 보정 가이드</h3>
+<h3 class="text-base sm:text-lg font-black text-white">30cm 근접 백색 야구공 전용 자동 판정 가이드</h3>
 </div>
 <button type="button" onclick="closeDualGuideModal()" class="text-slate-400 hover:text-white text-lg">
 <i class="fa-solid fa-xmark"></i>
@@ -1041,19 +1002,19 @@ class="px-2 py-0.5 rounded bg-slate-800 hover:bg-rose-950/80 text-slate-300 hove
 <div class="space-y-3 text-xs sm:text-sm text-slate-300 leading-relaxed">
 <div class="p-3 rounded-xl bg-emerald-950/50 border border-emerald-500/40">
 <div class="font-bold text-emerald-300 mb-1 flex items-center gap-1.5">
-<i class="fa-solid fa-baseball"></i> 1. 좌/우 측면 1프레임 단위 궤적 추적 및 보간 판정
+<i class="fa-solid fa-baseball"></i> 30cm 초근접 1프레임 즉시 인식 (Connected-Blob 엔진)
 </div>
 <p class="text-xs text-slate-300">
-우측 상단 시점 버튼을 <strong>[👉 측면(좌→우)]</strong> 또는 <strong>[👈 측면(우→좌)]</strong>로 맞추면, 화면을 가로질러 날아오는 야구공의 위치를 매 프레임 추적합니다. 공이 너무 빨라 홈플레이트 바로 위에서 프레임이 건너뛰어도 <strong>직전 프레임과 직후 프레임의 궤적을 선형 보간(Interpolation)</strong>하여 홈플레이트 전면(Front)과 중간면(Mid)을 통과한 정확한 높이를 계산해 판정합니다.
+홈플레이트 뒤 <strong>30cm(0.3m)</strong>처럼 가까운 거리에서는 야구공이 화면에 크게 찍히고 매우 빠르게 지나갑니다. 이제 <strong>개별 물체 군집 분리(Blob Detection)</strong> 알고리즘이 적용되어, 화면에 하얀 야구공이 <strong>단 1프레임만 찍혀도 즉시 잡아내어 판정</strong>합니다.
 </p>
 </div>
 
 <div class="p-3 rounded-xl bg-amber-950/50 border border-amber-500/40">
 <div class="font-bold text-amber-300 mb-1 flex items-center gap-1.5">
-<i class="fa-solid fa-hand-sparkles"></i> 2. 카메라 흔들림(Ego-Motion) 완벽 제거
+<i class="fa-solid fa-sliders"></i> 인식이 너무 안 되거나 민감할 때
 </div>
 <p class="text-xs text-slate-300">
-스마트폰이 흔들려서 가만히 있는 배경 물체가 움직이는 것처럼 보이는 현상을 막기 위해, 매 프레임 <strong>배경 전체의 이동량(Global Camera Shift)을 먼저 계산해 상쇄</strong>합니다. 따라서 카메라가 움직여도 정지된 물체는 인식되지 않으며, 배경 대비 독립적인 고속 궤적을 그리는 야구공만 확실하게 잡아냅니다.
+하단 컨트롤 바의 <strong>[백색 야구공 인식 감도]</strong> 슬라이더(기본 80)를 우측(85~95)으로 올리면 약간 어두운 실내 조명에서 찍힌 흰색 야구공도 훨씬 잘 인식합니다.
 </p>
 </div>
 </div>
@@ -1072,18 +1033,28 @@ class="px-4 py-2 rounded-xl bg-slate-800 text-slate-200 font-bold text-xs hover:
 </div>
 
 <!-- =========================================================================
-JAVASCRIPT: 좌/우 측면 1프레임 궤적 추적 + 카메라 흔들림 보정 + 고대비 공 검출
+JAVASCRIPT: 모든 브라우저 호환성 보장 + 30cm 근접 백색 야구공 즉시 인식 엔진
 ========================================================================== -->
 <script>
-/***************************************************************************
-* 1. 전역 상태(State) 및 KBO ABS 물리 상수 정의
-***************************************************************************/
+// 구형 모바일 웹뷰에서 ctx.roundRect 미지원으로 인해 전체 스크립트가 멈추는 현상 방지용 폴리필
+function drawSafeRoundRect(ctx, x, y, w, h, r) {
+if (typeof ctx.roundRect === 'function') {
+ctx.roundRect(x, y, w, h, r);
+} else {
+const radius = Math.min(r, w / 2, h / 2);
+ctx.moveTo(x + radius, y);
+ctx.arcTo(x + w, y, x + w, y + h, radius);
+ctx.arcTo(x + w, y + h, x, y + h, radius);
+ctx.arcTo(x, y + h, x, y, radius);
+ctx.arcTo(x, y, x + w, y, radius);
+}
+}
+
 const KBO_CONSTANTS = {
-TOP_RATIO: 0.5635, // 타자 신장의 56.35%
-BOTTOM_RATIO: 0.2764, // 타자 신장의 27.64%
-PLATE_WIDTH_CM: 47.18, // 홈플레이트 폭 43.18cm + 좌우 각 2cm 확대 = 47.18cm
-PLATE_DEPTH_CM: 43.18, // 홈플레이트 앞뒤 깊이 43.18cm (17인치)
-BALL_RADIUS_CM: 3.65, // 공인구 반지름 약 3.65cm
+TOP_RATIO: 0.5635,
+BOTTOM_RATIO: 0.2764,
+PLATE_WIDTH_CM: 47.18,
+BALL_RADIUS_CM: 3.65,
 MOUND_DIST_M: 18.44
 };
 
@@ -1098,34 +1069,28 @@ heightCm: 180
 }
 
 const appState = {
-// 10명의 타자 로스터 및 현재 선택된 타자 인덱스 (0 ~ 9)
 batterRoster: createEmptyBatterRoster(),
 activeBatterIndex: 0,
 
-// 현재 선택된 타자의 활성 정보
 batterName: '1번 타자',
 batterNumber: 1,
 batterStance: 'R',
 batterHeightCm: 180,
 
-// 홈플레이트 ~ 카메라 기본 거리 1.5m (측면 촬영 기본)
-cameraDistM: 1.5,
-cameraHeightM: 0.8,
+// 홈플레이트 ~ 카메라 기본 거리 30cm (0.3m)
+cameraDistM: 0.3,
+cameraHeightM: 0.6,
 bgSourceMode: 'camera',
 
-// 자동 계산된 스트라이크 존 (cm)
 zoneTopCm: 101.4,
 zoneBottomCm: 49.8,
 
-// 메인 트래킹 화면 상태
-// viewDirection: 'sideL2R' (측면 좌→우 비행) | 'sideR2L' (측면 우→좌 비행) | 'catcher' (포수후면)
 isTrackingView: false,
-viewDirection: 'sideL2R',
+viewDirection: 'catcher',
 showSilhouette: true,
 soundEnabled: true,
 dualCompactMode: false,
 
-// 카메라 및 화면캡처 스트림 상태
 mediaStream: null,
 screenStream: null,
 cameraActive: false,
@@ -1133,23 +1098,19 @@ screenShareActive: false,
 facingMode: 'environment',
 zoomLevel: 1.0,
 
-// 스마트폰 동영상/사진 상태
 nativeVideoActive: false,
 nativePhotoActive: false,
 nativeVideoUrl: null,
 
-// 실시간 연속 투구 스트림 (데모 모드)
 continuousStreamEnabled: false,
 lastAutoStreamPitchTime: 0,
 simStreamBall: null,
 
-// 실시간 ABS 합성 녹화 (MediaRecorder)
 mediaRecorder: null,
 isRecordingComposite: false,
 recordedChunks: [],
 recordingStartTime: 0,
 
-// 홈플레이트 & ABS 존 영점 보정값
 calibX: 0,
 calibY: 0,
 calibScale: 1.0,
@@ -1162,23 +1123,20 @@ dragOrigCalibY: 0,
 
 selectedPitchType: 'fourSeam',
 
-// 볼카운트 (BSO)
 balls: 0,
 strikes: 0,
 outs: 0,
 
-// 투구 기록 및 애니메이션
 pitchHistory: [],
 activePitchAnim: null,
 lastJudgmentBannerInfo: null,
 lastJudgmentTimer: null,
 
-// 광학 감지 상태
 autoOpticalEnabled: true,
+prevFrameData: null,
 lastOpticalTriggerTime: 0,
-opticalSignalStrength: 0,
-optEngine: null,
-ballSizeScale: 1.0
+opticalTrail: [],
+opticalSignalStrength: 0
 };
 
 const PITCH_TYPES = {
@@ -1211,7 +1169,7 @@ localStorage.setItem('kbo_abs_batter_roster_v2', JSON.stringify(appState.batterR
 
 function getBatterDisplayName(idx) {
 const b = appState.batterRoster[idx];
-if (!b) return ${idx + 1}번 타자; const trimmed = (b.name \vert{}\vert{} '').trim(); return trimmed ? trimmed : ``${b.slot}번 타자;
+if (!b) return ${idx + 1}번 타자; const trimmed = String(b.name || '').trim(); return trimmed ? trimmed : ``${b.slot}번 타자;
 }
 
 function getBatterDisplayNumber(idx) {
@@ -1236,9 +1194,10 @@ const btnLCls = b.stance === 'L'
 ? 'bg-amber-400 text-slate-950 font-black'
 : 'bg-slate-900 text-slate-400 hover:text-white';
 
+const safeName = String(b.name || '').replace(/"/g, '"');
+
 return &lt;div id="rosterRow_${idx}" class="grid grid-cols-12 gap-2 items-center px-2 py-1.5 transition ${rowBg}"&gt; &lt;div class="col-span-2 flex items-center justify-center"&gt; &lt;button type="button" onclick="selectActiveBatter(${idx})"
-class="w-full py-1 px-1.5 rounded-lg flex items-center justify-center gap-1.5 text-xs font-mono font-bold border transition ${isSelected ? 'bg-cyan-500 text-slate-950 border-cyan-300 shadow' : 'bg-slate-900/90 text-slate-300 border-slate-700 hover:border-cyan-400/50'}"&gt; &lt;i class="fa-solid ${isSelected ? 'fa-circle-check' : 'fa-circle'} text-[10px]"></i>
-<span>`${b.slot}번</span>
+class="w-full py-1 px-1.5 rounded-lg flex items-center justify-center gap-1.5 text-xs font-mono font-bold border transition ${isSelected ? 'bg-cyan-500 text-slate-950 border-cyan-300 shadow' : 'bg-slate-900/90 text-slate-300 border-slate-700 hover:border-cyan-400/50'}"&gt; &lt;span&gt;${isSelected ? '✔' : '○'} `${b.slot}번</span>
 </button>
 </div>
 
@@ -1306,16 +1265,62 @@ if (!skipFullTableRender) {
 renderBatterRosterTable();
 } else if (changed) {
 for (let i = 0; i < 10; i++) {
-const row = document.getElementById(rosterRow_${i}); if (row) { row.className =grid grid-cols-12 gap-2 items-center px-2 py-1.5 transition latex
-{i === parsedIdx ? 'bg-cyan-500/15 border-l-2 border-l-cyan-400' : 'hover:bg-slate-900/60'}`; } } } syncActiveBatterFromRoster(); } function syncActiveBatterFromRoster() { const idx = appState.activeBatterIndex; const b = appState.batterRoster[idx]; if (!b) return; appState.batterName = getBatterDisplayName(idx); appState.batterNumber = getBatterDisplayNumber(idx); appState.batterStance = b.stance \vert{}\vert{} 'R'; appState.batterHeightCm = parseFloat(b.heightCm) \vert{}\vert{} 180; const slotLbl = document.getElementById('activeSlotLabel'); if (slotLbl) slotLbl.textContent = `
+const row = document.getElementById(rosterRow_${i}); if (row) { row.className =grid grid-cols-12 gap-2 items-center px-2 py-1.5 transition ${i === parsedIdx ? 'bg-cyan-500/15 border-l-2 border-l-cyan-400' : 'hover:bg-slate-900/60'};
+}
+}
+}
 
-{b.slot}번 (latex
-{appState.batterName})`; const sliderH = document.getElementById('sliderBatterHeight'); const numH = document.getElementById('numBatterHeight'); if (sliderH) sliderH.value = appState.batterHeightCm; if (numH) numH.value = appState.batterHeightCm; const badge = document.getElementById('previewStanceBadge'); if (badge) { badge.textContent = appState.batterStance === 'R' ? '우타자 (R)' : '좌타자 (L)'; } const sub = document.getElementById('previewSelectedBatterSub'); const stanceKor = appState.batterStance === 'R' ? '우타' : '좌타'; if (sub) { sub.textContent = `현재 선택: #
+syncActiveBatterFromRoster();
+}
 
-{appState.batterNumber} {stanceKor} · latex
-{appState.batterHeightCm}cm)`; } recalculateABSZone(); populateHudBatterDropdown(); updateTrackingHudLabels(); if (appState.isTrackingView) { drawMiniZoneMap(); } } function updateActiveBatterHeight(val) { let num = parseFloat(val); if (isNaN(num)) return; num = Math.max(130, Math.min(220, num)); const idx = appState.activeBatterIndex; appState.batterRoster[idx].heightCm = num; saveBatterRosterToStorage(); const rowInput = document.getElementById(`rosterHeightInput_
+function syncActiveBatterFromRoster() {
+const idx = appState.activeBatterIndex;
+const b = appState.batterRoster[idx];
+if (!b) return;
 
-{idx}`);
+appState.batterName = getBatterDisplayName(idx);
+appState.batterNumber = getBatterDisplayNumber(idx);
+appState.batterStance = b.stance || 'R';
+appState.batterHeightCm = parseFloat(b.heightCm) || 180;
+
+const slotLbl = document.getElementById('activeSlotLabel');
+if (slotLbl) slotLbl.textContent = ``${b.slot}번 (${appState.batterName});
+
+const sliderH = document.getElementById('sliderBatterHeight');
+const numH = document.getElementById('numBatterHeight');
+if (sliderH) sliderH.value = appState.batterHeightCm;
+if (numH) numH.value = appState.batterHeightCm;
+
+const badge = document.getElementById('previewStanceBadge');
+if (badge) {
+badge.textContent = appState.batterStance === 'R' ? '우타자 (R)' : '좌타자 (L)';
+}
+
+const sub = document.getElementById('previewSelectedBatterSub');
+const stanceKor = appState.batterStance === 'R' ? '우타' : '좌타';
+if (sub) {
+sub.textContent = 현재 선택: #${appState.batterNumber} {stanceKor} · ${appState.batterHeightCm}cm);
+}
+
+recalculateABSZone();
+populateHudBatterDropdown();
+updateTrackingHudLabels();
+
+if (appState.isTrackingView) {
+drawMiniZoneMap();
+}
+}
+
+function updateActiveBatterHeight(val) {
+let num = parseFloat(val);
+if (isNaN(num)) return;
+num = Math.max(130, Math.min(220, num));
+
+const idx = appState.activeBatterIndex;
+appState.batterRoster[idx].heightCm = num;
+saveBatterRosterToStorage();
+
+const rowInput = document.getElementById(rosterHeightInput_${idx}`);
 if (rowInput) rowInput.value = num;
 
 syncActiveBatterFromRoster();
@@ -1338,41 +1343,154 @@ const name = getBatterDisplayName(idx);
 const num = getBatterDisplayNumber(idx);
 const stanceKor = b.stance === 'R' ? '우타' : '좌타';
 const selectedAttr = idx === appState.activeBatterIndex ? 'selected' : '';
-return <option value="${idx}" ${selectedAttr}&gt;${b.slot}번 · #${num}${name} (${stanceKor}·${b.heightCm}cm)</option>`;
+return <option value="${idx}" ${selectedAttr}&gt;${b.slot}번 · #${num} ${name} (${stanceKor}·${b.heightCm}cm)</option>`;
 }).join('');
 }
 
 function formatDistDisplay(distM) {
 if (distM < 1.0) {
-return ${Math.round(distM * 100)}cm ($`{distM.toFixed(2)}m)`; } return${distM.toFixed(2)}m; } function getViewDirectionLabel(dir) { if (dir === 'sideL2R') return '👉 측면(좌→우)'; if (dir === 'sideR2L') return '👈 측면(우→좌)'; return '🎯 포수후면'; } function setCameraViewDirection(dir) { appState.viewDirection = dir; ['sideL2R', 'sideR2L', 'catcher'].forEach(k =&gt; { const btn = document.getElementById(camAngleBtn_${k});
-if (!btn) return;
-if (k === dir) {
-btn.className = 'p-2.5 rounded-xl border border-cyan-400 bg-cyan-500/20 text-left transition shadow';
-} else {
-btn.className = 'p-2.5 rounded-xl border border-slate-700 bg-slate-800/70 hover:border-cyan-400/50 text-left transition';
-}
-});
-
-const hudBtn = document.getElementById('btnViewDirectionToggle');
-if (hudBtn) hudBtn.textContent = getViewDirectionLabel(dir);
-
-if (appState.optEngine) {
-appState.optEngine.tracks = [];
-}
-recalculateABSZone();
+return ${Math.round(distM * 100)}cm ($`{distM.toFixed(2)}m)`; } return${distM.toFixed(2)}m`;
 }
 
 function updateTrackingHudLabels() {
 const zoneRangeEl = document.getElementById('hudZoneRange');
 if (zoneRangeEl) {
-zoneRangeEl.textContent = 존:${appState.zoneBottomCm.toFixed(1)}~latex
-{appState.zoneTopCm.toFixed(1)}cm`; } const camDistEl = document.getElementById('hudCameraDist'); if (camDistEl) { camDistEl.innerHTML = `<i class="fa-solid fa-video mr-1"&gt;&lt;/i&gt;
-
-{formatDistDisplay(appState.cameraDistM)}; } const effMin = (appState.zoneBottomCm - KBO_CONSTANTS.BALL_RADIUS_CM).toFixed(1); const effMax = (appState.zoneTopCm + KBO_CONSTANTS.BALL_RADIUS_CM).toFixed(1); const effEl = document.getElementById('metricEffectiveZone'); if (effEl) { effEl.textContent ={effMax} cm; } } /*************************************************************************** * 3. Web Audio API 합성 사운드 엔진 ***************************************************************************/ let audioCtx = null; function initAudioContext() { if (!audioCtx) { const AudioContextClass = window.AudioContext \vert{}\vert{} window.webkitAudioContext; if (AudioContextClass) { audioCtx = new AudioContextClass(); } } if (audioCtx && audioCtx.state === 'suspended') { audioCtx.resume(); } } function playABSSound(type) { if (!appState.soundEnabled) return; try { initAudioContext(); if (!audioCtx) return; const now = audioCtx.currentTime; if (type === 'mitt') { const bufferSize = audioCtx.sampleRate * 0.08; const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate); const data = buffer.getChannelData(0); for (let i = 0; i &lt; bufferSize; i++) { data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (audioCtx.sampleRate * 0.018)); } const noise = audioCtx.createBufferSource(); noise.buffer = buffer; const filter = audioCtx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.setValueAtTime(380, now); const gain = audioCtx.createGain(); gain.gain.setValueAtTime(0.55, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08); noise.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination); noise.start(now); } else if (type === 'strike') { const osc1 = audioCtx.createOscillator(); const osc2 = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc1.type = 'triangle'; osc2.type = 'sine'; osc1.frequency.setValueAtTime(880, now + 0.05); osc1.frequency.setValueAtTime(1318.5, now + 0.16); osc2.frequency.setValueAtTime(1760, now + 0.05); osc2.frequency.setValueAtTime(2637, now + 0.16); gain.gain.setValueAtTime(0.001, now); gain.gain.setValueAtTime(0.32, now + 0.05); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.42); osc1.connect(gain); osc2.connect(gain); gain.connect(audioCtx.destination); osc1.start(now + 0.05); osc2.start(now + 0.05); osc1.stop(now + 0.43); osc2.stop(now + 0.43); } else if (type === 'ball') { const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.type = 'sine'; osc.frequency.setValueAtTime(440, now + 0.05); osc.frequency.setValueAtTime(330, now + 0.15); gain.gain.setValueAtTime(0.001, now); gain.gain.setValueAtTime(0.24, now + 0.05); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.32); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(now + 0.05); osc.stop(now + 0.33); } } catch (e) {} } /*************************************************************************** * 4. 시작 화면 계산 및 프리뷰 렌더링 ***************************************************************************/ function recalculateABSZone() { const h = appState.batterHeightCm; appState.zoneTopCm = +(h * KBO_CONSTANTS.TOP_RATIO).toFixed(1); appState.zoneBottomCm = +(h * KBO_CONSTANTS.BOTTOM_RATIO).toFixed(1); const zoneHeight = +(appState.zoneTopCm - appState.zoneBottomCm).toFixed(1); document.getElementById('calcZoneTop').textContent = appState.zoneTopCm.toFixed(1); document.getElementById('calcZoneBottom').textContent = appState.zoneBottomCm.toFixed(1); document.getElementById('calcZoneHeight').textContent = zoneHeight.toFixed(1); const cmBadge = document.getElementById('distCmBadge'); if (cmBadge) { cmBadge.textContent =(= ${Math.round(appState.cameraDistM * 100)} cm);
+zoneRangeEl.textContent = 존: ${appState.zoneBottomCm.toFixed(1)}~${appState.zoneTopCm.toFixed(1)}cm;
+}
+const camDistEl = document.getElementById('hudCameraDist');
+if (camDistEl) {
+camDistEl.innerHTML = <i class="fa-solid fa-video mr-1"&gt;&lt;/i&gt;${formatDistDisplay(appState.cameraDistM)}; } const effMin = (appState.zoneBottomCm - KBO_CONSTANTS.BALL_RADIUS_CM).toFixed(1); const effMax = (appState.zoneTopCm + KBO_CONSTANTS.BALL_RADIUS_CM).toFixed(1); const effEl = document.getElementById('metricEffectiveZone'); if (effEl) { effEl.textContent = ``${effMin} ~ ${effMax} cm`;
+}
 }
 
-document.getElementById('calcCamSummary').textContent =
-``${formatDistDisplay(appState.cameraDistM)} (${getViewDirectionLabel(appState.viewDirection)});
+/***************************************************************************
+* 3. Web Audio API 합성 사운드 엔진
+***************************************************************************/
+let audioCtx = null;
+
+function initAudioContext() {
+try {
+if (!audioCtx) {
+const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+if (AudioContextClass) {
+audioCtx = new AudioContextClass();
+}
+}
+if (audioCtx && audioCtx.state === 'suspended') {
+audioCtx.resume();
+}
+} catch (e) {}
+}
+
+function playABSSound(type) {
+if (!appState.soundEnabled) return;
+try {
+initAudioContext();
+if (!audioCtx) return;
+
+const now = audioCtx.currentTime;
+
+if (type === 'mitt') {
+const bufferSize = audioCtx.sampleRate * 0.08;
+const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+const data = buffer.getChannelData(0);
+for (let i = 0; i < bufferSize; i++) {
+data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (audioCtx.sampleRate * 0.018));
+}
+const noise = audioCtx.createBufferSource();
+noise.buffer = buffer;
+
+const filter = audioCtx.createBiquadFilter();
+filter.type = 'lowpass';
+filter.frequency.setValueAtTime(380, now);
+
+const gain = audioCtx.createGain();
+gain.gain.setValueAtTime(0.55, now);
+gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+
+noise.connect(filter);
+filter.connect(gain);
+gain.connect(audioCtx.destination);
+noise.start(now);
+} else if (type === 'strike') {
+const osc1 = audioCtx.createOscillator();
+const osc2 = audioCtx.createOscillator();
+const gain = audioCtx.createGain();
+
+osc1.type = 'triangle';
+osc2.type = 'sine';
+
+osc1.frequency.setValueAtTime(880, now + 0.05);
+osc1.frequency.setValueAtTime(1318.5, now + 0.16);
+
+osc2.frequency.setValueAtTime(1760, now + 0.05);
+osc2.frequency.setValueAtTime(2637, now + 0.16);
+
+gain.gain.setValueAtTime(0.001, now);
+gain.gain.setValueAtTime(0.32, now + 0.05);
+gain.gain.exponentialRampToValueAtTime(0.001, now + 0.42);
+
+osc1.connect(gain);
+osc2.connect(gain);
+gain.connect(audioCtx.destination);
+
+osc1.start(now + 0.05);
+osc2.start(now + 0.05);
+osc1.stop(now + 0.43);
+osc2.stop(now + 0.43);
+} else if (type === 'ball') {
+const osc = audioCtx.createOscillator();
+const gain = audioCtx.createGain();
+
+osc.type = 'sine';
+osc.frequency.setValueAtTime(440, now + 0.05);
+osc.frequency.setValueAtTime(330, now + 0.15);
+
+gain.gain.setValueAtTime(0.001, now);
+gain.gain.setValueAtTime(0.24, now + 0.05);
+gain.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
+
+osc.connect(gain);
+gain.connect(audioCtx.destination);
+
+osc.start(now + 0.05);
+osc.stop(now + 0.33);
+}
+} catch (e) {}
+}
+
+/***************************************************************************
+* 4. 시작 화면 계산 및 프리뷰 렌더링 (0.1m ~ 25.0m 지원, 기본 0.3m = 30cm)
+***************************************************************************/
+function recalculateABSZone() {
+const h = appState.batterHeightCm;
+appState.zoneTopCm = +(h * KBO_CONSTANTS.TOP_RATIO).toFixed(1);
+appState.zoneBottomCm = +(h * KBO_CONSTANTS.BOTTOM_RATIO).toFixed(1);
+const zoneHeight = +(appState.zoneTopCm - appState.zoneBottomCm).toFixed(1);
+
+const topEl = document.getElementById('calcZoneTop');
+const btmEl = document.getElementById('calcZoneBottom');
+const hEl = document.getElementById('calcZoneHeight');
+if (topEl) topEl.textContent = appState.zoneTopCm.toFixed(1);
+if (btmEl) btmEl.textContent = appState.zoneBottomCm.toFixed(1);
+if (hEl) hEl.textContent = zoneHeight.toFixed(1);
+
+let posLabel = '초근접';
+if (appState.cameraDistM <= 0.8) posLabel = '홈플레이트 초근접';
+else if (appState.cameraDistM <= 2.0) posLabel = '심판 근접';
+else if (appState.cameraDistM <= 4.5) posLabel = '포수 후면';
+else if (appState.cameraDistM < 12.0) posLabel = '백스톱 중거리';
+else posLabel = '투수 마운드';
+
+const cmBadge = document.getElementById('distCmBadge');
+if (cmBadge) {
+cmBadge.textContent = (=${Math.round(appState.cameraDistM * 100)} cm)`;
+}
+
+const camSumEl = document.getElementById('calcCamSummary');
+if (camSumEl) {
+camSumEl.textContent = ${formatDistDisplay(appState.cameraDistM)} (${posLabel});
+}
 
 drawSetupPreviewCanvas();
 }
@@ -1380,10 +1498,12 @@ drawSetupPreviewCanvas();
 function updateCameraDist(val) {
 let num = parseFloat(val);
 if (isNaN(num)) return;
-num = Math.max(0.3, Math.min(10.0, num));
+num = Math.max(0.1, Math.min(25.0, num));
 appState.cameraDistM = num;
 document.getElementById('sliderCameraDist').value = num;
 document.getElementById('numCameraDist').value = num;
+
+appState.viewDirection = num >= 12.0 ? 'pitcher' : 'catcher';
 
 document.querySelectorAll('.preset-dist-btn').forEach(btn => {
 btn.className = 'preset-dist-btn px-2.5 py-2 rounded-xl border border-slate-700 bg-slate-800/70 hover:border-amber-400/60 text-left transition';
@@ -1392,11 +1512,50 @@ recalculateABSZone();
 updateTrackingHudLabels();
 }
 
-function setCameraPreset(dist, height) {
+function setCameraPreset(dist, height, presetType) {
 updateCameraDist(dist);
-if (height != null) updateCameraHeight(height);
+updateCameraHeight(height);
+appState.viewDirection = presetType === 'pitcher' ? 'pitcher' : 'catcher';
 
-const activeBtn = document.getElementById(presetBtn_${dist}); if (activeBtn) { activeBtn.className = 'preset-dist-btn px-2.5 py-2 rounded-xl border border-amber-400 bg-amber-500/15 text-left transition'; } } function updateCameraHeight(val) { let num = parseFloat(val); if (isNaN(num)) return; num = Math.max(0.2, Math.min(3.0, num)); appState.cameraHeightM = num; document.getElementById('sliderCameraHeight').value = num; document.getElementById('numCameraHeight').value = num; recalculateABSZone(); } function drawSetupPreviewCanvas() { const canvas = document.getElementById('setupPreviewCanvas'); if (!canvas) return; const ctx = canvas.getContext('2d'); const W = canvas.width; const H = canvas.height; ctx.clearRect(0, 0, W, H); const groundY = H - 22; const scaleCmToPx = 0.92; ctx.strokeStyle = 'rgba(148, 163, 184, 0.15)'; ctx.fillStyle = '#64748b'; ctx.font = '10px "JetBrains Mono"'; ctx.lineWidth = 1; [0, 50, 100, 150, 200].forEach(cm =&gt; { const y = groundY - cm * scaleCmToPx; ctx.beginPath(); ctx.moveTo(28, y); ctx.lineTo(W - 10, y); ctx.stroke(); ctx.fillText(${cm}, 4, y + 3);
+const activeBtn = document.getElementById(presetBtn_${dist}`);
+if (activeBtn) {
+activeBtn.className = 'preset-dist-btn px-2.5 py-2 rounded-xl border border-amber-400 bg-amber-500/15 text-left transition';
+}
+}
+
+function updateCameraHeight(val) {
+let num = parseFloat(val);
+if (isNaN(num)) return;
+num = Math.max(0.2, Math.min(3.0, num));
+appState.cameraHeightM = num;
+document.getElementById('sliderCameraHeight').value = num;
+document.getElementById('numCameraHeight').value = num;
+recalculateABSZone();
+}
+
+function drawSetupPreviewCanvas() {
+try {
+const canvas = document.getElementById('setupPreviewCanvas');
+if (!canvas) return;
+const ctx = canvas.getContext('2d');
+const W = canvas.width;
+const H = canvas.height;
+ctx.clearRect(0, 0, W, H);
+
+const groundY = H - 22;
+const scaleCmToPx = 0.92;
+
+ctx.strokeStyle = 'rgba(148, 163, 184, 0.15)';
+ctx.fillStyle = '#64748b';
+ctx.font = '10px monospace';
+ctx.lineWidth = 1;
+[0, 50, 100, 150, 200].forEach(cm => {
+const y = groundY - cm * scaleCmToPx;
+ctx.beginPath();
+ctx.moveTo(28, y);
+ctx.lineTo(W - 10, y);
+ctx.stroke();
+ctx.fillText(``${cm}`, 4, y + 3);
 });
 
 const batterH = appState.batterHeightCm * scaleCmToPx;
@@ -1414,7 +1573,7 @@ ctx.fill();
 ctx.stroke();
 
 ctx.beginPath();
-ctx.roundRect(batterX - headR * 1.1, headY + headR + 2, headR * 2.2, batterH * 0.38, 6);
+drawSafeRoundRect(ctx, batterX - headR * 1.1, headY + headR + 2, headR * 2.2, batterH * 0.38, 6);
 ctx.fill();
 ctx.stroke();
 
@@ -1426,7 +1585,290 @@ ctx.lineTo(batterX + headR * 0.9, groundY);
 ctx.stroke();
 
 ctx.fillStyle = '#00f0ff';
-ctx.fillText(``${appState.batterHeightCm}cm, batterX - 18, groundY - batterH - 4); ctx.restore(); const zoneCenterX = W * 0.52; const zoneW = KBO_CONSTANTS.PLATE_WIDTH_CM * scaleCmToPx; const zoneTopY = groundY - appState.zoneTopCm * scaleCmToPx; const zoneBtmY = groundY - appState.zoneBottomCm * scaleCmToPx; const zoneH = zoneBtmY - zoneTopY; ctx.fillStyle = 'rgba(0, 240, 255, 0.16)'; ctx.strokeStyle = '#00f0ff'; ctx.lineWidth = 2; ctx.fillRect(zoneCenterX - zoneW / 2, zoneTopY, zoneW, zoneH); ctx.strokeRect(zoneCenterX - zoneW / 2, zoneTopY, zoneW, zoneH); ctx.fillStyle = '#f8fafc'; ctx.strokeStyle = '#00f0ff'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(zoneCenterX - zoneW / 2, groundY); ctx.lineTo(zoneCenterX + zoneW / 2, groundY); ctx.lineTo(zoneCenterX + zoneW / 2, groundY + 6); ctx.lineTo(zoneCenterX, groundY + 12); ctx.lineTo(zoneCenterX - zoneW / 2, groundY + 6); ctx.closePath(); ctx.fill(); ctx.stroke(); } /*************************************************************************** * 5. 실시간 영상 소스 연동 및 듀얼화면 / PiP 시스템 ***************************************************************************/ function applySetupInputsToHUD() { syncActiveBatterFromRoster(); const hudBtn = document.getElementById('btnViewDirectionToggle'); if (hudBtn) hudBtn.textContent = getViewDirectionLabel(appState.viewDirection); } async function startABSTracking(initialMode) { initAudioContext(); applySetupInputsToHUD(); document.getElementById('setupView').classList.add('hidden'); document.getElementById('trackingView').classList.remove('hidden'); appState.isTrackingView = true; appState.autoOpticalEnabled = true; resizeMainCanvas(); drawMiniZoneMap(); if (initialMode === 'autoDemoStream') { switchToAutoDemoStreamSource(); } else if (initialMode === 'dualPip') { await switchToLiveCameraSource(); openDualGuideModal(); } else { await switchToLiveCameraSource(); } } function returnToSetupView() { if (appState.isRecordingComposite) { stopCompositeRecording(); } stopCameraStream(); stopScreenCaptureStream(); pauseRecordedVideo(); appState.continuousStreamEnabled = false; appState.isTrackingView = false; document.getElementById('trackingView').classList.add('hidden'); document.getElementById('setupView').classList.remove('hidden'); renderBatterRosterTable(); drawSetupPreviewCanvas(); } async function togglePiPFloatingWindow() { try { const pipVid = document.getElementById('pipOutputVideo'); if (document.pictureInPictureElement) { await document.exitPictureInPicture(); return; } if (!pipVid.srcObject) { const canvasStream = mainCanvas.captureStream(30); pipVid.srcObject = canvasStream; } await pipVid.play(); if (pipVid.requestPictureInPicture) { await pipVid.requestPictureInPicture(); updateCameraStatusUI('live', 'PiP 팝업 판정창 실행 중'); } else if (pipVid.webkitSetPresentationMode) { pipVid.webkitSetPresentationMode('picture-in-picture'); } else { openDualGuideModal(); } } catch (err) { openDualGuideModal(); } } function toggleDualScreenCompactMode() { appState.dualCompactMode = !appState.dualCompactMode; const body = document.body; const btn = document.getElementById('btnToggleDualCompact'); const dashCol = document.getElementById('dashboardColumn'); const viewCol = document.getElementById('viewportColumn'); if (appState.dualCompactMode) { body.classList.add('dual-compact-mode'); dashCol.classList.add('hidden'); viewCol.className = 'lg:col-span-12 flex flex-col gap-2 relative'; btn.className = 'px-2.5 py-1.5 rounded-xl bg-cyan-400 text-slate-950 text-xs font-black flex items-center gap-1 transition shadow'; } else { body.classList.remove('dual-compact-mode'); dashCol.classList.remove('hidden'); viewCol.className = 'lg:col-span-8 flex flex-col gap-2.5 relative'; btn.className = 'px-2.5 py-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/50 text-cyan-300 text-xs font-bold flex items-center gap-1 transition'; } setTimeout(resizeMainCanvas, 60); } function openDualGuideModal() { document.getElementById('dualGuideModal').classList.remove('hidden'); } function closeDualGuideModal() { document.getElementById('dualGuideModal').classList.add('hidden'); } async function startScreenCaptureSource() { try { if (!navigator.mediaDevices \vert{}\vert{} !navigator.mediaDevices.getDisplayMedia) { openDualGuideModal(); return; } stopCameraStream(); pauseRecordedVideo(); appState.nativeVideoActive = false; appState.nativePhotoActive = false; appState.continuousStreamEnabled = false; updateContinuousStreamBtnUI(); const stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: { ideal: 60 } }, audio: false }); appState.screenStream = stream; appState.screenShareActive = true; const scrVid = document.getElementById('screenCaptureVideo'); scrVid.srcObject = stream; await scrVid.play(); stream.getVideoTracks()[0].onended = () =&gt; { appState.screenShareActive = false; switchToAutoDemoStreamSource(); }; document.getElementById('nativeVideoControlBar').classList.add('hidden'); document.getElementById('nativeVideoControlBar').classList.remove('flex'); updateSourceTabUI('screen'); updateCameraStatusUI('live', '듀얼창 화면 1프레임 궤적 자동판정 중'); } catch (e) { updateCameraStatusUI('live', '화면 캡처가 취소되었습니다.'); } } function stopScreenCaptureStream() { if (appState.screenStream) { appState.screenStream.getTracks().forEach(t =&gt; t.stop()); appState.screenStream = null; } appState.screenShareActive = false; } function switchToAutoDemoStreamSource() { stopCameraStream(); stopScreenCaptureStream(); pauseRecordedVideo(); appState.nativeVideoActive = false; appState.nativePhotoActive = false; appState.continuousStreamEnabled = true; appState.lastAutoStreamPitchTime = performance.now() - 2200; document.getElementById('nativeVideoControlBar').classList.add('hidden'); document.getElementById('nativeVideoControlBar').classList.remove('flex'); updateSourceTabUI('autoDemo'); updateContinuousStreamBtnUI(); updateCameraStatusUI('live', '연속 투구 스트림 (1프레임 궤적 추적 중)'); } function toggleContinuousPitchStream() { appState.continuousStreamEnabled = !appState.continuousStreamEnabled; if (appState.continuousStreamEnabled) { appState.lastAutoStreamPitchTime = performance.now() - 2000; } else { appState.simStreamBall = null; } updateContinuousStreamBtnUI(); } function updateContinuousStreamBtnUI() { const btn = document.getElementById('btnAutoStreamToggle'); const txt = document.getElementById('txtAutoStreamToggle'); if (!btn \vert{}\vert{} !txt) return; if (appState.continuousStreamEnabled) { btn.className = 'px-3 py-1.5 rounded-xl bg-purple-500 text-slate-950 text-xs font-black transition flex items-center gap-1.5 shadow-lg'; txt.textContent = '연속 자동투구 스트림: ON'; } else { btn.className = 'px-3 py-1.5 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 border border-purple-400/50 text-purple-200 text-xs font-bold transition flex items-center gap-1.5'; txt.textContent = '연속 자동투구 스트림: OFF'; } } function launchNativePhoneCamera(type) { initAudioContext(); applySetupInputsToHUD(); const input = document.getElementById('nativeCameraVideoInput'); input.value = ''; input.click(); } function launchGalleryPicker() { initAudioContext(); applySetupInputsToHUD(); const input = document.getElementById('galleryMediaInput'); input.value = ''; input.click(); } function handleNativeCameraFile(event) { const file = event.target.files && event.target.files[0]; if (!file) return; if (!appState.isTrackingView) { document.getElementById('setupView').classList.add('hidden'); document.getElementById('trackingView').classList.remove('hidden'); appState.isTrackingView = true; resizeMainCanvas(); drawMiniZoneMap(); } stopCameraStream(); stopScreenCaptureStream(); appState.continuousStreamEnabled = false; updateContinuousStreamBtnUI(); if (file.type.startsWith('image/')) { appState.nativeVideoActive = false; appState.nativePhotoActive = true; const img = document.getElementById('capturedPhotoImg'); img.onload = () =&gt; { updateCameraStatusUI('live', '사진 로드 완료 (야구공 클릭 시 판정)'); }; img.src = URL.createObjectURL(file); updateSourceTabUI('videoLoop'); return; } appState.nativePhotoActive = false; appState.nativeVideoActive = true; appState.autoOpticalEnabled = true; resetOpticalEngine(); if (appState.nativeVideoUrl) { URL.revokeObjectURL(appState.nativeVideoUrl); } const url = URL.createObjectURL(file); appState.nativeVideoUrl = url; const recVid = document.getElementById('recordedPitchVideo'); recVid.src = url; recVid.loop = true; recVid.muted = true; recVid.playbackRate = 1.0; recVid.onloadedmetadata = () =&gt; { document.getElementById('videoDurTime').textContent =${recVid.duration.toFixed(2)}s;
+ctx.fillText(${appState.batterHeightCm}cm`, batterX - 18, groundY - batterH - 4);
+ctx.restore();
+
+const zoneCenterX = W * 0.52;
+const zoneW = KBO_CONSTANTS.PLATE_WIDTH_CM * scaleCmToPx;
+const zoneTopY = groundY - appState.zoneTopCm * scaleCmToPx;
+const zoneBtmY = groundY - appState.zoneBottomCm * scaleCmToPx;
+const zoneH = zoneBtmY - zoneTopY;
+
+ctx.fillStyle = 'rgba(0, 240, 255, 0.16)';
+ctx.strokeStyle = '#00f0ff';
+ctx.lineWidth = 2;
+ctx.fillRect(zoneCenterX - zoneW / 2, zoneTopY, zoneW, zoneH);
+ctx.strokeRect(zoneCenterX - zoneW / 2, zoneTopY, zoneW, zoneH);
+
+ctx.fillStyle = '#f8fafc';
+ctx.strokeStyle = '#00f0ff';
+ctx.lineWidth = 1.5;
+ctx.beginPath();
+ctx.moveTo(zoneCenterX - zoneW / 2, groundY);
+ctx.lineTo(zoneCenterX + zoneW / 2, groundY);
+ctx.lineTo(zoneCenterX + zoneW / 2, groundY + 6);
+ctx.lineTo(zoneCenterX, groundY + 12);
+ctx.lineTo(zoneCenterX - zoneW / 2, groundY + 6);
+ctx.closePath();
+ctx.fill();
+ctx.stroke();
+} catch (e) {}
+}
+
+/***************************************************************************
+* 5. 실시간 영상 소스 연동 및 듀얼화면 / PiP 시스템
+***************************************************************************/
+function applySetupInputsToHUD() {
+syncActiveBatterFromRoster();
+const viewBtn = document.getElementById('btnViewDirectionToggle');
+if (viewBtn) {
+viewBtn.textContent = appState.viewDirection === 'catcher' ? '포수시점' : '투수시점';
+}
+}
+
+async function startABSTracking(initialMode) {
+initAudioContext();
+applySetupInputsToHUD();
+
+document.getElementById('setupView').classList.add('hidden');
+document.getElementById('trackingView').classList.remove('hidden');
+appState.isTrackingView = true;
+appState.autoOpticalEnabled = true;
+
+resizeMainCanvas();
+drawMiniZoneMap();
+
+if (initialMode === 'autoDemoStream') {
+switchToAutoDemoStreamSource();
+} else if (initialMode === 'dualPip') {
+await switchToLiveCameraSource();
+openDualGuideModal();
+} else {
+await switchToLiveCameraSource();
+}
+}
+
+function returnToSetupView() {
+if (appState.isRecordingComposite) {
+stopCompositeRecording();
+}
+stopCameraStream();
+stopScreenCaptureStream();
+pauseRecordedVideo();
+appState.continuousStreamEnabled = false;
+appState.isTrackingView = false;
+document.getElementById('trackingView').classList.add('hidden');
+document.getElementById('setupView').classList.remove('hidden');
+renderBatterRosterTable();
+drawSetupPreviewCanvas();
+}
+
+async function togglePiPFloatingWindow() {
+try {
+const pipVid = document.getElementById('pipOutputVideo');
+if (document.pictureInPictureElement) {
+await document.exitPictureInPicture();
+return;
+}
+
+if (!pipVid.srcObject) {
+const canvasStream = mainCanvas.captureStream(30);
+pipVid.srcObject = canvasStream;
+}
+await pipVid.play();
+
+if (pipVid.requestPictureInPicture) {
+await pipVid.requestPictureInPicture();
+updateCameraStatusUI('live', 'PiP 팝업 판정창 실행 중');
+} else if (pipVid.webkitSetPresentationMode) {
+pipVid.webkitSetPresentationMode('picture-in-picture');
+} else {
+openDualGuideModal();
+}
+} catch (err) {
+openDualGuideModal();
+}
+}
+
+function toggleDualScreenCompactMode() {
+appState.dualCompactMode = !appState.dualCompactMode;
+const body = document.body;
+const btn = document.getElementById('btnToggleDualCompact');
+const dashCol = document.getElementById('dashboardColumn');
+const viewCol = document.getElementById('viewportColumn');
+
+if (appState.dualCompactMode) {
+body.classList.add('dual-compact-mode');
+dashCol.classList.add('hidden');
+viewCol.className = 'lg:col-span-12 flex flex-col gap-2 relative';
+btn.className = 'px-2.5 py-1.5 rounded-xl bg-cyan-400 text-slate-950 text-xs font-black flex items-center gap-1 transition shadow';
+} else {
+body.classList.remove('dual-compact-mode');
+dashCol.classList.remove('hidden');
+viewCol.className = 'lg:col-span-8 flex flex-col gap-2.5 relative';
+btn.className = 'px-2.5 py-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/50 text-cyan-300 text-xs font-bold flex items-center gap-1 transition';
+}
+setTimeout(resizeMainCanvas, 60);
+}
+
+function openDualGuideModal() {
+document.getElementById('dualGuideModal').classList.remove('hidden');
+}
+
+function closeDualGuideModal() {
+document.getElementById('dualGuideModal').classList.add('hidden');
+}
+
+async function startScreenCaptureSource() {
+try {
+if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+openDualGuideModal();
+return;
+}
+stopCameraStream();
+pauseRecordedVideo();
+appState.nativeVideoActive = false;
+appState.nativePhotoActive = false;
+appState.continuousStreamEnabled = false;
+updateContinuousStreamBtnUI();
+
+const stream = await navigator.mediaDevices.getDisplayMedia({
+video: { frameRate: { ideal: 60 } },
+audio: false
+});
+
+appState.screenStream = stream;
+appState.screenShareActive = true;
+const scrVid = document.getElementById('screenCaptureVideo');
+scrVid.srcObject = stream;
+await scrVid.play();
+
+stream.getVideoTracks()[0].onended = () => {
+appState.screenShareActive = false;
+switchToAutoDemoStreamSource();
+};
+
+document.getElementById('nativeVideoControlBar').classList.add('hidden');
+document.getElementById('nativeVideoControlBar').classList.remove('flex');
+updateSourceTabUI('screen');
+updateCameraStatusUI('live', '듀얼창 화면 백색 야구공 자동판정 중');
+} catch (e) {
+updateCameraStatusUI('live', '화면 캡처가 취소되었습니다.');
+}
+}
+
+function stopScreenCaptureStream() {
+if (appState.screenStream) {
+appState.screenStream.getTracks().forEach(t => t.stop());
+appState.screenStream = null;
+}
+appState.screenShareActive = false;
+}
+
+function switchToAutoDemoStreamSource() {
+stopCameraStream();
+stopScreenCaptureStream();
+pauseRecordedVideo();
+appState.nativeVideoActive = false;
+appState.nativePhotoActive = false;
+appState.continuousStreamEnabled = true;
+appState.lastAutoStreamPitchTime = performance.now() - 2200;
+
+document.getElementById('nativeVideoControlBar').classList.add('hidden');
+document.getElementById('nativeVideoControlBar').classList.remove('flex');
+
+updateSourceTabUI('autoDemo');
+updateContinuousStreamBtnUI();
+updateCameraStatusUI('live', '연속 투구 스트림 (백색 야구공 자동 감지 중)');
+}
+
+function toggleContinuousPitchStream() {
+appState.continuousStreamEnabled = !appState.continuousStreamEnabled;
+if (appState.continuousStreamEnabled) {
+appState.lastAutoStreamPitchTime = performance.now() - 2000;
+} else {
+appState.simStreamBall = null;
+}
+updateContinuousStreamBtnUI();
+}
+
+function updateContinuousStreamBtnUI() {
+const btn = document.getElementById('btnAutoStreamToggle');
+const txt = document.getElementById('txtAutoStreamToggle');
+if (!btn || !txt) return;
+if (appState.continuousStreamEnabled) {
+btn.className = 'px-3 py-1.5 rounded-xl bg-purple-500 text-slate-950 text-xs font-black transition flex items-center gap-1.5 shadow-lg';
+txt.textContent = '연속 자동투구 스트림: ON';
+} else {
+btn.className = 'px-3 py-1.5 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 border border-purple-400/50 text-purple-200 text-xs font-bold transition flex items-center gap-1.5';
+txt.textContent = '연속 자동투구 스트림: OFF';
+}
+}
+
+function launchNativePhoneCamera(type) {
+initAudioContext();
+applySetupInputsToHUD();
+const input = document.getElementById('nativeCameraVideoInput');
+input.value = '';
+input.click();
+}
+
+function launchGalleryPicker() {
+initAudioContext();
+applySetupInputsToHUD();
+const input = document.getElementById('galleryMediaInput');
+input.value = '';
+input.click();
+}
+
+function handleNativeCameraFile(event) {
+const file = event.target.files && event.target.files[0];
+if (!file) return;
+
+if (!appState.isTrackingView) {
+document.getElementById('setupView').classList.add('hidden');
+document.getElementById('trackingView').classList.remove('hidden');
+appState.isTrackingView = true;
+resizeMainCanvas();
+drawMiniZoneMap();
+}
+
+stopCameraStream();
+stopScreenCaptureStream();
+appState.continuousStreamEnabled = false;
+updateContinuousStreamBtnUI();
+
+if (file.type.startsWith('image/')) {
+appState.nativeVideoActive = false;
+appState.nativePhotoActive = true;
+const img = document.getElementById('capturedPhotoImg');
+img.onload = () => {
+updateCameraStatusUI('live', '사진 로드 완료 (야구공 클릭 시 판정)');
+};
+img.src = URL.createObjectURL(file);
+updateSourceTabUI('videoLoop');
+return;
+}
+
+appState.nativePhotoActive = false;
+appState.nativeVideoActive = true;
+appState.autoOpticalEnabled = true;
+appState.prevFrameData = null;
+
+if (appState.nativeVideoUrl) {
+URL.revokeObjectURL(appState.nativeVideoUrl);
+}
+const url = URL.createObjectURL(file);
+appState.nativeVideoUrl = url;
+
+const recVid = document.getElementById('recordedPitchVideo');
+recVid.src = url;
+recVid.loop = true;
+recVid.muted = true;
+recVid.playbackRate = 1.0;
+
+recVid.onloadedmetadata = () => {
+document.getElementById('videoDurTime').textContent = ``${recVid.duration.toFixed(2)}s`;
 recVid.play().catch(() => {});
 updateVideoPlayButtonUI(true);
 };
@@ -1435,7 +1877,61 @@ recVid.ontimeupdate = () => {
 if (recVid.duration) {
 const pct = (recVid.currentTime / recVid.duration) * 100;
 document.getElementById('videoSeekSlider').value = pct;
-document.getElementById('videoCurTime').textContent = ``${recVid.currentTime.toFixed(2)}s; } }; document.getElementById('nativeVideoControlBar').classList.remove('hidden'); document.getElementById('nativeVideoControlBar').classList.add('flex'); updateSourceTabUI('videoLoop'); updateCameraStatusUI('live', '동영상 1프레임 궤적 추적 작동 중'); } async function switchToLiveCameraSource() { pauseRecordedVideo(); stopScreenCaptureStream(); appState.nativeVideoActive = false; appState.nativePhotoActive = false; appState.continuousStreamEnabled = false; updateContinuousStreamBtnUI(); document.getElementById('nativeVideoControlBar').classList.add('hidden'); document.getElementById('nativeVideoControlBar').classList.remove('flex'); updateSourceTabUI('live'); await startCameraStream(); } async function startCameraStream() { const video = document.getElementById('cameraVideo'); try { if (appState.mediaStream) { appState.mediaStream.getTracks().forEach(t =&gt; t.stop()); } if (!navigator.mediaDevices \vert{}\vert{} !navigator.mediaDevices.getUserMedia) { throw new Error('카메라 API 미지원'); } const constraints = { video: { facingMode: { ideal: appState.facingMode }, width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 60, min: 30 } }, audio: false }; const stream = await navigator.mediaDevices.getUserMedia(constraints); appState.mediaStream = stream; video.srcObject = stream; await video.play(); appState.cameraActive = true; resetOpticalEngine(); const camLabel = appState.facingMode === 'environment' ? '후면 카메라' : '전면 카메라'; updateCameraStatusUI('live',실시간 ${camLabel} (1프레임 궤적 추적));
+document.getElementById('videoCurTime').textContent = ${recVid.currentTime.toFixed(2)}s`;
+}
+};
+
+document.getElementById('nativeVideoControlBar').classList.remove('hidden');
+document.getElementById('nativeVideoControlBar').classList.add('flex');
+
+updateSourceTabUI('videoLoop');
+updateCameraStatusUI('live', '동영상 백색 야구공 즉시 포착 작동 중');
+}
+
+async function switchToLiveCameraSource() {
+pauseRecordedVideo();
+stopScreenCaptureStream();
+appState.nativeVideoActive = false;
+appState.nativePhotoActive = false;
+appState.continuousStreamEnabled = false;
+updateContinuousStreamBtnUI();
+
+document.getElementById('nativeVideoControlBar').classList.add('hidden');
+document.getElementById('nativeVideoControlBar').classList.remove('flex');
+
+updateSourceTabUI('live');
+await startCameraStream();
+}
+
+async function startCameraStream() {
+const video = document.getElementById('cameraVideo');
+try {
+if (appState.mediaStream) {
+appState.mediaStream.getTracks().forEach(t => t.stop());
+}
+if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+throw new Error('카메라 API 미지원');
+}
+
+const constraints = {
+video: {
+facingMode: { ideal: appState.facingMode },
+width: { ideal: 1280 },
+height: { ideal: 720 },
+frameRate: { ideal: 60, min: 30 }
+},
+audio: false
+};
+
+const stream = await navigator.mediaDevices.getUserMedia(constraints);
+appState.mediaStream = stream;
+video.srcObject = stream;
+await video.play();
+appState.cameraActive = true;
+appState.prevFrameData = null;
+
+const camLabel = appState.facingMode === 'environment' ? '후면 카메라' : '전면 카메라';
+updateCameraStatusUI('live', 실시간${camLabel} (30cm 백색 야구공 전용)`);
 } catch (err) {
 appState.cameraActive = false;
 appState.continuousStreamEnabled = true;
@@ -1463,7 +1959,90 @@ async function updateCameraZoom(val) {
 const z = parseFloat(val) || 1.0;
 appState.zoomLevel = z;
 document.getElementById('cameraZoomSlider').value = z;
-document.getElementById('zoomValueLabel').textContent = ``${z.toFixed(1)}x; if (appState.mediaStream) { const [track] = appState.mediaStream.getVideoTracks(); if (track && track.getCapabilities) { const caps = track.getCapabilities(); if (caps.zoom) { const clampedZoom = Math.max(caps.zoom.min, Math.min(caps.zoom.max, z)); try { await track.applyConstraints({ advanced: [{ zoom: clampedZoom }] }); } catch (e) {} } } } } function updateSourceTabUI(activeKey) { const btnLive = document.getElementById('btnSourceLiveCam'); const btnVideo = document.getElementById('btnSourceVideoLoop'); const btnScreen = document.getElementById('btnSourceScreenShare'); const btnDemo = document.getElementById('btnSourceAutoDemo'); const baseCls = 'px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 whitespace-nowrap '; btnLive.className = baseCls + (activeKey === 'live' ? 'bg-cyan-500 text-slate-950 shadow' : 'text-slate-300 hover:bg-slate-800'); btnVideo.className = baseCls + (activeKey === 'videoLoop' ? 'bg-emerald-400 text-slate-950 shadow' : 'text-emerald-300 hover:bg-slate-800'); btnScreen.className = baseCls + (activeKey === 'screen' ? 'bg-amber-400 text-slate-950 shadow' : 'text-amber-300 hover:bg-slate-800'); btnDemo.className = baseCls + (activeKey === 'autoDemo' ? 'bg-purple-400 text-slate-950 shadow' : 'text-purple-300 hover:bg-slate-800'); } function updateCameraStatusUI(mode, labelText) { const txt = document.getElementById('camStatusText'); if (txt) txt.textContent = labelText; } /*************************************************************************** * 6. 동영상 재생 컨트롤 (1프레임 이동 포함) 및 녹화 ***************************************************************************/ function toggleRecordedVideoPlay() { const vid = document.getElementById('recordedPitchVideo'); if (!vid) return; if (vid.paused) { vid.play(); updateVideoPlayButtonUI(true); } else { vid.pause(); updateVideoPlayButtonUI(false); } } function stepVideoFrame(dir) { const vid = document.getElementById('recordedPitchVideo'); if (!vid \vert{}\vert{} !vid.duration) return; vid.pause(); updateVideoPlayButtonUI(false); const frameStep = 1 / 60; vid.currentTime = Math.max(0, Math.min(vid.duration, vid.currentTime + dir * frameStep)); } function pauseRecordedVideo() { const vid = document.getElementById('recordedPitchVideo'); if (vid && !vid.paused) { vid.pause(); updateVideoPlayButtonUI(false); } } function updateVideoPlayButtonUI(isPlaying) { const icon = document.getElementById('iconVideoPlay'); const txt = document.getElementById('txtVideoPlay'); if (!icon \vert{}\vert{} !txt) return; if (isPlaying) { icon.className = 'fa-solid fa-pause'; txt.textContent = '일시정지'; } else { icon.className = 'fa-solid fa-play'; txt.textContent = '재생'; } } function seekRecordedVideo(pctVal) { const vid = document.getElementById('recordedPitchVideo'); if (!vid \vert{}\vert{} !vid.duration) return; vid.currentTime = (parseFloat(pctVal) / 100) * vid.duration; } function setRecordedVideoRate(rate) { const vid = document.getElementById('recordedPitchVideo'); if (vid) vid.playbackRate = rate; document.querySelectorAll('.vid-rate-btn').forEach(btn =&gt; { btn.className = 'vid-rate-btn px-2 py-0.5 rounded text-[11px] font-mono text-slate-300'; }); const active = document.getElementById(rateBtn_${rate});
+document.getElementById('zoomValueLabel').textContent = ${z.toFixed(1)}x`;
+
+if (appState.mediaStream) {
+const [track] = appState.mediaStream.getVideoTracks();
+if (track && track.getCapabilities) {
+const caps = track.getCapabilities();
+if (caps.zoom) {
+const clampedZoom = Math.max(caps.zoom.min, Math.min(caps.zoom.max, z));
+try {
+await track.applyConstraints({ advanced: [{ zoom: clampedZoom }] });
+} catch (e) {}
+}
+}
+}
+}
+
+function updateSourceTabUI(activeKey) {
+const btnLive = document.getElementById('btnSourceLiveCam');
+const btnVideo = document.getElementById('btnSourceVideoLoop');
+const btnScreen = document.getElementById('btnSourceScreenShare');
+const btnDemo = document.getElementById('btnSourceAutoDemo');
+
+const baseCls = 'px-2.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 whitespace-nowrap ';
+btnLive.className = baseCls + (activeKey === 'live' ? 'bg-cyan-500 text-slate-950 shadow' : 'text-slate-300 hover:bg-slate-800');
+btnVideo.className = baseCls + (activeKey === 'videoLoop' ? 'bg-emerald-400 text-slate-950 shadow' : 'text-emerald-300 hover:bg-slate-800');
+btnScreen.className = baseCls + (activeKey === 'screen' ? 'bg-amber-400 text-slate-950 shadow' : 'text-amber-300 hover:bg-slate-800');
+btnDemo.className = baseCls + (activeKey === 'autoDemo' ? 'bg-purple-400 text-slate-950 shadow' : 'text-purple-300 hover:bg-slate-800');
+}
+
+function updateCameraStatusUI(mode, labelText) {
+const txt = document.getElementById('camStatusText');
+if (txt) txt.textContent = labelText;
+}
+
+/***************************************************************************
+* 6. 동영상 재생 컨트롤 및 녹화
+***************************************************************************/
+function toggleRecordedVideoPlay() {
+const vid = document.getElementById('recordedPitchVideo');
+if (!vid) return;
+if (vid.paused) {
+vid.play();
+updateVideoPlayButtonUI(true);
+} else {
+vid.pause();
+updateVideoPlayButtonUI(false);
+}
+}
+
+function pauseRecordedVideo() {
+const vid = document.getElementById('recordedPitchVideo');
+if (vid && !vid.paused) {
+vid.pause();
+updateVideoPlayButtonUI(false);
+}
+}
+
+function updateVideoPlayButtonUI(isPlaying) {
+const icon = document.getElementById('iconVideoPlay');
+const txt = document.getElementById('txtVideoPlay');
+if (!icon || !txt) return;
+if (isPlaying) {
+icon.className = 'fa-solid fa-pause';
+txt.textContent = '일시정지';
+} else {
+icon.className = 'fa-solid fa-play';
+txt.textContent = '재생';
+}
+}
+
+function seekRecordedVideo(pctVal) {
+const vid = document.getElementById('recordedPitchVideo');
+if (!vid || !vid.duration) return;
+vid.currentTime = (parseFloat(pctVal) / 100) * vid.duration;
+}
+
+function setRecordedVideoRate(rate) {
+const vid = document.getElementById('recordedPitchVideo');
+if (vid) vid.playbackRate = rate;
+
+document.querySelectorAll('.vid-rate-btn').forEach(btn => {
+btn.className = 'vid-rate-btn px-2 py-0.5 rounded text-[11px] font-mono text-slate-300';
+});
+const active = document.getElementById(rateBtn_${rate}`);
 if (active) {
 active.className = 'vid-rate-btn px-2 py-0.5 rounded text-[11px] font-mono bg-cyan-500/25 text-cyan-300 font-bold';
 }
@@ -1506,4 +2085,854 @@ const url = URL.createObjectURL(blob);
 const ext = (recorder.mimeType && recorder.mimeType.includes('mp4')) ? 'mp4' : 'webm';
 const link = document.getElementById('downloadRecordedLink');
 link.href = url;
-link.download = KBO_ABS_${appState.batterName}_${Date.now
+link.download = KBO_ABS_${appState.batterName}_${Date.now()}.${ext}`;
+
+const wrap = document.getElementById('recordedDownloadWrap');
+wrap.classList.remove('hidden');
+wrap.classList.add('flex');
+};
+
+recorder.start(200);
+appState.mediaRecorder = recorder;
+appState.isRecordingComposite = true;
+appState.recordingStartTime = performance.now();
+
+const btn = document.getElementById('btnRecordComposite');
+const lbl = document.getElementById('recButtonLabel');
+btn.classList.add('rec-shutter-active');
+lbl.textContent = '녹화중지';
+} catch (err) {
+updateCameraStatusUI('live', '이 브라우저에서는 영상 녹화가 제한됩니다.');
+}
+}
+
+function stopCompositeRecording() {
+if (appState.mediaRecorder && appState.isRecordingComposite) {
+appState.mediaRecorder.stop();
+}
+appState.isRecordingComposite = false;
+const btn = document.getElementById('btnRecordComposite');
+const lbl = document.getElementById('recButtonLabel');
+btn.classList.remove('rec-shutter-active');
+lbl.textContent = 'ABS 녹화';
+}
+
+/***************************************************************************
+* 7. 메인 캔버스 원근 투영(Perspective) & 배경 소스 렌더링
+***************************************************************************/
+const mainCanvas = document.getElementById('absMainCanvas');
+const mainCtx = mainCanvas.getContext('2d');
+
+function resizeMainCanvas() {
+const container = document.getElementById('viewportContainer');
+if (!container) return;
+const rect = container.getBoundingClientRect();
+mainCanvas.width = Math.max(300, rect.width);
+mainCanvas.height = Math.max(300, rect.height);
+}
+
+window.addEventListener('resize', () => {
+if (appState.isTrackingView) {
+resizeMainCanvas();
+drawMiniZoneMap();
+}
+});
+
+function getZoneProjection() {
+const W = mainCanvas.width || 640;
+const H = mainCanvas.height || 480;
+
+const distFactor = Math.max(0.68, Math.min(1.22, Math.pow(1.5 / Math.max(0.3, appState.cameraDistM), 0.14)));
+const basePxPerCm = (Math.min(W, H) / 185) * distFactor * appState.calibScale;
+
+const camHeightOffsetPx = (appState.cameraHeightM - 0.8) * 28;
+const groundY = H * 0.81 + appState.calibY + camHeightOffsetPx;
+const centerX = W * 0.50 + appState.calibX;
+
+const zoneTopY = groundY - appState.zoneTopCm * basePxPerCm;
+const zoneBottomY = groundY - appState.zoneBottomCm * basePxPerCm;
+const zoneLeftX = centerX - KBO_CONSTANTS.PLATE_WIDTH_CM * 0.5 * basePxPerCm;
+const zoneRightX = centerX + KBO_CONSTANTS.PLATE_WIDTH_CM * 0.5 * basePxPerCm;
+
+return {
+W,
+H,
+centerX,
+groundY,
+pxPerCm: basePxPerCm,
+zoneTopY,
+zoneBottomY,
+zoneLeftX,
+zoneRightX,
+zoneWidthPx: zoneRightX - zoneLeftX,
+zoneHeightPx: zoneBottomY - zoneTopY,
+ballRadiusPx: KBO_CONSTANTS.BALL_RADIUS_CM * basePxPerCm,
+pixelToCm(pxX, pxY) {
+const xCm = (pxX - centerX) / basePxPerCm;
+const zCm = (groundY - pxY) / basePxPerCm;
+return { xCm, zCm };
+},
+cmToPixel(xCm, zCm) {
+return {
+x: centerX + xCm * basePxPerCm,
+y: groundY - zCm * basePxPerCm
+};
+}
+};
+}
+
+function drawMediaSourceToCanvas(ctx, mediaEl, mediaW, mediaH, canvasW, canvasH) {
+if (!mediaW || !mediaH) return;
+const zoom = appState.zoomLevel || 1.0;
+
+const scale = Math.max(canvasW / mediaW, canvasH / mediaH) * zoom;
+const drawW = mediaW * scale;
+const drawH = mediaH * scale;
+const dx = (canvasW - drawW) / 2;
+const dy = (canvasH - drawH) / 2;
+
+ctx.save();
+if (appState.cameraActive && appState.facingMode === 'user') {
+ctx.translate(canvasW, 0);
+ctx.scale(-1, 1);
+}
+ctx.drawImage(mediaEl, dx, dy, drawW, drawH);
+ctx.restore();
+}
+
+function drawVirtualStadiumBackground(ctx, proj) {
+const { W, H, centerX, groundY, pxPerCm } = proj;
+
+const skyGrad = ctx.createLinearGradient(0, 0, 0, groundY);
+skyGrad.addColorStop(0, '#040711');
+skyGrad.addColorStop(0.55, '#0a162c');
+skyGrad.addColorStop(1, '#102342');
+ctx.fillStyle = skyGrad;
+ctx.fillRect(0, 0, W, H);
+
+const horizonY = Math.min(groundY - 110, H * 0.44);
+
+const turfGrad = ctx.createLinearGradient(0, horizonY, 0, H);
+turfGrad.addColorStop(0, '#092e26');
+turfGrad.addColorStop(0.55, '#0b3b2f');
+turfGrad.addColorStop(1, '#1f1916');
+ctx.fillStyle = turfGrad;
+ctx.fillRect(0, horizonY, W, H - horizonY);
+
+ctx.strokeStyle = 'rgba(16, 185, 129, 0.12)';
+ctx.lineWidth = 1;
+for (let i = -6; i <= 6; i++) {
+ctx.beginPath();
+ctx.moveTo(centerX + i * 22, horizonY);
+ctx.lineTo(centerX + i * 190, H);
+ctx.stroke();
+}
+
+ctx.fillStyle = 'rgba(120, 72, 42, 0.45)';
+ctx.beginPath();
+ctx.ellipse(centerX, groundY + 10, 180 * (pxPerCm / 2.2), 42, 0, 0, Math.PI * 2);
+ctx.fill();
+}
+
+function drawBatterSilhouette(ctx, proj) {
+if (!appState.showSilhouette) return;
+
+const { centerX, groundY, pxPerCm } = proj;
+const batterHeightPx = appState.batterHeightCm * pxPerCm;
+const isRightBatter = appState.batterStance === 'R';
+
+let sideDir = isRightBatter ? -1 : 1;
+if (appState.viewDirection === 'pitcher') sideDir *= -1;
+
+const batterCenterX = centerX + sideDir * (56 * pxPerCm);
+const topHeadY = groundY - batterHeightPx;
+
+ctx.save();
+ctx.fillStyle = 'rgba(0, 240, 255, 0.08)';
+ctx.strokeStyle = 'rgba(0, 240, 255, 0.48)';
+ctx.lineWidth = 2;
+
+const headR = batterHeightPx * 0.068;
+const headCy = topHeadY + headR;
+
+ctx.beginPath();
+ctx.arc(batterCenterX, headCy, headR, 0, Math.PI * 2);
+ctx.fill();
+ctx.stroke();
+
+const torsoTop = headCy + headR + 3;
+const torsoH = batterHeightPx * 0.34;
+const torsoW = batterHeightPx * 0.16;
+ctx.beginPath();
+drawSafeRoundRect(ctx, batterCenterX - torsoW / 2, torsoTop, torsoW, torsoH, 10);
+ctx.fill();
+ctx.stroke();
+
+const hipY = torsoTop + torsoH;
+const kneeY = groundY - batterHeightPx * 0.25;
+ctx.lineWidth = 2.5;
+ctx.beginPath();
+ctx.moveTo(batterCenterX - sideDir * (torsoW * 0.25), hipY);
+ctx.lineTo(batterCenterX - sideDir * (torsoW * 0.45), kneeY);
+ctx.lineTo(batterCenterX - sideDir * (torsoW * 0.40), groundY);
+ctx.moveTo(batterCenterX + sideDir * (torsoW * 0.25), hipY);
+ctx.lineTo(batterCenterX + sideDir * (torsoW * 0.45), kneeY);
+ctx.lineTo(batterCenterX + sideDir * (torsoW * 0.50), groundY);
+ctx.stroke();
+
+ctx.fillStyle = '#00f0ff';
+ctx.font = 'bold 11px sans-serif';
+ctx.textAlign = 'center';
+ctx.fillText(#${appState.batterNumber} {appState.batterHeightCm}cm)`, batterCenterX, topHeadY - 8);
+
+ctx.restore();
+}
+
+function drawABSStrikeZone(ctx, proj) {
+const {
+centerX, groundY,
+zoneTopY, zoneBottomY, zoneLeftX, zoneRightX,
+zoneWidthPx, zoneHeightPx
+} = proj;
+
+ctx.save();
+
+if (appState.autoOpticalEnabled) {
+const roiPadX = Math.max(85, zoneWidthPx * 0.55);
+const roiPadTop = Math.max(75, zoneHeightPx * 0.45);
+ctx.strokeStyle = 'rgba(0, 230, 118, 0.32)';
+ctx.lineWidth = 1.2;
+ctx.setLineDash([6, 4]);
+ctx.strokeRect(
+zoneLeftX - roiPadX,
+Math.max(8, zoneTopY - roiPadTop),
+zoneWidthPx + roiPadX * 2,
+Math.min(proj.H - 16, (groundY - Math.max(8, zoneTopY - roiPadTop)) + 25)
+);
+ctx.setLineDash([]);
+ctx.fillStyle = 'rgba(0, 230, 118, 0.85)';
+ctx.font = 'bold 10px monospace';
+ctx.textAlign = 'left';
+ctx.fillText('● WHITE BASEBALL INSTANT-CATCH ROI (하얀 공이 이 구역에 찍히면 즉시 판정)', zoneLeftX - roiPadX + 4, Math.max(20, zoneTopY - roiPadTop - 5));
+}
+
+const plateDepthPx = Math.max(16, 26 * (1.2 / Math.max(0.3, appState.cameraDistM)));
+const clampedDepthPx = Math.min(38, plateDepthPx);
+const dirDepth = appState.viewDirection === 'catcher' ? 1 : -1;
+
+ctx.fillStyle = appState.dragAlignMode ? 'rgba(255, 184, 0, 0.55)' : 'rgba(248, 250, 252, 0.88)';
+ctx.strokeStyle = appState.dragAlignMode ? '#ffb800' : '#00f0ff';
+ctx.lineWidth = 2.5;
+ctx.beginPath();
+ctx.moveTo(zoneLeftX, groundY);
+ctx.lineTo(zoneRightX, groundY);
+ctx.lineTo(zoneRightX, groundY + dirDepth * (clampedDepthPx * 0.5));
+ctx.lineTo(centerX, groundY + dirDepth * clampedDepthPx);
+ctx.lineTo(zoneLeftX, groundY + dirDepth * (clampedDepthPx * 0.5));
+ctx.closePath();
+ctx.fill();
+ctx.stroke();
+
+const pillarGrad = ctx.createLinearGradient(0, zoneBottomY, 0, groundY);
+pillarGrad.addColorStop(0, 'rgba(0, 240, 255, 0.20)');
+pillarGrad.addColorStop(1, 'rgba(0, 240, 255, 0.02)');
+ctx.fillStyle = pillarGrad;
+ctx.fillRect(zoneLeftX, zoneBottomY, zoneWidthPx, groundY - zoneBottomY);
+
+const rPx = proj.ballRadiusPx;
+ctx.strokeStyle = 'rgba(255, 184, 0, 0.42)';
+ctx.lineWidth = 1.2;
+ctx.setLineDash([4, 4]);
+ctx.strokeRect(
+zoneLeftX - rPx,
+zoneTopY - rPx,
+zoneWidthPx + rPx * 2,
+zoneHeightPx + rPx * 2
+);
+ctx.setLineDash([]);
+
+ctx.fillStyle = appState.dragAlignMode ? 'rgba(255, 184, 0, 0.16)' : 'rgba(0, 240, 255, 0.08)';
+ctx.fillRect(zoneLeftX, zoneTopY, zoneWidthPx, zoneHeightPx);
+
+ctx.strokeStyle = 'rgba(0, 240, 255, 0.42)';
+ctx.lineWidth = 1.2;
+for (let i = 1; i <= 2; i++) {
+const gx = zoneLeftX + (zoneWidthPx / 3) * i;
+ctx.beginPath();
+ctx.moveTo(gx, zoneTopY);
+ctx.lineTo(gx, zoneBottomY);
+ctx.stroke();
+
+const gy = zoneTopY + (zoneHeightPx / 3) * i;
+ctx.beginPath();
+ctx.moveTo(zoneLeftX, gy);
+ctx.lineTo(zoneRightX, gy);
+ctx.stroke();
+}
+
+ctx.strokeStyle = appState.dragAlignMode ? '#ffb800' : '#00f0ff';
+ctx.lineWidth = 2.5;
+ctx.strokeRect(zoneLeftX, zoneTopY, zoneWidthPx, zoneHeightPx);
+
+ctx.font = 'bold 11px monospace';
+ctx.textAlign = 'left';
+ctx.fillStyle = '#00f0ff';
+ctx.fillText(TOP ${appState.zoneTopCm.toFixed(1)}cm, zoneRightX + rPx + 6, zoneTopY + 4); ctx.fillStyle = '#ffb800'; ctx.fillText(BTM ${appState.zoneBottomCm.toFixed(1)}cm, zoneRightX + rPx + 6, zoneBottomY + 4);
+
+ctx.restore();
+}
+
+function drawPitchHistoryMarkers(ctx, proj) {
+const rPx = Math.max(8, proj.ballRadiusPx);
+
+appState.pitchHistory.forEach((p, idx) => {
+const pos = proj.cmToPixel(p.xCm, p.zCm);
+const isLatest = idx === appState.pitchHistory.length - 1;
+
+ctx.save();
+ctx.beginPath();
+ctx.arc(pos.x, pos.y, rPx, 0, Math.PI * 2);
+
+if (p.isStrike) {
+ctx.fillStyle = isLatest ? 'rgba(255, 184, 0, 0.95)' : 'rgba(255, 184, 0, 0.58)';
+ctx.strokeStyle = isLatest ? '#ffffff' : '#fde047';
+} else {
+ctx.fillStyle = isLatest ? 'rgba(0, 230, 118, 0.95)' : 'rgba(0, 230, 118, 0.55)';
+ctx.strokeStyle = isLatest ? '#ffffff' : '#6ee7b7';
+}
+
+ctx.lineWidth = isLatest ? 2.5 : 1.5;
+ctx.fill();
+ctx.stroke();
+
+ctx.fillStyle = '#020617';
+ctx.font = 800 ${Math.max(10, Math.round(rPx * 0.85))}px monospace`;
+ctx.textAlign = 'center';
+ctx.textBaseline = 'middle';
+ctx.fillText(String(p.number), pos.x, pos.y + 0.5);
+
+ctx.restore();
+});
+}
+
+function drawActivePitchAnimation(ctx, proj, now) {
+const anim = appState.activePitchAnim;
+if (!anim) return;
+
+const elapsed = now - anim.startTime;
+const t = Math.min(1, elapsed / anim.duration);
+
+const startPos = anim.startPixel;
+const endPos = proj.cmToPixel(anim.targetXCm, anim.targetZCm);
+
+const curveFactor = 4 * t * (1 - t);
+const curX = startPos.x + (endPos.x - startPos.x) * t + anim.curveOffsetPxX * curveFactor;
+const curY = startPos.y + (endPos.y - startPos.y) * t + anim.curveOffsetPxY * curveFactor;
+
+anim.trail.push({ x: curX, y: curY, t });
+if (anim.trail.length > 16) anim.trail.shift();
+
+if (anim.trail.length > 1) {
+ctx.save();
+for (let i = 1; i < anim.trail.length; i++) {
+const p0 = anim.trail[i - 1];
+const p1 = anim.trail[i];
+const alpha = i / anim.trail.length;
+ctx.strokeStyle = rgba(0, 240, 255,${alpha * 0.85})`;
+ctx.lineWidth = Math.max(2, proj.ballRadiusPx * 1.4 * p1.t * alpha);
+ctx.lineCap = 'round';
+ctx.beginPath();
+ctx.moveTo(p0.x, p0.y);
+ctx.lineTo(p1.x, p1.y);
+ctx.stroke();
+}
+ctx.restore();
+}
+
+const currentRadius = Math.max(4, proj.ballRadiusPx * (0.28 + 0.72 * t));
+
+ctx.save();
+ctx.beginPath();
+ctx.arc(curX, curY, currentRadius, 0, Math.PI * 2);
+ctx.fillStyle = '#ffffff';
+ctx.fill();
+ctx.lineWidth = 1.5;
+ctx.strokeStyle = '#ef4444';
+ctx.stroke();
+ctx.restore();
+
+if (t >= 1 && !anim.judged) {
+anim.judged = true;
+finalizeABSJudgment(anim);
+setTimeout(() => {
+if (appState.activePitchAnim === anim) {
+appState.activePitchAnim = null;
+}
+}, 160);
+}
+}
+
+/***************************************************************************
+* 8. KBO ABS 볼 / 스트라이크 정밀 판정
+***************************************************************************/
+function triggerPitchToCm(targetXCm, targetZCm, speedKmh, pitchTypeKey, instant = false) {
+const proj = getZoneProjection();
+const pInfo = PITCH_TYPES[pitchTypeKey] || PITCH_TYPES.fourSeam;
+
+if (instant) {
+finalizeABSJudgment({
+targetXCm,
+targetZCm,
+speedKmh: +speedKmh.toFixed(1),
+pitchTypeKey,
+pitchTypeName: pInfo.name,
+rpm: Math.round(pInfo.rpmBase + (Math.random() * 140 - 70))
+});
+return;
+}
+
+if (appState.activePitchAnim && !appState.activePitchAnim.judged) return;
+
+const startPixel = {
+x: proj.centerX + (appState.batterStance === 'R' ? 10 : -10),
+y: Math.min(proj.zoneTopY - 60, proj.H * 0.24)
+};
+
+const duration = Math.max(200, Math.min(420, (145 / Math.max(90, speedKmh)) * 300));
+
+appState.activePitchAnim = {
+startTime: performance.now(),
+duration,
+startPixel,
+targetXCm,
+targetZCm,
+speedKmh: +speedKmh.toFixed(1),
+pitchTypeKey,
+pitchTypeName: pInfo.name,
+rpm: Math.round(pInfo.rpmBase + (Math.random() * 140 - 70)),
+curveOffsetPxX: pInfo.breakX * proj.pxPerCm * 0.42,
+curveOffsetPxY: -pInfo.breakZ * proj.pxPerCm * 0.42,
+trail: [],
+judged: false
+};
+}
+
+function finalizeABSJudgment(anim) {
+const { targetXCm, targetZCm, speedKmh, pitchTypeName, rpm } = anim;
+
+const halfW = KBO_CONSTANTS.PLATE_WIDTH_CM / 2;
+const ballR = KBO_CONSTANTS.BALL_RADIUS_CM;
+
+const horizMarginCm = (halfW + ballR) - Math.abs(targetXCm);
+const topMarginCm = (appState.zoneTopCm + ballR) - targetZCm;
+const btmMarginCm = targetZCm - (appState.zoneBottomCm - ballR);
+const vertMarginCm = Math.min(topMarginCm, btmMarginCm);
+
+const minMarginCm = Math.min(horizMarginCm, vertMarginCm);
+const isStrike = minMarginCm >= 0;
+const isBorderline = Math.abs(minMarginCm) <= 2.2;
+
+playABSSound('mitt');
+setTimeout(() => {
+playABSSound(isStrike ? 'strike' : 'ball');
+}, 45);
+
+const pitchNumber = appState.pitchHistory.length + 1;
+const record = {
+number: pitchNumber,
+isStrike,
+isBorderline,
+xCm: +targetXCm.toFixed(1),
+zCm: +targetZCm.toFixed(1),
+speedKmh,
+pitchTypeName,
+rpm,
+marginCm: +minMarginCm.toFixed(1),
+batterName: appState.batterName
+};
+appState.pitchHistory.push(record);
+
+let specialEvent = null;
+if (isStrike) {
+appState.strikes++;
+if (appState.strikes >= 3) {
+specialEvent = 'STRIKE OUT!';
+appState.strikes = 0;
+appState.balls = 0;
+appState.outs = (appState.outs + 1) % 3;
+}
+} else {
+appState.balls++;
+if (appState.balls >= 4) {
+specialEvent = 'FOUR BALL (WALK)';
+appState.balls = 0;
+appState.strikes = 0;
+}
+}
+
+appState.lastJudgmentBannerInfo = {
+record,
+specialEvent,
+expireTime: performance.now() + 2400
+};
+
+updateBSODisplay();
+showJudgmentBanner(record, specialEvent);
+updateDashboardMetrics(record);
+renderPitchHistoryList();
+drawMiniZoneMap();
+}
+
+function showJudgmentBanner(record, specialEvent) {
+const banner = document.getElementById('judgmentBanner');
+const box = document.getElementById('judgmentBox');
+const subTxt = document.getElementById('judgmentSubText');
+const mainTxt = document.getElementById('judgmentMainText');
+const detailTxt = document.getElementById('judgmentDetailText');
+
+banner.classList.remove('hidden');
+banner.classList.remove('animate-call-banner');
+void banner.offsetWidth;
+banner.classList.add('animate-call-banner');
+
+const horizDir = record.xCm >= 0 ? 우측 +${record.xCm}cm:좌측 ${record.xCm}cm;
+
+if (record.isStrike) {
+box.className = 'px-6 py-2.5 rounded-2xl neon-border-strike bg-slate-950/92 backdrop-blur-md flex flex-col items-center text-center';
+subTxt.className = 'text-[11px] font-mono tracking-widest uppercase text-amber-300 font-bold';
+subTxt.textContent = record.isBorderline
+? BORDERLINE STRIKE! (경계 +${record.marginCm}cm 걸침): 'KBO ABS WHITE BALL AUTO CALL'; mainTxt.className = 'text-4xl sm:text-5xl font-display font-black tracking-wider text-amber-400'; mainTxt.textContent = specialEvent || 'STRIKE'; } else { box.className = 'px-6 py-2.5 rounded-2xl neon-border-ball bg-slate-950/92 backdrop-blur-md flex flex-col items-center text-center'; subTxt.className = 'text-[11px] font-mono tracking-widest uppercase text-emerald-300 font-bold'; subTxt.textContent = record.isBorderline ?BORDERLINE BALL! (경계 ${Math.abs(record.marginCm).toFixed(1)}cm 벗어남)
+: 'KBO ABS WHITE BALL AUTO CALL';
+mainTxt.className = 'text-4xl sm:text-5xl font-display font-black tracking-wider text-emerald-400';
+mainTxt.textContent = specialEvent || 'BALL';
+}
+
+detailTxt.textContent = ${record.batterName} | ${record.speedKmh}km/h | 높이 ${record.zCm}cm | ${horizDir};
+
+if (appState.lastJudgmentTimer) clearTimeout(appState.lastJudgmentTimer);
+appState.lastJudgmentTimer = setTimeout(() => {
+banner.classList.add('hidden');
+}, 2400);
+}
+
+function updateDashboardMetrics(record) {
+const badge = document.getElementById('lastCallBadge');
+if (record.isStrike) {
+badge.className = 'px-2.5 py-0.5 rounded-full text-xs font-display font-black bg-amber-500/20 text-amber-300 border border-amber-400/50';
+badge.textContent = PITCH #${record.number} STRIKE; } else { badge.className = 'px-2.5 py-0.5 rounded-full text-xs font-display font-black bg-emerald-500/20 text-emerald-300 border border-emerald-400/50'; badge.textContent =PITCH #${record.number} BALL;
+}
+
+document.getElementById('metricPitchType').textContent = record.pitchTypeName;
+document.getElementById('metricSpeed').textContent = record.speedKmh.toFixed(1);
+document.getElementById('metricHeight').textContent = record.zCm.toFixed(1);
+
+const hStatus = document.getElementById('metricHeightStatus');
+if (record.zCm > appState.zoneTopCm + KBO_CONSTANTS.BALL_RADIUS_CM) {
+hStatus.textContent = '높은 볼 (HIGH)';
+hStatus.className = 'font-mono text-emerald-400';
+} else if (record.zCm < appState.zoneBottomCm - KBO_CONSTANTS.BALL_RADIUS_CM) {
+hStatus.textContent = '낮은 볼 (LOW)';
+hStatus.className = 'font-mono text-emerald-400';
+} else {
+hStatus.textContent = '존 통과 (IN-ZONE)';
+hStatus.className = 'font-mono text-amber-300';
+}
+
+const dirStr = record.xCm === 0 ? '정중앙 0.0 cm' : (record.xCm > 0 ? 우측 +${record.xCm.toFixed(1)} cm:좌측 ${record.xCm.toFixed(1)} cm);
+document.getElementById('metricHoriz').textContent = dirStr;
+document.getElementById('metricSpin').textContent = ${record.rpm} rpm`;
+
+const borderEl = document.getElementById('metricBorderMargin');
+if (record.isStrike) {
+borderEl.className = 'text-xs font-mono font-bold text-amber-300 mt-1.5 truncate';
+borderEl.textContent = record.isBorderline
+? 보더라인 걸침 (+${record.marginCm}cm):스트라이크 존 내부 (+latex
+{record.marginCm}cm)`; } else { borderEl.className = 'text-xs font-mono font-bold text-emerald-300 mt-1.5 truncate'; borderEl.textContent = `존 외곽 벗어남 (
+
+{record.marginCm}cm)`;
+}
+
+const marker = document.getElementById('zoneBarMarker');
+marker.classList.remove('hidden');
+const pct = Math.max(2, Math.min(98, (record.zCm / appState.batterHeightCm) * 100));
+marker.style.left = ${pct}%`;
+}
+
+function updateBSODisplay() {
+const bContainer = document.getElementById('bsoBalls').children;
+const sContainer = document.getElementById('bsoStrikes').children;
+const oContainer = document.getElementById('bsoOuts').children;
+
+for (let i = 0; i < 3; i++) {
+bContainer[i].className = i < appState.balls ? 'w-2.5 h-2.5 rounded-full led-ball' : 'w-2.5 h-2.5 rounded-full led-off';
+}
+for (let i = 0; i < 2; i++) {
+sContainer[i].className = i < appState.strikes ? 'w-2.5 h-2.5 rounded-full led-strike' : 'w-2.5 h-2.5 rounded-full led-off';
+}
+for (let i = 0; i < 2; i++) {
+oContainer[i].className = i < appState.outs ? 'w-2.5 h-2.5 rounded-full led-out' : 'w-2.5 h-2.5 rounded-full led-off';
+}
+
+document.getElementById('hudPitchCount').textContent = String(appState.pitchHistory.length);
+}
+
+function resetBSOCount() {
+appState.balls = 0;
+appState.strikes = 0;
+appState.outs = 0;
+updateBSODisplay();
+}
+
+function drawMiniZoneMap() {
+try {
+const canvas = document.getElementById('miniZoneMapCanvas');
+if (!canvas) return;
+const ctx = canvas.getContext('2d');
+const W = canvas.width;
+const H = canvas.height;
+ctx.clearRect(0, 0, W, H);
+
+const zLeft = 24;
+const zTop = 22;
+const zW = W - 48;
+const zH = H - 48;
+
+ctx.strokeStyle = 'rgba(255, 184, 0, 0.35)';
+ctx.setLineDash([2, 2]);
+ctx.strokeRect(zLeft - 6, zTop - 6, zW + 12, zH + 12);
+ctx.setLineDash([]);
+
+ctx.fillStyle = 'rgba(0, 240, 255, 0.1)';
+ctx.strokeStyle = '#00f0ff';
+ctx.lineWidth = 1.5;
+ctx.fillRect(zLeft, zTop, zW, zH);
+ctx.strokeRect(zLeft, zTop, zW, zH);
+
+ctx.strokeStyle = 'rgba(0, 240, 255, 0.3)';
+ctx.lineWidth = 1;
+for (let i = 1; i <= 2; i++) {
+ctx.beginPath();
+ctx.moveTo(zLeft + (zW / 3) * i, zTop);
+ctx.lineTo(zLeft + (zW / 3) * i, zTop + zH);
+ctx.stroke();
+
+ctx.beginPath();
+ctx.moveTo(zLeft, zTop + (zH / 3) * i);
+ctx.lineTo(zLeft + zW, zTop + (zH / 3) * i);
+ctx.stroke();
+}
+
+const halfPlate = KBO_CONSTANTS.PLATE_WIDTH_CM / 2;
+const midZ = (appState.zoneTopCm + appState.zoneBottomCm) / 2;
+const halfZoneH = (appState.zoneTopCm - appState.zoneBottomCm) / 2;
+
+appState.pitchHistory.forEach((p) => {
+const nx = (p.xCm / halfPlate) * (zW / 2) + (W / 2);
+const ny = (H / 2 - 2) - ((p.zCm - midZ) / halfZoneH) * (zH / 2);
+
+ctx.beginPath();
+ctx.arc(nx, ny, 5.5, 0, Math.PI * 2);
+ctx.fillStyle = p.isStrike ? '#ffb800' : '#00e676';
+ctx.strokeStyle = '#ffffff';
+ctx.lineWidth = 1;
+ctx.fill();
+ctx.stroke();
+});
+} catch (e) {}
+}
+
+function renderPitchHistoryList() {
+const container = document.getElementById('pitchHistoryList');
+const strikeCnt = appState.pitchHistory.filter(p => p.isStrike).length;
+const ballCnt = appState.pitchHistory.length - strikeCnt;
+
+document.getElementById('statStrikeCnt').textContent = String(strikeCnt);
+document.getElementById('statBallCnt').textContent = String(ballCnt);
+
+if (appState.pitchHistory.length === 0) {
+container.innerHTML = &lt;div class="h-32 flex flex-col items-center justify-center text-slate-400 text-xs text-center px-2 leading-relaxed"&gt; &lt;i class="fa-solid fa-baseball text-lg mb-1.5 text-emerald-400"&gt;&lt;/i&gt; &lt;span&gt;하얀색 야구공이 카메라에 찍히는 순간 즉시 자동으로 판정이 기록됩니다!&lt;/span&gt; &lt;/div>;
+return;
+}
+
+const reversed = [...appState.pitchHistory].reverse();
+container.innerHTML = reversed.map(p => {
+const badgeCls = p.isStrike
+? 'bg-amber-400 text-slate-950'
+: 'bg-emerald-400 text-slate-950';
+const callStr = p.isStrike ? 'STRIKE' : 'BALL';
+
+return &lt;div class="flex items-center justify-between bg-slate-900/90 border border-slate-800 rounded-xl px-2.5 py-1.5 text-xs"&gt; &lt;div class="flex items-center gap-2"&gt; &lt;span class="w-5 h-5 rounded-full${badgeCls} font-mono font-black flex items-center justify-center text-[11px]">
+{p.isStrike ? 'text-amber-300' : 'text-emerald-300'} font-display">{p.speedKmh}km/h</span>
+</div>
+<div class="text-[10px] font-mono text-slate-400">
+높이 {p.xCm > 0 ? '+' + p.xCm : p.xCm}cm
+</div>
+</div>
+</div>
+</div>
+`;
+}).join('');
+}
+
+function clearPitchHistory() {
+appState.pitchHistory = [];
+resetBSOCount();
+renderPitchHistoryList();
+drawMiniZoneMap();
+document.getElementById('judgmentBanner').classList.add('hidden');
+}
+
+/***************************************************************************
+* 9. 캔버스 터치 판정 & 드래그 홈플레이트 영점 이동 이벤트
+***************************************************************************/
+function toggleDragAlignMode() {
+appState.dragAlignMode = !appState.dragAlignMode;
+const btn = document.getElementById('btnDragAlignMode');
+const txt = document.getElementById('txtDragAlignMode');
+
+if (appState.dragAlignMode) {
+btn.className = 'px-2 py-1 rounded-lg bg-amber-400 text-slate-950 font-black text-[11px] flex items-center gap-1 transition shadow-lg';
+txt.textContent = '존 위치 이동: ON';
+} else {
+btn.className = 'px-2 py-1 rounded-lg bg-slate-900/90 hover:bg-slate-800 border border-amber-400/50 text-[11px] font-bold text-amber-300 flex items-center gap-1 transition shadow';
+txt.textContent = '존 위치 이동: OFF';
+}
+}
+
+mainCanvas.addEventListener('pointerdown', (e) => {
+if (!appState.isTrackingView) return;
+initAudioContext();
+
+const rect = mainCanvas.getBoundingClientRect();
+const pxX = e.clientX - rect.left;
+const pxY = e.clientY - rect.top;
+
+if (appState.dragAlignMode) {
+appState.isDraggingZone = true;
+appState.dragStartX = pxX;
+appState.dragStartY = pxY;
+appState.dragOrigCalibX = appState.calibX;
+appState.dragOrigCalibY = appState.calibY;
+return;
+}
+
+const proj = getZoneProjection();
+const { xCm, zCm } = proj.pixelToCm(pxX, pxY);
+const baseInput = parseFloat(document.getElementById('touchBaseSpeed').value) || 145;
+const speed = baseInput + (Math.random() * 2.6 - 1.3);
+
+const isPausedNativeVideo = appState.nativeVideoActive && document.getElementById('recordedPitchVideo').paused;
+triggerPitchToCm(xCm, Math.max(5, zCm), speed, appState.selectedPitchType, isPausedNativeVideo);
+});
+
+mainCanvas.addEventListener('pointermove', (e) => {
+if (!appState.isDraggingZone || !appState.dragAlignMode) return;
+const rect = mainCanvas.getBoundingClientRect();
+const pxX = e.clientX - rect.left;
+const pxY = e.clientY - rect.top;
+
+appState.calibX = Math.round(appState.dragOrigCalibX + (pxX - appState.dragStartX));
+appState.calibY = Math.round(appState.dragOrigCalibY + (pxY - appState.dragStartY));
+
+document.getElementById('sliderCalibX').value = appState.calibX;
+document.getElementById('sliderCalibY').value = appState.calibY;
+document.getElementById('lblCalibX').textContent = ${appState.calibX} px; document.getElementById('lblCalibY').textContent = ``${appState.calibY} px;
+});
+
+window.addEventListener('pointerup', () => {
+appState.isDraggingZone = false;
+});
+
+function throwPresetPitch(presetMode) {
+initAudioContext();
+const halfW = KBO_CONSTANTS.PLATE_WIDTH_CM / 2;
+const ballR = KBO_CONSTANTS.BALL_RADIUS_CM;
+const midZ = (appState.zoneTopCm + appState.zoneBottomCm) / 2;
+
+let targetX = 0;
+let targetZ = midZ;
+
+if (presetMode === 'borderline') {
+const edgeChoice = Math.floor(Math.random() * 4);
+const jitter = (Math.random() * 2.6) - 1.0;
+if (edgeChoice === 0) {
+targetX = (halfW + ballR - jitter) * (Math.random() < 0.5 ? 1 : -1);
+targetZ = midZ + (Math.random() * 20 - 10);
+} else if (edgeChoice === 1) {
+targetZ = appState.zoneTopCm + ballR - jitter;
+targetX = (Math.random() * 30 - 15);
+} else if (edgeChoice === 2) {
+targetZ = appState.zoneBottomCm - ballR + jitter;
+targetX = (Math.random() * 30 - 15);
+} else {
+targetX = (halfW + ballR - jitter) * (Math.random() < 0.5 ? 1 : -1);
+targetZ = appState.zoneBottomCm + 2;
+}
+} else {
+targetX = (Math.random() * 66) - 33;
+targetZ = midZ + (Math.random() * 72) - 36;
+}
+
+const baseSpeed = parseFloat(document.getElementById('touchBaseSpeed').value) || 145;
+triggerPitchToCm(targetX, Math.max(8, targetZ), baseSpeed + (Math.random() * 3 - 1.5), appState.selectedPitchType);
+}
+
+/***************************************************************************
+* 10. 30cm 근접 대응 백색 야구공 전용 Blob(군집) 즉시 포착 엔진
+***************************************************************************/
+function toggleOpticalAutoDetect() {
+appState.autoOpticalEnabled = !appState.autoOpticalEnabled;
+const dot = document.getElementById('dotAutoOptical');
+const txt = document.getElementById('txtAutoOptical');
+const btn = document.getElementById('btnAutoOpticalToggle');
+
+if (appState.autoOpticalEnabled) {
+dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping';
+txt.textContent = '실시간 자동판정: ON';
+btn.className = 'flex items-center gap-1.5 text-xs font-black text-emerald-300';
+} else {
+dot.className = 'w-2.5 h-2.5 rounded-full bg-slate-500';
+txt.textContent = '실시간 자동판정: OFF';
+btn.className = 'flex items-center gap-1.5 text-xs font-bold text-slate-400';
+}
+}
+
+function updateAndDrawSimulatedStreamPitch(ctx, proj, now) {
+if (!appState.continuousStreamEnabled) return;
+
+if (!appState.simStreamBall && now - appState.lastAutoStreamPitchTime > 2800) {
+appState.lastAutoStreamPitchTime = now;
+const midZ = (appState.zoneTopCm + appState.zoneBottomCm) / 2;
+const targetXCm = (Math.random() * 64) - 32;
+const targetZCm = midZ + (Math.random() * 66) - 33;
+const endPt = proj.cmToPixel(targetXCm, Math.max(12, targetZCm));
+
+appState.simStreamBall = {
+startTime: now,
+duration: 360,
+startX: proj.centerX + (Math.random() * 24 - 12),
+startY: Math.max(30, proj.zoneTopY - 85),
+endX: endPt.x,
+endY: endPt.y,
+curveX: (Math.random() * 36) - 18
+};
+}
+
+const b = appState.simStreamBall;
+if (!b) return;
+
+const t = (now - b.startTime) / b.duration;
+if (t > 1.05) {
+appState.simStreamBall = null;
+return;
+}
+
+const clampedT = Math.min(1, t);
+const curve = 4 * clampedT * (1 - clampedT);
+const bx = b.startX + (b.endX - b.startX) * clampedT + b.curveX * curve;
+const by = b.startY + (b.endY - b.startY) * clampedT;
+const br = Math.max(7, proj.ballRadiusPx * (0.4 + 0.6 * clampedT));
+
+ctx.save();
+ctx.beginPath();
+ctx.arc(bx, by, br,
