@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>KBO ABS 트래킹 시스템 - 30cm 초근접 백색 야구공 즉시 인식 & 10인 로스터</title>
+  <title>KBO ABS 트래킹 시스템 - 접근 궤적 기반 야구공 판정 & 10인 로스터</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Google Fonts: Pretendard / Orbitron / Noto Sans KR -->
@@ -184,14 +184,14 @@
     <header class="text-center mb-5 md:mb-6">
       <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-400/40 text-emerald-300 text-xs font-mono tracking-widest uppercase mb-2">
         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-        30CM ULTRA-CLOSE READY · WHITE BASEBALL BLOB TRACKER
+        1.0~1.2M PLATE-PLANE · APPROACH-TRAJECTORY BALL TRACKER
       </div>
       <h1 class="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight text-white flex items-center justify-center gap-2.5 flex-wrap">
         <span class="font-display text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-sky-300 to-amber-400">KBO ABS</span>
         <span>야구공 전용 실시간 판정 시스템</span>
       </h1>
       <p class="text-slate-400 text-xs sm:text-sm md:text-base mt-2 max-w-3xl mx-auto leading-relaxed">
-        홈플레이트 뒤 <strong class="text-amber-300">30cm(0.3m) 초근접 거리</strong>를 기본 지원하며, 카메라에 <strong class="text-emerald-300">하얀색 야구공이 딱 찍히는 순간(1프레임 포착) 즉시 볼/스트라이크를 판정</strong>합니다!
+        카메라를 홈플레이트 뒤 <strong class="text-amber-300">1.0~1.2m</strong>에 두면, <strong class="text-emerald-300">멀리서 작게 보이다가 점점 커지며 다가오는 공</strong>만 여러 프레임 추적하고, 그 공이 <strong class="text-emerald-300">홈플레이트 판정면을 화면 안에서 통과하는 순간</strong>에만 볼/스트라이크를 판정합니다.
       </p>
     </header>
 
@@ -252,7 +252,7 @@
           </div>
         </section>
 
-        <!-- 카드 2: 카메라 위치 (기본 30cm = 0.3m) 및 백색 야구공 전용 필터 안내 -->
+        <!-- 카드 2: 카메라 위치 (권장 1.0~1.2m, 기본 1.1m) 및 접근 궤적 판정 안내 -->
         <section class="neon-card rounded-2xl p-4 sm:p-5">
           <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
             <div class="flex items-center gap-2.5">
@@ -260,60 +260,54 @@
                 <i class="fa-solid fa-video"></i>
               </div>
               <div>
-                <h2 class="text-base sm:text-lg font-bold text-white leading-tight">2. 홈플레이트-카메라 거리 (기본 30cm) 설정</h2>
-                <p class="text-xs text-slate-400">홈플레이트에서 30cm(0.3m) 떨어진 초근접 거리부터 원거리까지 자유롭게 설정됩니다</p>
+                <h2 class="text-base sm:text-lg font-bold text-white leading-tight">2. 홈플레이트-카메라 거리 설정 (권장 1.0~1.2m)</h2>
+                <p class="text-xs text-slate-400">홈플레이트 뒤쪽 끝(꼭짓점)에서 카메라 렌즈까지의 거리를 실제로 재서 입력하세요. 공 크기로 거리를 계산하므로 정확할수록 판정이 정확해집니다</p>
               </div>
             </div>
-            <span class="text-[11px] font-mono text-amber-300 bg-amber-950/60 px-2.5 py-1 rounded border border-amber-500/30">기본 30cm (0.3m)</span>
+            <span class="text-[11px] font-mono text-amber-300 bg-amber-950/60 px-2.5 py-1 rounded border border-amber-500/30">기본 1.1m</span>
           </div>
 
-          <!-- 카메라-홈플레이트 거리 (m) - 기본 0.3m (30cm) -->
+          <!-- 카메라-홈플레이트 거리 (m) - 권장 1.0~1.2m -->
           <div class="bg-slate-900/70 rounded-xl p-3.5 border border-slate-800 mb-3.5">
             <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
               <label class="text-sm font-bold text-white flex items-center gap-2">
                 <i class="fa-solid fa-arrows-left-right-to-line text-amber-400"></i>
                 카메라 - 홈플레이트 거리
-                <span id="distCmBadge" class="text-xs font-mono text-emerald-300 bg-emerald-500/15 px-2 py-0.5 rounded border border-emerald-400/30">(= 30 cm)</span>
+                <span id="distCmBadge" class="text-xs font-mono text-emerald-300 bg-emerald-500/15 px-2 py-0.5 rounded border border-emerald-400/30">(= 110 cm)</span>
               </label>
               <div class="flex items-center gap-1.5">
-                <input id="numCameraDist" type="number" value="0.3" min="0.1" max="25.0" step="0.05"
+                <input id="numCameraDist" type="number" value="1.1" min="0.8" max="1.6" step="0.05"
                   oninput="updateCameraDist(this.value)"
                   class="w-20 bg-slate-950 border border-amber-500/50 rounded-lg px-2.5 py-1 text-right font-mono font-bold text-amber-300 text-base outline-none" />
                 <span class="text-xs font-mono text-slate-400">m (미터)</span>
               </div>
             </div>
 
-            <!-- 시점 프리셋 버튼들 (0.3m 30cm 기본 활성화) -->
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2.5">
-              <button type="button" onclick="setCameraPreset(0.3, 0.6, 'catcher')" id="presetBtn_0.3"
+            <!-- 거리 프리셋 (권장 1.0 / 1.1 / 1.2m) -->
+            <div class="grid grid-cols-3 gap-2 mb-2.5">
+              <button type="button" onclick="setCameraPreset(1.0, null, 'catcher')" id="presetBtn_1"
+                class="preset-dist-btn px-2.5 py-2 rounded-xl border border-slate-700 bg-slate-800/70 hover:border-amber-400/60 text-left transition">
+                <div class="text-[11px] text-slate-400">가깝게</div>
+                <div class="text-xs font-mono font-bold text-white">1.0 m</div>
+              </button>
+              <button type="button" onclick="setCameraPreset(1.1, null, 'catcher')" id="presetBtn_1.1"
                 class="preset-dist-btn px-2.5 py-2 rounded-xl border border-amber-400 bg-amber-500/15 text-left transition">
-                <div class="text-[11px] text-amber-300 font-semibold">홈플레이트 직후방</div>
-                <div class="text-xs font-mono font-bold text-white">30 cm <span class="text-[10px] text-amber-300">(0.3m 기본)</span></div>
+                <div class="text-[11px] text-amber-300 font-semibold">권장 (기본)</div>
+                <div class="text-xs font-mono font-bold text-white">1.1 m</div>
               </button>
-              <button type="button" onclick="setCameraPreset(1.5, 1.2, 'umpire')" id="presetBtn_1.5"
+              <button type="button" onclick="setCameraPreset(1.2, null, 'catcher')" id="presetBtn_1.2"
                 class="preset-dist-btn px-2.5 py-2 rounded-xl border border-slate-700 bg-slate-800/70 hover:border-amber-400/60 text-left transition">
-                <div class="text-[11px] text-slate-400">심판/포수 시점</div>
-                <div class="text-xs font-mono font-bold text-white">1.5 m <span class="text-[10px] text-amber-400">근접</span></div>
-              </button>
-              <button type="button" onclick="setCameraPreset(3.0, 1.2, 'catcher')" id="presetBtn_3"
-                class="preset-dist-btn px-2.5 py-2 rounded-xl border border-slate-700 bg-slate-800/70 hover:border-amber-400/60 text-left transition">
-                <div class="text-[11px] text-slate-400">포수 후면</div>
-                <div class="text-xs font-mono font-bold text-white">3.0 m <span class="text-[10px] text-cyan-400">표준</span></div>
-              </button>
-              <button type="button" onclick="setCameraPreset(18.44, 1.6, 'pitcher')" id="presetBtn_18.44"
-                class="preset-dist-btn px-2.5 py-2 rounded-xl border border-slate-700 bg-slate-800/70 hover:border-amber-400/60 text-left transition">
-                <div class="text-[11px] text-slate-400">투수 마운드 시점</div>
-                <div class="text-xs font-mono font-bold text-white">18.44 m <span class="text-[10px] text-emerald-400">정면</span></div>
+                <div class="text-[11px] text-slate-400">넓게</div>
+                <div class="text-xs font-mono font-bold text-white">1.2 m</div>
               </button>
             </div>
 
-            <input id="sliderCameraDist" type="range" min="0.1" max="25.0" step="0.05" value="0.3"
+            <input id="sliderCameraDist" type="range" min="0.8" max="1.6" step="0.05" value="1.1"
               oninput="updateCameraDist(this.value)" class="w-full my-1" />
             <div class="flex justify-between text-[11px] font-mono text-slate-500 mt-0.5">
-              <span class="text-amber-300 font-bold">0.3m (30cm 초근접)</span>
-              <span>1.5m (심판)</span>
-              <span>3.0m (포수후면)</span>
-              <span>18.44m (투수판)</span>
+              <span>0.8m</span>
+              <span class="text-amber-300 font-bold">1.0 ~ 1.2m 권장</span>
+              <span>1.6m</span>
             </div>
           </div>
 
@@ -346,11 +340,11 @@
                 <span class="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
                   <i class="fa-solid fa-baseball text-white"></i> 감지 모드 (단일 고정)
                 </span>
-                <span class="text-[10px] font-mono font-bold text-slate-950 bg-emerald-400 px-2 py-0.5 rounded-full">1-FRAME LOCK</span>
+                <span class="text-[10px] font-mono font-bold text-slate-950 bg-emerald-400 px-2 py-0.5 rounded-full">TRACK → CALL</span>
               </div>
-              <div class="text-xs font-bold text-white">⚾ 백색 야구공 즉시 포착 엔진</div>
+              <div class="text-xs font-bold text-white">⚾ 접근 궤적 추적 → 판정면 통과 판정</div>
               <p class="text-[11px] text-slate-300 leading-snug mt-1">
-                30cm 근접에서도 공이 화면에 <strong class="text-emerald-300">단 1프레임만 찍혀도 원형 백색 군집(Blob)을 즉시 분리해 판정</strong>하며, 살색(손)이나 큰 물체는 자동 제외합니다.
+                원래 화면에 있던 흰색(벽·옷·조명)은 배경으로 학습해 제외하고, <strong class="text-emerald-300">작게 → 크게 다가오는 둥근 공</strong>만 3프레임 이상 추적해 <strong class="text-emerald-300">판정면 통과 지점이 화면 안일 때만</strong> 판정합니다.
               </p>
             </div>
           </div>
@@ -423,7 +417,7 @@
                   </div>
                   <div class="flex justify-between font-mono">
                     <span class="text-slate-400">카메라 거리:</span>
-                    <span id="calcCamSummary" class="text-amber-300 font-bold">30cm (0.30m 초근접)</span>
+                    <span id="calcCamSummary" class="text-amber-300 font-bold">1.10m (권장 거리)</span>
                   </div>
                 </div>
               </div>
@@ -436,7 +430,7 @@
               class="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-cyan-400 via-sky-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-slate-950 font-black text-sm sm:text-base tracking-wide shadow-[0_0_25px_rgba(0,240,255,0.4)] transition transform active:scale-[0.99] flex items-center justify-center gap-2">
               <i class="fa-solid fa-video text-base"></i>
               <span>1. 실시간 카메라 켜놓고 자동 판정 시작</span>
-              <span class="px-1.5 py-0.5 text-[10px] rounded bg-slate-950 text-cyan-300 font-mono">⚾30cm대응</span>
+              <span class="px-1.5 py-0.5 text-[10px] rounded bg-slate-950 text-cyan-300 font-mono">⚾1.0~1.2m</span>
             </button>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -506,7 +500,7 @@
             <span class="hidden md:inline-block h-3.5 w-[1px] bg-slate-700"></span>
             <span id="hudZoneRange" class="hidden md:inline-block text-[11px] font-mono text-cyan-300">존: 49.8~101.4cm</span>
             <span class="h-3.5 w-[1px] bg-slate-700"></span>
-            <span id="hudCameraDist" class="text-[11px] font-mono text-amber-300"><i class="fa-solid fa-video mr-1"></i>30cm (0.3m)</span>
+            <span id="hudCameraDist" class="text-[11px] font-mono text-amber-300"><i class="fa-solid fa-video mr-1"></i>1.10m</span>
           </div>
         </div>
 
@@ -722,6 +716,14 @@
                   <span id="lblCalibScale" class="font-mono text-amber-300">100%</span>
                 </div>
                 <input id="sliderCalibScale" type="range" min="45" max="200" value="100" oninput="updateCalibration()" class="w-full" />
+              </div>
+              <div>
+                <div class="flex justify-between text-[11px] text-slate-300 mb-0.5">
+                  <span>판정면 공 크기 보정</span>
+                  <span id="lblBallScale" class="font-mono text-emerald-300">100%</span>
+                </div>
+                <input id="sliderBallScale" type="range" min="50" max="200" value="100" oninput="updateCalibration()" class="w-full" />
+                <p class="text-[10px] text-slate-500 mt-0.5 leading-snug">홈플레이트 위에 공을 들고 화면의 점선 원과 크기가 같아지도록 맞추세요.</p>
               </div>
             </div>
           </div>
@@ -983,7 +985,7 @@
       <div class="flex items-center justify-between border-b border-slate-800 pb-3">
         <div class="flex items-center gap-2">
           <i class="fa-solid fa-clone text-cyan-400 text-lg"></i>
-          <h3 class="text-base sm:text-lg font-black text-white">30cm 근접 백색 야구공 전용 자동 판정 가이드</h3>
+          <h3 class="text-base sm:text-lg font-black text-white">접근 궤적 기반 자동 판정 가이드</h3>
         </div>
         <button type="button" onclick="closeDualGuideModal()" class="text-slate-400 hover:text-white text-lg">
           <i class="fa-solid fa-xmark"></i>
@@ -993,10 +995,10 @@
       <div class="space-y-3 text-xs sm:text-sm text-slate-300 leading-relaxed">
         <div class="p-3 rounded-xl bg-emerald-950/50 border border-emerald-500/40">
           <div class="font-bold text-emerald-300 mb-1 flex items-center gap-1.5">
-            <i class="fa-solid fa-baseball"></i> 30cm 초근접 1프레임 즉시 인식 (Connected-Blob 엔진)
+            <i class="fa-solid fa-baseball"></i> 이렇게 판정합니다
           </div>
           <p class="text-xs text-slate-300">
-            홈플레이트 뒤 <strong>30cm(0.3m)</strong>처럼 가까운 거리에서는 야구공이 화면에 크게 찍히고 매우 빠르게 지나갑니다. 이제 <strong>개별 물체 군집 분리(Blob Detection)</strong> 알고리즘이 적용되어, 화면에 하얀 야구공이 <strong>단 1프레임만 찍혀도 즉시 잡아내어 판정</strong>합니다.
+            ① 시작 후 약 0.3초간 카메라를 움직이지 마세요 (배경 학습). ② 원래 있던 흰색은 모두 무시하고, 새로 나타난 둥근 흰 물체 중 <strong>작게 보이다가 점점 커지는(다가오는)</strong> 것만 추적합니다. ③ 공 크기로 거리를 계산해 <strong>홈플레이트 판정면(카메라 앞 설정 거리)을 통과하는 순간</strong>의 위치를 구하고, 그 지점이 화면 안일 때만 볼/스트라이크를 판정합니다. 화면 왼쪽 아래 메시지에 판정/무시 이유가 표시됩니다.
           </p>
         </div>
 
@@ -1005,7 +1007,7 @@
             <i class="fa-solid fa-Sliders"></i> 인식이 너무 안 되거나 민감할 때
           </div>
           <p class="text-xs text-slate-300">
-            하단 컨트롤 바의 <strong>[백색 야구공 인식 감도]</strong> 슬라이더(기본 78)를 우측(85~95)으로 올리면 약간 어두운 실내 조명에서 찍힌 흰색 야구공도 훨씬 잘 인식합니다.
+            <strong>공을 못 잡으면</strong> 하단 [백색 야구공 인식 감도]를 85~95로 올리세요. <strong>엉뚱한 물체를 잡으면</strong> 60~70으로 내리세요. '판정면까지 오지 않음'이 자주 뜨면 영점 패널의 <strong>[판정면 공 크기 보정]</strong>을 낮추고, 홈플레이트 존 위치·크기를 실제 홈플레이트에 맞추면 정확도가 올라갑니다. 공 뒤 배경이 흰 벽이면 공이 구분되지 않으니 어두운 배경을 권장합니다.
           </p>
         </div>
       </div>
@@ -1024,7 +1026,7 @@
   </div>
 
   <!-- =========================================================================
-       JAVASCRIPT: 30cm 근접 대응 백색 야구공 Blob 추적 엔진 & 10인 타자 로스터 연동
+       JAVASCRIPT: 접근 궤적 기반 야구공 추적 엔진 & 10인 타자 로스터 연동
   ========================================================================== -->
   <script>
     /***************************************************************************
@@ -1060,8 +1062,8 @@
       batterStance: 'R',
       batterHeightCm: 180,
 
-      // [핵심 요청 반영] 홈플레이트 ~ 카메라 기본 거리 30cm (0.3m)
-      cameraDistM: 0.3,
+      // 홈플레이트 ~ 카메라 기본 거리 1.1m (권장 1.0~1.2m)
+      cameraDistM: 1.1,
       cameraHeightM: 0.6,
       bgSourceMode: 'camera',
 
@@ -1129,7 +1131,9 @@
       prevFrameData: null,
       lastOpticalTriggerTime: 0,
       opticalTrail: [],
-      opticalSignalStrength: 0
+      opticalSignalStrength: 0,
+      optEngine: null,        // 접근 궤적 추적 엔진 상태
+      ballSizeScale: 1.0      // 판정면 공 크기 보정
     };
 
     const PITCH_TYPES = {
@@ -1471,7 +1475,7 @@
     }
 
     /***************************************************************************
-     * 4. 시작 화면 계산 및 프리뷰 렌더링 (0.1m ~ 25.0m 지원, 기본 0.3m = 30cm)
+     * 4. 시작 화면 계산 및 프리뷰 렌더링 (권장 1.0~1.2m, 기본 1.1m)
      ***************************************************************************/
     function recalculateABSZone() {
       const h = appState.batterHeightCm;
@@ -1483,12 +1487,9 @@
       document.getElementById('calcZoneBottom').textContent = appState.zoneBottomCm.toFixed(1);
       document.getElementById('calcZoneHeight').textContent = zoneHeight.toFixed(1);
 
-      let posLabel = '초근접';
-      if (appState.cameraDistM <= 0.8) posLabel = '홈플레이트 초근접';
-      else if (appState.cameraDistM <= 2.0) posLabel = '심판 근접';
-      else if (appState.cameraDistM <= 4.5) posLabel = '포수 후면';
-      else if (appState.cameraDistM < 12.0) posLabel = '백스톱 중거리';
-      else posLabel = '투수 마운드';
+let posLabel = '권장 거리';
+      if (appState.cameraDistM < 0.99) posLabel = '권장보다 가까움';
+      else if (appState.cameraDistM > 1.21) posLabel = '권장보다 멂';
 
       const cmBadge = document.getElementById('distCmBadge');
       if (cmBadge) {
@@ -1503,8 +1504,8 @@
     function updateCameraDist(val) {
       let num = parseFloat(val);
       if (isNaN(num)) return;
-      // 최소 0.1m (10cm) 부터 허용하여 0.3m (30cm) 완벽 지원!
-      num = Math.max(0.1, Math.min(25.0, num));
+      // 권장 1.0~1.2m, 입력 허용 0.8~1.6m
+      num = Math.max(0.8, Math.min(1.6, num));
       appState.cameraDistM = num;
       document.getElementById('sliderCameraDist').value = num;
       document.getElementById('numCameraDist').value = num;
@@ -1520,7 +1521,7 @@
 
     function setCameraPreset(dist, height, presetType) {
       updateCameraDist(dist);
-      updateCameraHeight(height);
+      if (height != null) updateCameraHeight(height);
       appState.viewDirection = presetType === 'pitcher' ? 'pitcher' : 'catcher';
 
       const activeBtn = document.getElementById(`presetBtn_${dist}`);
@@ -1857,6 +1858,7 @@
       appState.nativeVideoActive = true;
       appState.autoOpticalEnabled = true;
       appState.prevFrameData = null;
+      resetOpticalEngine();
 
       if (appState.nativeVideoUrl) {
         URL.revokeObjectURL(appState.nativeVideoUrl);
@@ -1932,9 +1934,10 @@
         await video.play();
         appState.cameraActive = true;
         appState.prevFrameData = null;
+      resetOpticalEngine();
 
         const camLabel = appState.facingMode === 'environment' ? '후면 카메라' : '전면 카메라';
-        updateCameraStatusUI('live', `실시간 ${camLabel} (30cm 백색 야구공 전용)`);
+        updateCameraStatusUI('live', `실시간 ${camLabel} (접근 궤적 판정)`);
       } catch (err) {
         appState.cameraActive = false;
         appState.continuousStreamEnabled = true;
@@ -2302,24 +2305,22 @@
 
       ctx.save();
 
-      // 0. 백색 야구공 전용 감지 ROI 가이드 표시 (30cm 근접을 고려해 넉넉한 감시 영역 표시)
+      // 0. 판정면 안내: 존 중앙에 '판정면에서 공이 보여야 하는 크기' 점선 원 표시 (공 크기 보정용)
       if (appState.autoOpticalEnabled) {
-        const roiPadX = Math.max(85, zoneWidthPx * 0.55);
-        const roiPadTop = Math.max(75, zoneHeightPx * 0.45);
-        ctx.strokeStyle = 'rgba(0, 230, 118, 0.32)';
+        const rGuide = Math.max(2, proj.ballRadiusPx * (appState.ballSizeScale || 1));
+        const gx = centerX;
+        const gy = (zoneTopY + zoneBottomY) / 2;
+        ctx.strokeStyle = 'rgba(0, 230, 118, 0.55)';
         ctx.lineWidth = 1.2;
-        ctx.setLineDash([6, 4]);
-        ctx.strokeRect(
-          zoneLeftX - roiPadX,
-          Math.max(8, zoneTopY - roiPadTop),
-          zoneWidthPx + roiPadX * 2,
-          Math.min(proj.H - 16, (groundY - Math.max(8, zoneTopY - roiPadTop)) + 25)
-        );
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath();
+        ctx.arc(gx, gy, rGuide, 0, Math.PI * 2);
+        ctx.stroke();
         ctx.setLineDash([]);
         ctx.fillStyle = 'rgba(0, 230, 118, 0.85)';
         ctx.font = 'bold 10px "JetBrains Mono"';
         ctx.textAlign = 'left';
-        ctx.fillText('● WHITE BASEBALL INSTANT-CATCH ROI (하얀 공이 이 구역에 찍히면 즉시 판정)', zoneLeftX - roiPadX + 4, Math.max(20, zoneTopY - roiPadTop - 5));
+        ctx.fillText(`● 판정면 (카메라 앞 ${appState.cameraDistM.toFixed(2)}m) · 다가오는 공만 통과 순간 판정`, zoneLeftX, Math.max(14, zoneTopY - 8));
       }
 
       // 1. 하단 실제 홈플레이트 영점 맞춤 가이드 (오각형)
@@ -2929,13 +2930,7 @@
     }
 
     /***************************************************************************
-     * 10. [핵심 업그레이드] 30cm 근접 대응 백색 야구공 전용 Blob(군집) 즉시 포착 엔진
-     * - 기존 코드에서 인식이 잘 안 되었던 이유 완벽 해결:
-     *   1) 30cm 근거리에서는 공이 크게 찍히므로 군집 크기 허용치를 최대 750픽셀(160x120 기준)까지 확대
-     *   2) 전체 화면의 픽셀을 하나로 뭉뚱그리지 않고, 8방향 연결 요소(Connected Component Blob)로
-     *      각 물체를 분리하여 그중 '둥근 백색 야구공 형태'의 물체만 정확히 골라냄!
-     *   3) 빠른 투구나 30cm 근접 투구는 ROI에 단 1프레임만 찍히는 경우가 많으므로,
-     *      유효한 백색 야구공 Blob이 포착되면 2프레임을 기다리지 않고 **즉시(1-Frame Lock)** 판정!
+     * 10. 실시간 자동판정 ON/OFF
      ***************************************************************************/
     function toggleOpticalAutoDetect() {
       appState.autoOpticalEnabled = !appState.autoOpticalEnabled;
@@ -2954,24 +2949,46 @@
       }
     }
 
+    /***************************************************************************
+     * 10-A. 데모(가상 투구) 스트림 — 실제 원근 투영으로 '멀리서 작게 → 가까이 크게' 날아오는 공
+     ***************************************************************************/
+    function getCameraModel(proj) {
+      const hCm = appState.cameraHeightM * 100;
+      return {
+        ppc: proj.pxPerCm,
+        cx: proj.centerX,
+        // 카메라 광축 높이(지평선)의 화면 y 좌표: 판정면(홈플레이트)에서 지면=groundY, 카메라높이=y0
+        y0: proj.groundY - hCm * proj.pxPerCm,
+        hCm,
+        // 공이 홈플레이트 판정면에 있을 때 화면에 보여야 하는 공 반지름(px)
+        rPlate: Math.max(2, proj.ballRadiusPx * (appState.ballSizeScale || 1))
+      };
+    }
+
+    // 화면 좌표(x,y)와 '판정면 대비 크기비 s(=공반지름/판정면 공반지름 = D/Z)'로 실제 공간 좌표(cm) 역산
+    function backProjectToWorld(cam, x, y, s) {
+      return {
+        xCm: (x - cam.cx) / (cam.ppc * s),
+        zCm: cam.hCm + (cam.y0 - y) / (cam.ppc * s)
+      };
+    }
+
     function updateAndDrawSimulatedStreamPitch(ctx, proj, now) {
       if (!appState.continuousStreamEnabled) return;
+      const D = appState.cameraDistM;
 
       if (!appState.simStreamBall && now - appState.lastAutoStreamPitchTime > 2800) {
         appState.lastAutoStreamPitchTime = now;
         const midZ = (appState.zoneTopCm + appState.zoneBottomCm) / 2;
-        const targetXCm = (Math.random() * 64) - 32;
-        const targetZCm = midZ + (Math.random() * 66) - 33;
-        const endPt = proj.cmToPixel(targetXCm, Math.max(12, targetZCm));
-
+        const speedKmh = 120 + Math.random() * 30;
         appState.simStreamBall = {
           startTime: now,
-          duration: 360,
-          startX: proj.centerX + (Math.random() * 24 - 12),
-          startY: Math.max(30, proj.zoneTopY - 85),
-          endX: endPt.x,
-          endY: endPt.y,
-          curveX: (Math.random() * 36) - 18
+          duration: (KBO_CONSTANTS.MOUND_DIST_M / (speedKmh / 3.6)) * 1000,
+          relX: (Math.random() * 50) - 25,        // 릴리스 포인트 좌우(cm)
+          relZ: 170 + Math.random() * 20,         // 릴리스 높이(cm)
+          endX: (Math.random() * 64) - 32,
+          endZ: Math.max(12, midZ + (Math.random() * 66) - 33),
+          breakX: (Math.random() * 24) - 12
         };
       }
 
@@ -2979,16 +2996,22 @@
       if (!b) return;
 
       const t = (now - b.startTime) / b.duration;
-      if (t > 1.05) {
+      const Zm = D + KBO_CONSTANTS.MOUND_DIST_M * (1 - t);   // 카메라~공 깊이(m)
+      // 판정면을 지나 포수 미트/그물에 들어가면 사라짐
+      if (Zm < D * 0.82) {
         appState.simStreamBall = null;
         return;
       }
 
-      const clampedT = Math.min(1, t);
-      const curve = 4 * clampedT * (1 - clampedT);
-      const bx = b.startX + (b.endX - b.startX) * clampedT + b.curveX * curve;
-      const by = b.startY + (b.endY - b.startY) * clampedT;
-      const br = Math.max(7, proj.ballRadiusPx * (0.4 + 0.6 * clampedT));
+      const s = D / Zm;
+      const cam = getCameraModel(proj);
+      const tc = Math.max(0, t);
+      const worldX = b.relX + (b.endX - b.relX) * tc + b.breakX * 4 * tc * (1 - tc);
+      const worldZ = b.relZ + (b.endZ - b.relZ) * tc;
+      const bx = cam.cx + worldX * cam.ppc * s;
+      const by = cam.y0 - (worldZ - cam.hCm) * cam.ppc * s;
+      const br = KBO_CONSTANTS.BALL_RADIUS_CM * cam.ppc * s;
+      if (br < 0.6) return;
 
       ctx.save();
       ctx.beginPath();
@@ -2998,283 +3021,588 @@
       ctx.restore();
     }
 
-    function processOpticalBallDetection(proj, now) {
-      if (!appState.autoOpticalEnabled) return;
+    /***************************************************************************
+     * 10-B. [재설계] 접근 궤적 기반 야구공 판정 엔진
+     *
+     *  기존 문제: 화면에 '흰색 + 약간의 변화'만 있으면 1프레임 만에 판정 → 흰 옷, 벽, 조명,
+     *            손 등 아무 흰색이나 판정되고, 정작 작고 빠른 공은 놓침.
+     *
+     *  새 방식 (4단계):
+     *   1) 배경 학습: 화면을 계속 학습해 '원래 있던 흰색'(벽·라인·옷·조명)은 전부 배경으로 제외.
+     *      배경과 확실히 다른, 새로 나타난 밝은 무채색 픽셀만 후보로 사용.
+     *   2) 원형 군집 분리: 후보 픽셀을 덩어리(Blob)로 나누고, 판정면 기준 공 크기의 2.2배를
+     *      넘거나 길쭉하거나 속이 빈 덩어리(사람·팔·배트)는 제외.
+     *   3) 다중 프레임 추적: 덩어리를 프레임마다 이어 붙여 궤적(Track)을 만듦.
+     *      → 처음엔 작게(멀리) 보이다가 점점 커지는(가까워지는) 궤적만 '투구'로 인정.
+     *      → 대각선 진입 허용. 제자리에 있거나 멀어지거나 크기가 안 변하는 물체는 무시.
+     *   4) 판정면 통과 순간 판정: 공 크기 변화로 깊이(거리)를 계산해 공이 홈플레이트
+     *      판정면(카메라 앞 D m)에 도달하는 순간의 위치를 보간/외삽.
+     *      그 지점이 카메라 화면 안에 찍힌 경우에만 볼/스트라이크 판정.
+     ***************************************************************************/
+    const TRACK_CFG = {
+      PROC_LONG_SIDE: 480,     // 분석 해상도(긴 변 px, 최소)
+      MIN_PLATE_R_PROC: 6,     // 분석 화면에서 판정면 공 반지름이 최소 이 정도는 되도록 해상도 자동 상향
+      MAX_PROC_PIXELS: 320000,
+      BG_WARMUP_FRAMES: 12,    // 시작 후 배경 학습 프레임 수
+      MAX_FG_RATIO: 0.06,      // 화면 6% 이상이 한꺼번에 바뀌면 카메라 흔들림/조명 변화로 간주
+      MAX_CANDIDATES: 10,
+      MAX_TRACKS: 14,
+      TRACK_TIMEOUT_MS: 140,   // 이 시간 이상 안 보이면 궤적 종료
+      MAX_TRACK_MS: 1600,      // 투구 1회는 이보다 짧음
+      MIN_OBS: 3,              // 최소 연속 포착 프레임 수
+      MIN_GROWTH: 1.35,        // 처음 대비 마지막 크기 증가율(접근 판단)
+      MAX_FIRST_S: 0.8,        // 첫 포착 시점엔 판정면보다 충분히 멀리 있어야 함
+      MIN_LAST_S: 0.4,         // 마지막 포착 시 판정면 근처(크기 40% 이상)까지 와야 함
+      PLANE_S: 0.92,           // 이 크기에 도달하면 '판정면 도달'로 보고 즉시 판정
+      MAX_SIZE_S: 2.2,         // 판정면 공 크기의 2.2배 초과 덩어리는 공이 아님
+      MIN_SPEED_MS: 5,         // 접근 속도 하한 (m/s) ≈ 18km/h — 이보다 느린 건 투구로 보지 않음
+      MAX_SPEED_MS: 55,        // 접근 속도 상한 (m/s) ≈ 198km/h
+      COOLDOWN_MS: 800
+    };
 
-      const procCanvas = document.getElementById('opticalProcCanvas');
-      const pCtx = procCanvas.getContext('2d', { willReadFrequently: true });
-      const pw = procCanvas.width;   // 160
-      const ph = procCanvas.height;  // 120
+    function createOpticalEngineState() {
+      return {
+        sourceKey: '',
+        pw: 0, ph: 0,
+        bg: null,            // Float32Array 배경 밝기
+        bgSat: null,         // Float32Array 배경 채도
+        lastSample: null,    // 중복 프레임 검사용
+        lastMediaTime: -1,
+        warmup: 0,
+        tracks: [],
+        nextTrackId: 1,
+        lastCross: null,     // 마지막 판정면 통과 지점 (오버레이 표시)
+        lastMsg: '배경 학습 중…',
+        lastMsgTime: 0
+      };
+    }
 
-      let hasValidSource = false;
+    function resetOpticalEngine() {
+      appState.optEngine = createOpticalEngineState();
+    }
+
+    function setOpticalMsg(eng, msg, now) {
+      eng.lastMsg = msg;
+      eng.lastMsgTime = now;
+    }
+
+    function getOpticalSource() {
       if (appState.cameraActive) {
         const v = document.getElementById('cameraVideo');
-        if (v && v.readyState >= 2) {
-          pCtx.drawImage(v, 0, 0, pw, ph);
-          hasValidSource = true;
-        }
-      } else if (appState.nativeVideoActive) {
+        if (v && v.readyState >= 2 && v.videoWidth) return { key: 'camera', el: v, w: v.videoWidth, h: v.videoHeight };
+        return null;
+      }
+      if (appState.nativeVideoActive) {
         const v = document.getElementById('recordedPitchVideo');
-        if (v && !v.paused && v.readyState >= 2) {
-          pCtx.drawImage(v, 0, 0, pw, ph);
-          hasValidSource = true;
+        if (v && !v.paused && v.readyState >= 2 && v.videoWidth) {
+          return { key: 'video', el: v, w: v.videoWidth, h: v.videoHeight, mediaTimeMs: v.currentTime * 1000 };
         }
-      } else if (appState.screenShareActive) {
+        return null;
+      }
+      if (appState.screenShareActive) {
         const v = document.getElementById('screenCaptureVideo');
-        if (v && v.readyState >= 2) {
-          pCtx.drawImage(v, 0, 0, pw, ph);
-          hasValidSource = true;
-        }
-      } else if (appState.continuousStreamEnabled) {
-        pCtx.drawImage(mainCanvas, 0, 0, pw, ph);
-        hasValidSource = true;
+        if (v && v.readyState >= 2 && v.videoWidth) return { key: 'screen', el: v, w: v.videoWidth, h: v.videoHeight };
+        return null;
+      }
+      if (appState.continuousStreamEnabled) {
+        return { key: 'demo', el: mainCanvas, isCanvas: true };
+      }
+      return null;
+    }
+
+    // 가중 선형회귀 y = a + b*t
+    function weightedLinearFit(ts, ys, ws) {
+      let sw = 0, st = 0, sy = 0, stt = 0, sty = 0;
+      for (let i = 0; i < ts.length; i++) {
+        const w = ws[i];
+        sw += w; st += w * ts[i]; sy += w * ys[i];
+        stt += w * ts[i] * ts[i]; sty += w * ts[i] * ys[i];
+      }
+      const den = sw * stt - st * st;
+      if (sw <= 0) return { a: 0, b: 0 };
+      if (Math.abs(den) < 1e-9) return { a: sy / sw, b: 0 };
+      const b = (sw * sty - st * sy) / den;
+      const a = (sy - b * st) / sw;
+      return { a, b };
+    }
+
+    function processOpticalBallDetection(proj, now) {
+      if (!appState.autoOpticalEnabled) return;
+      if (!appState.optEngine) resetOpticalEngine();
+      let eng = appState.optEngine;
+
+      const src = getOpticalSource();
+      if (!src) return;
+
+      // 영상 소스가 바뀌면 배경/궤적 초기화
+      if (eng.sourceKey !== src.key) {
+        resetOpticalEngine();
+        eng = appState.optEngine;
+        eng.sourceKey = src.key;
       }
 
-      if (!hasValidSource) return;
+      // 분석용 캔버스: 메인 화면과 같은 비율 → 좌표가 화면과 정확히 일치
+      const procCanvas = document.getElementById('opticalProcCanvas');
+      const camForScale = getCameraModel(proj);
+      let scale = Math.max(TRACK_CFG.PROC_LONG_SIDE / Math.max(1, proj.W, proj.H), TRACK_CFG.MIN_PLATE_R_PROC / camForScale.rPlate);
+      scale = Math.min(1, scale, Math.sqrt(TRACK_CFG.MAX_PROC_PIXELS / Math.max(1, proj.W * proj.H)));
+      const pw = Math.max(40, Math.round(proj.W * scale));
+      const ph = Math.max(30, Math.round(proj.H * scale));
+      if (procCanvas.width !== pw || procCanvas.height !== ph) {
+        procCanvas.width = pw;
+        procCanvas.height = ph;
+      }
+      if (eng.pw !== pw || eng.ph !== ph) {
+        eng.pw = pw; eng.ph = ph;
+        eng.bg = null; eng.bgSat = null; eng.lastSample = null; eng.tracks = []; eng.warmup = 0;
+      }
+      const sx = pw / proj.W, sy = ph / proj.H;     // 화면 px → 분석 px
+      const pCtx = procCanvas.getContext('2d', { willReadFrequently: true });
 
+      // 동영상 파일은 영상 내부 시간 기준(슬로우 재생에도 정확), 그 외는 실제 시간 기준
+      let frameT = now;
+      if (src.mediaTimeMs !== undefined) {
+        if (src.mediaTimeMs === eng.lastMediaTime) return;         // 같은 프레임
+        if (src.mediaTimeMs < eng.lastMediaTime) { eng.tracks = []; } // 되감기/반복
+        eng.lastMediaTime = src.mediaTimeMs;
+        frameT = src.mediaTimeMs;
+      }
+
+      if (src.isCanvas) {
+        pCtx.drawImage(src.el, 0, 0, pw, ph);
+      } else {
+        pCtx.fillStyle = '#000';
+        pCtx.fillRect(0, 0, pw, ph);
+        drawMediaSourceToCanvas(pCtx, src.el, src.w, src.h, pw, ph);
+      }
       const frame = pCtx.getImageData(0, 0, pw, ph).data;
-      if (!appState.prevFrameData) {
-        appState.prevFrameData = new Uint8ClampedArray(frame);
+      const N = pw * ph;
+
+      // 카메라(30fps)가 화면 갱신(60fps)보다 느릴 때 같은 프레임을 두 번 분석하지 않도록 검사
+      const SAMPLE_STEP = 97;
+      const sampleLen = Math.floor(N / SAMPLE_STEP);
+      if (!src.isCanvas && src.mediaTimeMs === undefined) {
+        let same = !!eng.lastSample;
+        if (!eng.lastSample) eng.lastSample = new Uint8Array(sampleLen * 3);
+        for (let k = 0, p = 0; k < sampleLen; k++, p += SAMPLE_STEP) {
+          const i = p * 4;
+          const o = k * 3;
+          if (same && (eng.lastSample[o] !== frame[i] || eng.lastSample[o + 1] !== frame[i + 1] || eng.lastSample[o + 2] !== frame[i + 2])) same = false;
+          eng.lastSample[o] = frame[i]; eng.lastSample[o + 1] = frame[i + 1]; eng.lastSample[o + 2] = frame[i + 2];
+        }
+        if (same) return;
+      }
+
+      // ── 1) 배경 모델 ──
+      if (!eng.bg) {
+        eng.bg = new Float32Array(N);
+        eng.bgSat = new Float32Array(N);
+        for (let p = 0, i = 0; p < N; p++, i += 4) {
+          const r = frame[i], g = frame[i + 1], b = frame[i + 2];
+          const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+          eng.bg[p] = 0.299 * r + 0.587 * g + 0.114 * b;
+          eng.bgSat[p] = (mx - mn) / (mx + 1);
+        }
+        eng.warmup = 0;
+        setOpticalMsg(eng, '배경 학습 중…', now);
         return;
       }
 
       const sensitivity = parseInt(document.getElementById('opticalSensitivity').value, 10) || 78;
-      // 실내 조명이나 모션 블러로 인해 약간 흐려진 흰색 야구공도 잘 잡도록 기준 최적화
-      const minWhiteLuma = Math.max(128, 212 - Math.round(sensitivity * 0.85));
-      const maxChroma = Math.max(28, Math.round(sensitivity * 0.62));
-      const minLumaDiff = Math.max(12, 68 - Math.round(sensitivity * 0.55));
+      const minWhite = 225 - sensitivity * 0.95;          // 78 → 151
+      const maxSat = 0.12 + sensitivity * 0.0022;         // 78 → 0.29
+      const minDiff = Math.max(14, 60 - sensitivity * 0.45); // 78 → 25 (배경 대비 밝아진 정도)
 
-      // 30cm 근접 촬영을 고려하여 ROI(감지 영역)를 넉넉하게 확보
-      const roiPadX = Math.max(85, proj.zoneWidthPx * 0.55);
-      const roiPadTop = Math.max(75, proj.zoneHeightPx * 0.45);
-      const roiLeft = Math.max(4, Math.floor(((proj.zoneLeftX - roiPadX) / proj.W) * pw));
-      const roiRight = Math.min(pw - 4, Math.ceil(((proj.zoneRightX + roiPadX) / proj.W) * pw));
-      const roiTop = Math.max(4, Math.floor(((proj.zoneTopY - roiPadTop) / proj.H) * ph));
-      const roiBottom = Math.min(ph - 4, Math.ceil(((proj.groundY + 25) / proj.H) * ph));
+      const mask = new Uint8Array(N);
+      let fgCount = 0;
+      const bg = eng.bg, bgSat = eng.bgSat;
+      const warming = eng.warmup < TRACK_CFG.BG_WARMUP_FRAMES;
 
-      const mask = new Uint8Array(pw * ph);
-      let totalMovingWhitePixels = 0;
+      for (let p = 0, i = 0; p < N; p++, i += 4) {
+        const r = frame[i], g = frame[i + 1], b = frame[i + 2];
+        const luma = 0.299 * r + 0.587 * g + 0.114 * b;
+        const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+        const sat = (mx - mn) / (mx + 1);
+        const dBg = luma - bg[p];
 
-      for (let y = roiTop; y < roiBottom; y++) {
-        for (let x = roiLeft; x < roiRight; x++) {
-          const idx = y * pw + x;
-          const i = idx * 4;
-          const r = frame[i], g = frame[i + 1], b = frame[i + 2];
-          const pr = appState.prevFrameData[i], pg = appState.prevFrameData[i + 1], pb = appState.prevFrameData[i + 2];
-
-          const luma = (r + g + b) / 3;
-          const prevLuma = (pr + pg + pb) / 3;
-
-          // 1) 밝기 변화량 검사: 새로 나타난 밝은 물체(양수 점프) 또는 빠르게 지나간 밝은 물체
-          const lumaJump = luma - prevLuma;
-          const absMotion = Math.abs(r - pr) + Math.abs(g - pg) + Math.abs(b - pb);
-          if (lumaJump < minLumaDiff && !(luma > minWhiteLuma + 20 && absMotion > minLumaDiff * 2.4)) {
-            continue;
-          }
-
-          // 2) 명백한 피부색(손/팔/얼굴) 차단:
-          // 단, 아주 밝은 하이라이트(luma > 215)가 아닌 경우에만 살색 필터(R이 G보다 훨씬 크고 B보다 훨씬 큰 경우) 적용
-          if (luma < 215 && r > g + 18 && g > b + 12 && (r - b) > 38) {
-            continue;
-          }
-
-          // 3) 백색도(무채색 밝기) 확인
-          const maxC = Math.max(r, g, b);
-          const minC = Math.min(r, g, b);
-          const chroma = maxC - minC;
-
-          if (luma >= minWhiteLuma && chroma <= maxChroma) {
-            mask[idx] = 1;
-            totalMovingWhitePixels++;
-          }
+        let isFg = false;
+        if (!warming && luma >= minWhite && sat <= maxSat && dBg >= minDiff) {
+          // 살색(손·팔·얼굴) 제외
+          const skin = r > g + 15 && g > b + 8 && (r - b) > 30 && luma < 230;
+          if (!skin) isFg = true;
         }
+        if (isFg) { mask[p] = 1; fgCount++; }
+
+        // 배경 갱신: 평소엔 빠르게, 전경(공 후보)은 아주 천천히 흡수
+        const a = isFg ? 0.01 : (warming ? 0.25 : 0.06);
+        bg[p] += a * (luma - bg[p]);
+        bgSat[p] += a * (sat - bgSat[p]);
       }
 
-      // 배경 적응형 업데이트 (공이 살짝 느리게 움직여도 계속 잡히도록 이전 프레임과 부드럽게 블렌딩)
-      for (let i = 0; i < frame.length; i++) {
-        appState.prevFrameData[i] = (appState.prevFrameData[i] + frame[i]) >> 1;
-      }
-
-      // 카메라 전체가 흔들려서 화면 절반 이상이 하얗게 변한 경우는 무시
-      const roiArea = Math.max(1, (roiRight - roiLeft) * (roiBottom - roiTop));
-      if (totalMovingWhitePixels > roiArea * 0.42) {
+      if (warming) {
+        eng.warmup++;
+        setOpticalMsg(eng, `배경 학습 중… ${Math.round(eng.warmup / TRACK_CFG.BG_WARMUP_FRAMES * 100)}%`, now);
         return;
       }
 
-      // 4) 연결 요소 군집화 (Connected-Component Blob Labeling - BFS)
-      // 손이나 배경 노이즈와 야구공이 동시에 있어도 각각의 덩어리(Blob)를 분리해 야구공만 찾아냄!
-      const visited = new Uint8Array(pw * ph);
-      let bestBallBlob = null;
-      let bestScore = -1;
+      // 화면 대부분이 한 번에 변함 → 카메라 흔들림/조명 변화. 배경을 빠르게 재학습하고 이번 프레임은 버림
+      if (fgCount > N * TRACK_CFG.MAX_FG_RATIO) {
+        for (let p = 0, i = 0; p < N; p++, i += 4) {
+          bg[p] = 0.299 * frame[i] + 0.587 * frame[i + 1] + 0.114 * frame[i + 2];
+        }
+        eng.tracks = [];
+        setOpticalMsg(eng, '화면 전체 변화 감지 → 배경 재학습', now);
+        return;
+      }
 
-      const queueX = new Int16Array(pw * ph);
-      const queueY = new Int16Array(pw * ph);
+      // ── 2) 원형 군집(Blob) 분리 ──
+      const cam = getCameraModel(proj);
+      const rPlateProc = cam.rPlate * sx;
+      const maxBlobR = rPlateProc * TRACK_CFG.MAX_SIZE_S + 1.5;
+      const candidates = [];
 
-      for (let y = roiTop; y < roiBottom; y++) {
-        for (let x = roiLeft; x < roiRight; x++) {
-          const startIdx = y * pw + x;
-          if (!mask[startIdx] || visited[startIdx]) continue;
-
+      if (fgCount > 0) {
+        const visited = new Uint8Array(N);
+        const queue = new Int32Array(Math.min(N, fgCount + 8));
+        for (let p0 = 0; p0 < N; p0++) {
+          if (!mask[p0] || visited[p0]) continue;
           let head = 0, tail = 0;
-          queueX[tail] = x;
-          queueY[tail] = y;
-          tail++;
-          visited[startIdx] = 1;
-
-          let sumX = 0, sumY = 0, sumLuma = 0;
-          let minX = x, maxX = x, minY = y, maxY = y;
-
+          queue[tail++] = p0;
+          visited[p0] = 1;
+          let sumX = 0, sumY = 0, sumL = 0;
+          let minX = pw, maxX = 0, minY = ph, maxY = 0;
           while (head < tail) {
-            const cx = queueX[head];
-            const cy = queueY[head];
-            head++;
-
-            const cIdx = (cy * pw + cx) * 4;
-            const cLuma = (frame[cIdx] + frame[cIdx + 1] + frame[cIdx + 2]) / 3;
-
-            sumX += cx;
-            sumY += cy;
-            sumLuma += cLuma;
-
-            if (cx < minX) minX = cx;
-            if (cx > maxX) maxX = cx;
-            if (cy < minY) minY = cy;
-            if (cy > maxY) maxY = cy;
-
-            // 8방향 인접 픽셀 탐색 (1픽셀 건너뛴 모션 블러까지 연결하도록 반경 2 탐색)
-            for (let ny = Math.max(roiTop, cy - 2); ny <= Math.min(roiBottom - 1, cy + 2); ny++) {
-              for (let nx = Math.max(roiLeft, cx - 2); nx <= Math.min(roiRight - 1, cx + 2); nx++) {
-                const nIdx = ny * pw + nx;
-                if (mask[nIdx] && !visited[nIdx]) {
-                  visited[nIdx] = 1;
-                  queueX[tail] = nx;
-                  queueY[tail] = ny;
-                  tail++;
+            const p = queue[head++];
+            const x = p % pw, y = (p / pw) | 0;
+            const i = p * 4;
+            sumX += x; sumY += y;
+            sumL += (frame[i] + frame[i + 1] + frame[i + 2]) / 3;
+            if (x < minX) minX = x; if (x > maxX) maxX = x;
+            if (y < minY) minY = y; if (y > maxY) maxY = y;
+            for (let dy = -1; dy <= 1; dy++) {
+              const ny = y + dy;
+              if (ny < 0 || ny >= ph) continue;
+              for (let dx = -1; dx <= 1; dx++) {
+                const nx = x + dx;
+                if (nx < 0 || nx >= pw) continue;
+                const np = ny * pw + nx;
+                if (mask[np] && !visited[np] && tail < queue.length) {
+                  visited[np] = 1;
+                  queue[tail++] = np;
                 }
               }
             }
           }
 
-          const blobCount = tail;
-          const bw = (maxX - minX) + 1;
-          const bh = (maxY - minY) + 1;
-          const aspect = Math.max(bw / bh, bh / bw);
-          const bboxArea = Math.max(1, bw * bh);
-          const fillRatio = blobCount / bboxArea;
-
-          // 30cm 초근접(큰 공: 최대 55x55px, 면적 750px)부터 원거리(작은 공: 2x2px, 면적 2px) 및 빠른 궤적(aspect <= 3.8) 모두 수용!
-          const isBaseballCandidate =
-            blobCount >= 2 &&
-            blobCount <= 750 &&
-            bw >= 2 && bw <= 58 &&
-            bh >= 2 && bh <= 58 &&
-            aspect <= 3.8 &&
-            fillRatio >= 0.18;
-
-          if (isBaseballCandidate) {
-            const avgLuma = sumLuma / blobCount;
-            // 원형에 가까울수록(aspect -> 1), 속이 꽉 찰수록(fillRatio), 밝을수록(avgLuma) 높은 야구공 점수 부여
-            const roundnessBonus = 1 / Math.max(1, aspect * 0.8);
-            const score = (avgLuma * 0.6) + (fillRatio * 90 * roundnessBonus) + Math.min(45, blobCount * 1.5);
-
-            if (score > bestScore) {
-              bestScore = score;
-              bestBallBlob = {
-                cx: sumX / blobCount,
-                cy: sumY / blobCount,
-                count: blobCount,
-                bw,
-                bh,
-                avgLuma
-              };
+          const count = tail;
+          if (count < 2) continue;
+          const bw = maxX - minX + 1, bh = maxY - minY + 1;
+          // 서브픽셀 면적: 경계 1px까지 포함해 '배경 대비 밝아진 정도'를 부분 면적으로 합산 → 작은 공도 크기 변화를 정밀하게 측정
+          let peak = 0;
+          for (let k = 0; k < tail; k++) {
+            const q = queue[k];
+            const d = (0.299 * frame[q * 4] + 0.587 * frame[q * 4 + 1] + 0.114 * frame[q * 4 + 2]) - bg[q];
+            if (d > peak) peak = d;
+          }
+          let cover = 0;
+          if (peak > 1) {
+            const ax0 = Math.max(0, minX - 1), ax1 = Math.min(pw - 1, maxX + 1);
+            const ay0 = Math.max(0, minY - 1), ay1 = Math.min(ph - 1, maxY + 1);
+            for (let yy = ay0; yy <= ay1; yy++) {
+              for (let xx = ax0; xx <= ax1; xx++) {
+                const q = yy * pw + xx;
+                const d = (0.299 * frame[q * 4] + 0.587 * frame[q * 4 + 1] + 0.114 * frame[q * 4 + 2]) - bg[q];
+                if (d > 0) cover += Math.min(1, d / peak);
+              }
             }
           }
+          const rProc = Math.sqrt(Math.max(count * 0.6, cover) / Math.PI);
+          if (rProc > maxBlobR) continue;                       // 너무 큼 (사람·옷 등)
+          const aspect = Math.max(bw / bh, bh / bw);
+          const fill = count / (bw * bh);
+          if (bw >= 4 || bh >= 4) {
+            if (aspect > 3.0) continue;                         // 길쭉함 (배트·팔·라인)
+            if (fill < 0.35) continue;                          // 속이 빔 (윤곽·그물)
+          }
+          // 화면 가장자리에 걸친 큰 덩어리는 잘린 물체일 가능성 → 제외
+          if ((minX === 0 || minY === 0 || maxX === pw - 1 || maxY === ph - 1) && rProc > rPlateProc * 0.8) continue;
+
+          const roundness = 1 / aspect;
+          candidates.push({
+            x: (sumX / count) / sx,         // 메인 화면 좌표
+            y: (sumY / count) / sy,
+            r: rProc / sx,
+            score: (sumL / count) * 0.5 + fill * 60 * roundness + Math.min(30, count)
+          });
         }
       }
 
+      candidates.sort((a, b) => b.score - a.score);
+      if (candidates.length > TRACK_CFG.MAX_CANDIDATES) candidates.length = TRACK_CFG.MAX_CANDIDATES;
+
+      // ── 3) 다중 프레임 궤적 연결 ──
+      const tracks = eng.tracks;
+      const pairs = [];
+      for (let ti = 0; ti < tracks.length; ti++) {
+        const tr = tracks[ti];
+        const last = tr.obs[tr.obs.length - 1];
+        let px = last.x, py = last.y, speedPx = 0;
+        if (tr.obs.length >= 2) {
+          const prev = tr.obs[tr.obs.length - 2];
+          const dt = Math.max(1, last.t - prev.t);
+          const vx = (last.x - prev.x) / dt, vy = (last.y - prev.y) / dt;
+          px = last.x + vx * (frameT - last.t);
+          py = last.y + vy * (frameT - last.t);
+          speedPx = Math.hypot(vx, vy) * (frameT - last.t);
+        }
+        const gate = Math.max(22, last.r * 5) + speedPx * 0.6;
+        for (let ci = 0; ci < candidates.length; ci++) {
+          const c = candidates[ci];
+          // 크기 연속성: 공은 한 프레임 사이에 갑자기 작아지거나 3배 이상 커지지 않음
+          if (c.r < last.r * 0.6 - 1 || c.r > last.r * 3.0 + 2) continue;
+          const d = Math.hypot(c.x - px, c.y - py);
+          if (d <= gate) pairs.push({ ti, ci, d });
+        }
+      }
+      pairs.sort((a, b) => a.d - b.d);
+      const usedT = new Set(), usedC = new Set();
+      for (const pr of pairs) {
+        if (usedT.has(pr.ti) || usedC.has(pr.ci)) continue;
+        usedT.add(pr.ti); usedC.add(pr.ci);
+        const c = candidates[pr.ci];
+        tracks[pr.ti].obs.push({ t: frameT, x: c.x, y: c.y, r: c.r, s: c.r / cam.rPlate });
+        tracks[pr.ti].lastT = frameT;
+      }
+      for (let ci = 0; ci < candidates.length; ci++) {
+        if (usedC.has(ci)) continue;
+        const c = candidates[ci];
+        if (c.r / cam.rPlate > TRACK_CFG.MAX_FIRST_S) continue;   // 처음부터 가까이 '불쑥' 나타난 물체는 투구 아님
+        if (tracks.length >= TRACK_CFG.MAX_TRACKS) {
+          // 자리가 없으면 '다가오지 않는(크기 변화 없는)' 궤적 중 가장 오래된 것을 밀어냄
+          let worst = -1, worstScore = -Infinity;
+          for (let k = 0; k < tracks.length; k++) {
+            const tk = tracks[k];
+            const g = tk.obs[tk.obs.length - 1].r / Math.max(0.6, tk.obs[0].r);
+            const score = (frameT - tk.startT) - g * 400;
+            if (score > worstScore) { worstScore = score; worst = k; }
+          }
+          if (worst < 0) continue;
+          tracks.splice(worst, 1);
+        }
+        tracks.push({ id: eng.nextTrackId++, obs: [{ t: frameT, x: c.x, y: c.y, r: c.r, s: c.r / cam.rPlate }], startT: frameT, lastT: frameT });
+      }
+
+      // ── 4) 판정면 도달/궤적 종료 검사 ──
+      const cooling = now - appState.lastOpticalTriggerTime < TRACK_CFG.COOLDOWN_MS;
+      const animBusy = appState.activePitchAnim && !appState.activePitchAnim.judged;
+      let bestProgress = 0;
+
+      for (let ti = tracks.length - 1; ti >= 0; ti--) {
+        const tr = tracks[ti];
+        const last = tr.obs[tr.obs.length - 1];
+        const avgDt = tr.obs.length >= 2 ? (last.t - tr.obs[0].t) / (tr.obs.length - 1) : 33;
+        const timeout = Math.max(TRACK_CFG.TRACK_TIMEOUT_MS, avgDt * 2.5);
+        const dead = frameT - tr.lastT > timeout;
+        const reachedPlane = last.s >= TRACK_CFG.PLANE_S && tr.obs.length >= TRACK_CFG.MIN_OBS;
+        const tooOld = frameT - tr.startT > TRACK_CFG.MAX_TRACK_MS;
+
+        if (tr.obs.length >= 2 && last.s > tr.obs[0].s) bestProgress = Math.max(bestProgress, Math.min(1, last.s));
+
+        if (reachedPlane || dead || tooOld) {
+          if (!tooOld && tr.obs.length >= TRACK_CFG.MIN_OBS) {
+            const res = evaluatePitchTrack(tr, cam, proj);
+            if (res.ok) {
+              if (!cooling && !animBusy) {
+                appState.lastOpticalTriggerTime = now;
+                const crossPx = proj.cmToPixel(res.xCm, res.zCm);
+                eng.lastCross = { x: crossPx.x, y: crossPx.y, r: cam.rPlate, time: now, obs: tr.obs.slice() };
+                setOpticalMsg(eng, `판정 ✔ ${res.speedSource === 'measured' ? '측정' : '기준'}구속 ${res.speedKmh.toFixed(0)}km/h · ${tr.obs.length}프레임 추적`, now);
+                eng.tracks = [];
+                triggerPitchToCm(res.xCm, Math.max(1, res.zCm), res.speedKmh, appState.selectedPitchType, true);
+                return;
+              }
+            } else if (res.reason && tr.obs.length >= 4) {
+              setOpticalMsg(eng, `무시: ${res.reason}`, now);
+            }
+          }
+          tracks.splice(ti, 1);
+        }
+      }
+
+      // UI 신호 표시
       const barEl = document.getElementById('opticalSignalBar');
       const stateLbl = document.getElementById('opticalStateLabel');
-
-      if (bestBallBlob) {
-        const signalPct = Math.min(100, Math.max(35, Math.round((bestBallBlob.count / 12) * 100)));
-        appState.opticalSignalStrength = signalPct;
-        if (barEl) barEl.style.width = `${signalPct}%`;
-
-        const canvasX = (bestBallBlob.cx / pw) * proj.W;
-        const canvasY = (bestBallBlob.cy / ph) * proj.H;
-        const radiusPx = Math.max(14, ((Math.max(bestBallBlob.bw, bestBallBlob.bh) / pw) * proj.W) * 0.6);
-
-        appState.opticalTrail.push({ x: canvasX, y: canvasY, r: radiusPx, time: now });
-        if (appState.opticalTrail.length > 10) appState.opticalTrail.shift();
-
-        if (stateLbl) {
-          stateLbl.textContent = '⚾CATCH!';
+      const pct = Math.round(Math.max(5, bestProgress * 100));
+      appState.opticalSignalStrength = pct;
+      if (barEl) barEl.style.width = `${pct}%`;
+      if (stateLbl && now - appState.lastOpticalTriggerTime > 650) {
+        if (bestProgress > 0) {
+          stateLbl.textContent = 'TRACK';
           stateLbl.className = 'text-amber-300 font-bold w-14 text-right';
-        }
-
-        // [핵심] 공이 딱 찍히면(1프레임 포착만으로도) 쿨다운(0.95초)이 지났다면 즉시 판정!
-        if (now - appState.lastOpticalTriggerTime > 950 && !appState.activePitchAnim) {
-          const { xCm, zCm } = proj.pixelToCm(canvasX, canvasY);
-
-          // 스트라이크 존 및 볼 판정 유효 공간 내부에 찍혔는지 확인
-          const inValidSpace = Math.abs(xCm) <= 75 && zCm >= 3 && zCm <= appState.batterHeightCm * 1.05;
-
-          if (inValidSpace) {
-            appState.lastOpticalTriggerTime = now;
-
-            const baseSpeed = parseFloat(document.getElementById('touchBaseSpeed').value) || 145;
-            let estSpeed = baseSpeed + (Math.random() * 4 - 2);
-
-            const recentPts = appState.opticalTrail.filter(pt => now - pt.time < 250);
-            if (recentPts.length >= 2) {
-              const firstPt = recentPts[0];
-              const lastPt = recentPts[recentPts.length - 1];
-              const moveDistPx = Math.hypot(lastPt.x - firstPt.x, lastPt.y - firstPt.y);
-              const dt = Math.max(16, lastPt.time - firstPt.time);
-              const velFactor = Math.min(14, Math.max(-10, (moveDistPx / dt - 0.35) * 16));
-              estSpeed = Math.max(80, Math.min(165, baseSpeed + velFactor));
-            }
-
-            triggerPitchToCm(xCm, Math.max(5, zCm), estSpeed, appState.selectedPitchType, true);
-          }
-        }
-      } else {
-        if (barEl) barEl.style.width = '5%';
-        if (stateLbl && now - appState.lastOpticalTriggerTime > 650) {
+        } else {
           stateLbl.textContent = 'SCAN';
           stateLbl.className = 'text-cyan-300 font-bold w-14 text-right';
         }
       }
     }
 
-    function drawOpticalTrackingOverlay(ctx, now) {
-      appState.opticalTrail = appState.opticalTrail.filter(pt => now - pt.time < 450);
-      if (appState.opticalTrail.length === 0) return;
+    // 궤적이 '멀리서 다가와 판정면을 통과한 투구'인지 검증하고, 판정면 통과 지점(cm) 계산
+    function evaluatePitchTrack(tr, cam, proj) {
+      const obs = tr.obs;
+      const n = obs.length;
+      const first = obs[0], last = obs[n - 1];
+      const D = appState.cameraDistM;
 
-      ctx.save();
-      if (appState.opticalTrail.length > 1) {
-        ctx.beginPath();
-        for (let i = 0; i < appState.opticalTrail.length; i++) {
-          const pt = appState.opticalTrail[i];
-          if (i === 0) ctx.moveTo(pt.x, pt.y);
-          else ctx.lineTo(pt.x, pt.y);
-        }
-        ctx.strokeStyle = 'rgba(0, 230, 118, 0.9)';
-        ctx.lineWidth = 3;
-        ctx.stroke();
+      // (a) 접근(크기 증가) 검사 — 첫 2개 평균 대비
+      const r0 = Math.max(0.6, (obs[0].r + obs[1].r) / 2);
+      const growth = last.r / r0;
+      if (growth < TRACK_CFG.MIN_GROWTH) return { ok: false, reason: '다가오지 않음(크기 변화 없음)' };
+      let okSteps = 0;
+      for (let i = 1; i < n; i++) if (obs[i].r >= obs[i - 1].r * 0.85 - 0.3) okSteps++;
+      if (okSteps / (n - 1) < 0.7) return { ok: false, reason: '크기가 들쭉날쭉(공 아님)' };
+      if (first.s > TRACK_CFG.MAX_FIRST_S) return { ok: false, reason: '먼 곳에서 출발하지 않음' };
+      if (last.s < TRACK_CFG.MIN_LAST_S) return { ok: false, reason: '판정면까지 오지 않음' };
+      if (last.s > TRACK_CFG.MAX_SIZE_S) return { ok: false, reason: '공보다 큰 물체' };
+
+      // (b) 깊이 추정: u = 1/s = Z/D 는 등속 접근 시 시간에 선형 → 가중 회귀
+      const use = obs.slice(-6);
+      const t0 = use[0].t;
+      const ts = use.map(o => o.t - t0);
+      const us = use.map(o => 1 / Math.max(0.03, o.s));
+      const ws = use.map(o => o.r * o.r);
+      const fitU = weightedLinearFit(ts, us, ws);
+      if (fitU.b >= 0) return { ok: false, reason: '멀어지는 물체' };
+      // 등속 접근이면 u가 직선이어야 함 → 직선에서 많이 벗어나거나 끝에서 크기 증가가 멈추면(다른 물체와 겹침·조명 변화) 제외
+      const uSpan = Math.max(0.05, us[0] - us[us.length - 1]);
+      let sse = 0;
+      for (let i = 0; i < us.length; i++) {
+        const e = us[i] - (fitU.a + fitU.b * ts[i]);
+        sse += e * e * ws[i];
+      }
+      const wsum = ws.reduce((x, y) => x + y, 0);
+      const rmsRel = Math.sqrt(sse / Math.max(1e-9, wsum)) / uSpan;
+      if (use.length >= 4 && rmsRel > 0.22) return { ok: false, reason: '접근 궤적이 불규칙(공 아님)' };
+      if (use.length >= 4) {
+        const tail3 = use.slice(-3);
+        const fitTail = weightedLinearFit(tail3.map(o => o.t - t0), tail3.map(o => 1 / Math.max(0.03, o.s)), [1, 1, 1]);
+        if (fitTail.b > fitU.b * 0.35) return { ok: false, reason: '마지막에 크기 증가가 멈춤(공 아님)' };
       }
 
-      const latest = appState.opticalTrail[appState.opticalTrail.length - 1];
-      const r = latest.r || 18;
-      ctx.strokeStyle = '#00e676';
-      ctx.lineWidth = 2.5;
-      ctx.beginPath();
-      ctx.arc(latest.x, latest.y, r, 0, Math.PI * 2);
-      ctx.stroke();
+      const tStar = (1 - fitU.a) / fitU.b;                  // u=1 (판정면) 도달 시각(t0 기준 ms)
+      const tLastRel = last.t - t0;
+      const avgDt = (last.t - first.t) / (n - 1);
+      if (tStar - tLastRel > Math.max(90, avgDt * 2.5)) return { ok: false, reason: '판정면 도달 전 사라짐' };
+      if (tStar < -avgDt) return { ok: false, reason: '궤적 계산 불가' };
 
-      ctx.fillStyle = '#00e676';
-      ctx.font = 'bold 11px "JetBrains Mono"';
-      ctx.fillText('⚾ WHITE BALL LOCK', latest.x + r + 6, latest.y + 4);
+      const approachMs = -fitU.b * D * 1000;                // m/s
+      if (approachMs < TRACK_CFG.MIN_SPEED_MS) return { ok: false, reason: '너무 느림(공 아님)' };
+      if (approachMs > TRACK_CFG.MAX_SPEED_MS * 1.6) return { ok: false, reason: '비정상 속도' };
+
+      // (c) 각 관측을 실제 공간(cm)으로 역투영 후 판정면 시각으로 보간/외삽
+      const wx = [], wz = [], wt = [], ww = [];
+      const recent = use.slice(-5);
+      for (const o of recent) {
+        const sFit = 1 / Math.max(0.3, fitU.a + fitU.b * (o.t - t0));
+        const w = backProjectToWorld(cam, o.x, o.y, Math.min(3, Math.max(0.05, sFit)));
+        wx.push(w.xCm); wz.push(w.zCm); wt.push(o.t - t0); ww.push(sFit * sFit);
+      }
+      const fx = weightedLinearFit(wt, wx, ww);
+      const fz = weightedLinearFit(wt, wz, ww);
+      // 실제 공간에서의 옆/위아래 이동 속도가 접근 속도에 비해 너무 크면 투구가 아님 (옆으로 지나가는 물체 등)
+      const approachCmPerMs = approachMs * 0.1;
+      if (Math.abs(fx.b) > approachCmPerMs * 0.6 || Math.abs(fz.b) > approachCmPerMs * 0.8) {
+        return { ok: false, reason: '옆으로 움직이는 물체(투구 궤적 아님)' };
+      }
+      const xCm = fx.a + fx.b * tStar;
+      const zCm = fz.a + fz.b * tStar;
+      if (!isFinite(xCm) || !isFinite(zCm)) return { ok: false, reason: '궤적 계산 불가' };
+
+      // (d) 판정면 통과 지점이 카메라 화면 안에 찍혀야 함
+      const px = proj.cmToPixel(xCm, zCm);
+      const m = cam.rPlate * 0.5;
+      if (px.x < -m || px.x > proj.W + m || px.y < -m || px.y > proj.H + m) {
+        return { ok: false, reason: '판정면 통과 지점이 화면 밖' };
+      }
+      if (Math.abs(xCm) > 80 || zCm < 0 || zCm > appState.batterHeightCm * 1.05) {
+        return { ok: false, reason: '판정 유효 공간 밖' };
+      }
+
+      const baseSpeed = parseFloat(document.getElementById('touchBaseSpeed').value) || 145;
+      const measuredKmh = approachMs * 3.6;
+      const useMeasured = approachMs >= TRACK_CFG.MIN_SPEED_MS && approachMs <= TRACK_CFG.MAX_SPEED_MS;
+      return {
+        ok: true,
+        xCm, zCm,
+        speedKmh: useMeasured ? measuredKmh : baseSpeed,
+        speedSource: useMeasured ? 'measured' : 'base'
+      };
+    }
+
+    function drawOpticalTrackingOverlay(ctx, now) {
+      const eng = appState.optEngine;
+      if (!eng || !appState.autoOpticalEnabled) return;
+      ctx.save();
+
+      // 추적 중인 궤적 (노랑 = 접근 중)
+      for (const tr of eng.tracks) {
+        if (tr.obs.length < 2) continue;
+        const last = tr.obs[tr.obs.length - 1];
+        const approaching = last.r > tr.obs[0].r * 1.15;
+        ctx.strokeStyle = approaching ? 'rgba(255, 184, 0, 0.9)' : 'rgba(148, 163, 184, 0.5)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        tr.obs.forEach((o, i) => (i === 0 ? ctx.moveTo(o.x, o.y) : ctx.lineTo(o.x, o.y)));
+        ctx.stroke();
+        for (const o of tr.obs) {
+          ctx.beginPath();
+          ctx.arc(o.x, o.y, Math.max(2, o.r), 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        if (approaching) {
+          ctx.fillStyle = '#ffb800';
+          ctx.font = 'bold 10px "JetBrains Mono"';
+          ctx.textAlign = 'left';
+          ctx.fillText(`APPROACH ${Math.round(Math.min(1, last.s) * 100)}%`, last.x + Math.max(6, last.r) + 4, last.y + 3);
+        }
+      }
+
+      // 마지막 판정면 통과 지점 (초록)
+      const lc = eng.lastCross;
+      if (lc && now - lc.time < 1200) {
+        const alpha = 1 - (now - lc.time) / 1200;
+        ctx.globalAlpha = alpha;
+        ctx.strokeStyle = 'rgba(0, 230, 118, 0.9)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        lc.obs.forEach((o, i) => (i === 0 ? ctx.moveTo(o.x, o.y) : ctx.lineTo(o.x, o.y)));
+        ctx.lineTo(lc.x, lc.y);
+        ctx.stroke();
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = '#00e676';
+        ctx.beginPath();
+        ctx.arc(lc.x, lc.y, Math.max(8, lc.r), 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.fillStyle = '#00e676';
+        ctx.font = 'bold 11px "JetBrains Mono"';
+        ctx.textAlign = 'left';
+        ctx.fillText('⚾ 판정면 통과', lc.x + Math.max(8, lc.r) + 6, lc.y + 4);
+        ctx.globalAlpha = 1;
+      }
+
+      // 상태 메시지 (왜 판정했는지 / 왜 무시했는지)
+      if (eng.lastMsg && now - eng.lastMsgTime < 4000) {
+        ctx.font = 'bold 11px "JetBrains Mono", sans-serif';
+        ctx.textAlign = 'left';
+        const text = `⚾ ${eng.lastMsg}`;
+        const tw = ctx.measureText(text).width;
+        const y = ctx.canvas.height - 66;
+        ctx.fillStyle = 'rgba(6, 10, 18, 0.82)';
+        ctx.beginPath();
+        ctx.roundRect(10, y - 14, tw + 16, 21, 8);
+        ctx.fill();
+        ctx.fillStyle = eng.lastMsg.startsWith('판정') ? '#00e676' : (eng.lastMsg.startsWith('무시') ? '#fca5a5' : '#7dd3fc');
+        ctx.fillText(text, 18, y + 1);
+      }
       ctx.restore();
     }
 
@@ -3347,6 +3675,11 @@
       appState.calibX = x;
       appState.calibY = y;
       appState.calibScale = s / 100;
+      const bsEl = document.getElementById('sliderBallScale');
+      const bs = bsEl ? (parseInt(bsEl.value, 10) || 100) : 100;
+      appState.ballSizeScale = bs / 100;
+      const bsLbl = document.getElementById('lblBallScale');
+      if (bsLbl) bsLbl.textContent = `${bs}%`;
 
       document.getElementById('lblCalibX').textContent = `${x} px`;
       document.getElementById('lblCalibY').textContent = `${y} px`;
@@ -3357,6 +3690,8 @@
       document.getElementById('sliderCalibX').value = 0;
       document.getElementById('sliderCalibY').value = 0;
       document.getElementById('sliderCalibScale').value = 100;
+      const bsEl = document.getElementById('sliderBallScale');
+      if (bsEl) bsEl.value = 100;
       updateCalibration();
     }
 
