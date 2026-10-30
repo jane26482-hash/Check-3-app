@@ -68,6 +68,8 @@
     <label>타자 키 <span><input type="number" id="inHeight" value="175" min="130" max="210"> cm</span></label>
     <label>존 위아래 보정 <b id="lblShift">0 cm</b></label>
     <input type="range" id="inShift" min="-30" max="30" step="1" value="0">
+    <label>스트라이크 존 크기 <b id="lblZoneScale">150%</b></label>
+    <input type="range" id="inZoneScale" min="100" max="200" step="10" value="150">
     <label>공 인식 감도 <b id="lblSens">50</b></label>
     <input type="range" id="inSens" min="0" max="100" step="1" value="50">
     <label>공 크기 보정 <b id="lblBall">100%</b></label>
@@ -124,15 +126,18 @@
   const saved = load('abs_simple_settings', {});
   if (saved.h) $('inHeight').value = saved.h;
   if (saved.shift != null) $('inShift').value = saved.shift;
+  if (saved.zs) $('inZoneScale').value = saved.zs;
   if (saved.sens != null) $('inSens').value = saved.sens;
   if (saved.ball) $('inBall').value = saved.ball;
-  function saveSettings() { save('abs_simple_settings', { h: +$('inHeight').value, shift: +$('inShift').value, sens: +$('inSens').value, ball: +$('inBall').value }); }
+  function saveSettings() { save('abs_simple_settings', { h: +$('inHeight').value, shift: +$('inShift').value, sens: +$('inSens').value, ball: +$('inBall').value, zs: +$('inZoneScale').value }); }
   function syncLabels() {
+    $('lblZoneScale').textContent = `${$('inZoneScale').value}%`;
     $('lblShift').textContent = `${$('inShift').value > 0 ? '+' : ''}${$('inShift').value} cm`;
     $('lblSens').textContent = $('inSens').value;
     $('lblBall').textContent = `${$('inBall').value}%`;
   }
   ['inHeight', 'inShift', 'inSens', 'inBall'].forEach(id => $(id).addEventListener('input', () => { syncLabels(); saveSettings(); S.bgR = null; }));
+  $('inZoneScale').addEventListener('input', () => { syncLabels(); saveSettings(); });
   syncLabels();
 
   // ───────── 영상 좌표 ↔ 화면 좌표 ─────────
@@ -155,18 +160,23 @@
     const shift = +$('inShift').value || 0;
     const top = height * TOP_RATIO + shift, btm = height * BTM_RATIO + shift;
     const ballR = BALL_R * ppc * (+$('inBall').value / 100);
-    const zone = { l: cx - ZONE_HALF_W * ppc, r: cx + ZONE_HALF_W * ppc, t: gy - top * ppc, b: gy - btm * ppc };
+    const zone0 = { l: cx - ZONE_HALF_W * ppc, r: cx + ZONE_HALF_W * ppc, t: gy - top * ppc, b: gy - btm * ppc };   // 원래 KBO 존
+    // 스트라이크 존 크기 배율: 존 가운데를 기준으로 가로·세로를 같은 비율로 키움 (공 검출 영역은 그대로)
+    const zs = (+$('inZoneScale').value || 150) / 100;
+    const halfW = ZONE_HALF_W * zs, mid = (top + btm) / 2, halfH = (top - btm) / 2 * zs;
+    const topS = mid + halfH, btmS = Math.max(0, mid - halfH);
+    const zone = { l: cx - halfW * ppc, r: cx + halfW * ppc, t: gy - topS * ppc, b: gy - btmS * ppc };
     // 판정 박스: 바깥으로 크게 빠지는 볼·높은 볼도 잡도록 존보다 좌우 각 1.3배, 위 1.6배 넓게 (지면 아래는 제외)
-    const zw = zone.r - zone.l, zh = zone.b - zone.t;
+    const zw = zone0.r - zone0.l, zh = zone0.b - zone0.t;
     const win = {
-      l: Math.max(0, zone.l - zw * 1.3), r: Math.min(w, zone.r + zw * 1.3),
-      t: Math.max(0, zone.t - zh * 1.6), b: Math.min(h, Math.min(gy - 4 * ppc, zone.b + zh * 0.45))
+      l: Math.max(0, Math.min(zone.l, zone0.l - zw * 1.3)), r: Math.min(w, Math.max(zone.r, zone0.r + zw * 1.3)),
+      t: Math.max(0, Math.min(zone.t, zone0.t - zh * 1.6)), b: Math.min(h, Math.min(gy - 4 * ppc, zone0.b + zh * 0.45))
     };
     // 투수 영역: 투수 몸 위쪽(손이 공을 놓는 높이). 투수를 탭하지 않았으면 존 뒤쪽 기본 위치
     const pw = (x2 - x1) * 2.4;
-    const pcx = S.pitcher ? S.pitcher.x * w : cx, pcy = S.pitcher ? S.pitcher.y * h : zone.t + (zone.b - zone.t) * 0.3;
+    const pcx = S.pitcher ? S.pitcher.x * w : cx, pcy = S.pitcher ? S.pitcher.y * h : zone0.t + (zone0.b - zone0.t) * 0.3;
     const pbox = { l: Math.max(0, pcx - pw * 0.45), r: Math.min(w, pcx + pw * 0.45), t: Math.max(0, pcy - pw * 0.6), b: Math.min(h, pcy + pw * 0.05) };
-    return { ppc, cx, gy, top, btm, zone, win, ballR, pbox };
+    return { ppc, cx, gy, top: topS, btm: btmS, halfW, zone, zone0, win, ballR, pbox };
   }
   function toCm(g, x, y) { return { x: (x - g.cx) / g.ppc, z: (g.gy - y) / g.ppc }; }
 
@@ -419,7 +429,7 @@
       if (spot) { spot.t = t; return; }    // 가만히 있던 물체(바닥 공 등) 자리
       // 새 궤적은 '멀리 있는(작은)' 공으로, 판정 박스 가장자리가 아닌 곳에서만 시작 (타자 몸·장갑이 들어오는 것 제외)
       const nearEdge = c.x - g.win.l < edge || g.win.r - c.x < edge || g.win.b - c.y < edge * 0.5;
-      if (c.y < g.zone.t - (g.zone.b - g.zone.t)) return;   // 화면 맨 위(타자 손·배트 위치)에서는 새 궤적 시작 안 함
+      if (c.y < g.zone0.t - (g.zone0.b - g.zone0.t)) return;   // 화면 맨 위(타자 손·배트 위치)에서는 새 궤적 시작 안 함
       if ((c.rel <= 0.68 && !nearEdge) || false) tracks.push([Object.assign({ t }, c)]);
     });
     // 종료 검사
@@ -613,7 +623,7 @@
     }
     const cm = toCm(g, pt.x, pt.y);
     if (Math.abs(cm.x) > 90 || cm.z < -10 || cm.z > g.top + 60) { S.lastMsg = '판정 박스 밖 — 무시'; return false; }
-    const isStrike = Math.abs(cm.x) <= ZONE_HALF_W + BALL_R && cm.z <= g.top + BALL_R && cm.z >= g.btm - BALL_R;
+    const isStrike = Math.abs(cm.x) <= g.halfW + BALL_R && cm.z <= g.top + BALL_R && cm.z >= g.btm - BALL_R;
     call(isStrike, cm, pt, obs);
     S.cooldownUntil = S.prevT + 900;
     return true;
