@@ -54,6 +54,7 @@
     <button class="primary" id="btnCam">📷 카메라 시작</button>
     <label class="filebtn">🎞️ 영상 불러오기<input type="file" id="fileInput" accept="video/*"></label>
     <button id="btnPlate">🏠 홈플레이트 맞추기</button>
+    <button id="btnPitcher">🧍 투수 위치 맞추기</button>
     <button id="btnPlay" style="display:none">⏯ 재생/정지</button>
     <select id="selRate" style="display:none" class="filebtn">
       <option value="1">1x</option><option value="0.5">0.5x</option><option value="0.25">0.25x</option>
@@ -81,7 +82,6 @@
     <input type="range" id="inSens" min="0" max="100" step="1" value="50">
     <label>공 크기 보정 <b id="lblBall">100%</b></label>
     <input type="range" id="inBall" min="50" max="200" step="5" value="100">
-    <label style="justify-content:flex-start;gap:8px"><input type="checkbox" id="chkOneFrame"> 1프레임만 찍혀도 판정 <span class="muted">(30fps 카메라에서 공을 자주 놓칠 때)</span></label>
     <label style="justify-content:flex-start;gap:8px"><input type="checkbox" id="chkDebug"> 인식 과정 보기</label>
   </div>
 
@@ -93,13 +93,15 @@
   <div class="card muted" style="line-height:1.6">
     <b style="color:var(--text)">사용법</b><br>
     1. 휴대폰을 고정하고 카메라를 켭니다(가능하면 60fps).<br>
-    2. [홈플레이트 맞추기]를 누르고, 화면에서 홈플레이트의 <b style="color:var(--text)">왼쪽 끝 → 오른쪽 끝</b>을 차례로 탭합니다. 홈플레이트 위에 스트라이크 존과 판정 박스(점선)가 생깁니다.<br>
-    3. 공이 판정 박스 안에서 <b style="color:var(--text)">다가오며</b> 홈플레이트 위치의 공 크기로 찍히면 볼/스트라이크를 판정합니다. 타자·배트·바닥의 공·조명은 무시합니다.<br>
-    4. 잘못 판정되면 [마지막 판정 취소]를 누르세요. 공을 못 잡으면 감도를 올리고, 엉뚱한 걸 잡으면 내리세요.
+    2. [투수 위치 맞추기]를 누르고 공을 던지는 사람의 배꼽(몸 가운데)을 탭합니다. 이 사람 손에서 출발한 공만 판정합니다.<br>
+    3. [홈플레이트 맞추기]를 누르고, 화면에서 홈플레이트의 <b style="color:var(--text)">왼쪽 끝 → 오른쪽 끝</b>을 차례로 탭합니다. 홈플레이트 위에 스트라이크 존과 판정 박스(점선)가 생깁니다.<br>
+    4. 공이 판정 박스 안에서 <b style="color:var(--text)">다가오며</b> 홈플레이트 위치의 공 크기로 찍히면 볼/스트라이크를 판정합니다. 타자·배트·바닥의 공·조명은 무시합니다.<br>
+    5. 잘못 판정되면 [마지막 판정 취소]를 누르세요. 공을 못 잡으면 감도를 올리고, 엉뚱한 걸 잡으면 내리세요.
   </div>
 
   <video id="video" playsinline muted style="display:none"></video>
   <canvas id="proc" style="display:none"></canvas>
+  <canvas id="farc" style="display:none"></canvas>
 
 <script>
 (() => {
@@ -111,10 +113,13 @@
   const view = $('view'), vctx = view.getContext('2d');
   const video = $('video');
   const proc = $('proc'), pctx = proc.getContext('2d', { willReadFrequently: true });
+  const farCanvas = $('farc'), fctx = farCanvas.getContext('2d', { willReadFrequently: true });
 
   const S = {
     source: null,                 // 'camera' | 'file'
     plate: load('abs_simple_plate', null),   // {x1,y1,x2,y2} 영상 좌표 비율(0~1)
+    pitcher: load('abs_simple_pitcher', null), // {x,y} 투수 몸 가운데 (영상 좌표 비율)
+    ftracks: [], fdone: [],
     tapStep: 0, tapTmp: null,
     balls: 0, strikes: 0, outs: 0, history: [],
     banner: null, lastCall: null,
@@ -167,7 +172,11 @@
       l: Math.max(0, zone.l - zw * 1.3), r: Math.min(w, zone.r + zw * 1.3),
       t: Math.max(0, zone.t - zh * 1.6), b: Math.min(h, Math.min(gy - 4 * ppc, zone.b + zh * 0.45))
     };
-    return { ppc, cx, gy, top, btm, zone, win, ballR };
+    // 투수 영역: 투수 몸 위쪽(손이 공을 놓는 높이). 투수를 탭하지 않았으면 존 뒤쪽 기본 위치
+    const pw = (x2 - x1) * 2.4;
+    const pcx = S.pitcher ? S.pitcher.x * w : cx, pcy = S.pitcher ? S.pitcher.y * h : zone.t + (zone.b - zone.t) * 0.3;
+    const pbox = { l: Math.max(0, pcx - pw * 0.45), r: Math.min(w, pcx + pw * 0.45), t: Math.max(0, pcy - pw * 0.6), b: Math.min(h, pcy + pw * 0.05) };
+    return { ppc, cx, gy, top, btm, zone, win, ballR, pbox };
   }
   function toCm(g, x, y) { return { x: (x - g.cx) / g.ppc, z: (g.gy - y) / g.ppc }; }
 
@@ -204,7 +213,7 @@
     setHint(S.plate ? '판정 대기 중 — 공을 던지세요.' : '[홈플레이트 맞추기]를 누르고 홈플레이트 왼쪽 끝 → 오른쪽 끝을 탭하세요.');
     startFrameLoop();
   }
-  function resetDetector() { S.bgR = null; S.bgL = null; S.warm = 0; S.pending = []; S.tracks = []; S.spots = []; S.prevT = -1; }
+  function resetDetector() { F.bgR = null; S.bgR = null; S.bgL = null; S.warm = 0; S.pending = []; S.tracks = []; S.spots = []; S.ftracks = []; S.fdone = []; S.prevT = -1; }
 
   // ───────── 홈플레이트 탭 ─────────
   $('btnPlate').onclick = () => {
@@ -212,10 +221,21 @@
     $('btnPlate').classList.add('active');
     setHint('① 홈플레이트 왼쪽 끝을 탭하세요.');
   };
+  $('btnPitcher').onclick = () => {
+    S.tapStep = 9;
+    $('btnPitcher').classList.add('active');
+    setHint('화면에서 공을 던지는 사람(투수)의 배꼽(몸 가운데)을 탭하세요.');
+  };
   view.addEventListener('pointerdown', e => {
     if (!S.tapStep) return;
     const rect = view.getBoundingClientRect();
     const nx = (e.clientX - rect.left) / rect.width, ny = (e.clientY - rect.top) / rect.height;
+    if (S.tapStep === 9) {
+      S.pitcher = { x: nx, y: ny }; save('abs_simple_pitcher', S.pitcher);
+      S.tapStep = 0; $('btnPitcher').classList.remove('active'); resetDetector();
+      setHint('투수 위치 설정 완료 — 투수 손에서 출발한 공만 판정합니다.');
+      return;
+    }
     if (S.tapStep === 1) { S.tapTmp = { x: nx, y: ny }; S.tapStep = 2; setHint('② 홈플레이트 오른쪽 끝을 탭하세요.'); }
     else {
       const a = S.tapTmp, b = { x: nx, y: ny };
@@ -301,6 +321,7 @@
     if (nMove > N * 0.5) { S.pending = []; S.tracks = []; S.lastMsg = '화면 전체가 흔들림 — 무시'; for (let p = 0, i = 0; p < N; p++, i += 4) { bgR[p] = px[i]; bgL[p] = (px[i] + px[i + 1] + px[i + 2]) / 3; } return; }
 
     const rExp = g.ballR * k;              // 홈플레이트 위치에서의 공 반지름 (분석 px)
+    const BR = 2;
     const cands = [];
     if (nWhite) {
       const seen = new Uint8Array(N), q = new Int32Array(nWhite + 4);
@@ -312,10 +333,10 @@
           const p = q[h++], x = p % ww, y = (p / ww) | 0;
           sx += x; sy += y;
           if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
-          // 그물 줄에 가려 끊긴 공도 이어지도록 2px 까지 연결
-          for (let dy = -2; dy <= 2; dy++) {
+          // 그물 줄에 가려 끊긴 공도 이어지도록 몇 px 까지 연결
+          for (let dy = -BR; dy <= BR; dy++) {
             const ny = y + dy; if (ny < 0 || ny >= wh) continue;
-            for (let dx = -2; dx <= 2; dx++) {
+            for (let dx = -BR; dx <= BR; dx++) {
               const nx = x + dx; if (nx < 0 || nx >= ww) continue;
               const np = ny * ww + nx;
               if (white[np] && !seen[np] && tl < q.length) { seen[np] = 1; q[tl++] = np; }
@@ -350,6 +371,7 @@
       }
     }
 
+    try { trackFar(t, dt, g, farPass(g)); } catch (e) { console.error(e); }
     // 여러 물체를 각각 추적: 매 프레임 '움직이며 다가오는' 것만 이어 붙임
     if (t < S.cooldownUntil) { S.tracks = []; S.pending = []; return; }
     const tracks = S.tracks || (S.tracks = []);
@@ -400,7 +422,7 @@
       // 새 궤적은 '멀리 있는(작은)' 공으로, 판정 박스 가장자리가 아닌 곳에서만 시작 (타자 몸·장갑이 들어오는 것 제외)
       const nearEdge = c.x - g.win.l < edge || g.win.r - c.x < edge || g.win.b - c.y < edge * 0.5;
       if (c.y < g.zone.t - (g.zone.b - g.zone.t)) return;   // 화면 맨 위(타자 손·배트 위치)에서는 새 궤적 시작 안 함
-      if ((c.rel <= 0.68 && !nearEdge) || $('chkOneFrame').checked) tracks.push([Object.assign({ t }, c)]);
+      if ((c.rel <= 0.68 && !nearEdge) || false) tracks.push([Object.assign({ t }, c)]);
     });
     // 종료 검사
     for (let i = tracks.length - 1; i >= 0; i--) {
@@ -419,6 +441,98 @@
       tracks.length = 24;
     }
     S.pending = tracks.reduce((m, tr) => (tr.length > m.length ? tr : m), []);
+  }
+
+  // ───────── 먼 공 후보 찾기 (고해상도, 별도 배경) ─────────
+  const F = { bgR: null, key: '', warm: 0 };
+  function farPass(g) {
+    const k = Math.min(1, 16 / g.ballR);
+    const W0 = g.win.l, T0 = g.win.t;
+    const ww = Math.max(8, Math.round((g.win.r - g.win.l) * k)), wh = Math.max(8, Math.round((g.win.b - g.win.t) * k));
+    const key = `${Math.round(W0)},${Math.round(T0)},${ww},${wh}`;
+    if (F.key !== key) { F.key = key; F.bgR = null; }
+    if (farCanvas.width !== ww || farCanvas.height !== wh) { farCanvas.width = ww; farCanvas.height = wh; }
+    fctx.drawImage(video, W0, T0, g.win.r - g.win.l, g.win.b - g.win.t, 0, 0, ww, wh);
+    const px = fctx.getImageData(0, 0, ww, wh).data, N = ww * wh;
+    if (!F.bgR) { F.bgR = new Float32Array(N); F.bgL = new Float32Array(N); for (let p = 0, i = 0; p < N; p++, i += 4) { F.bgR[p] = px[i]; F.bgL[p] = (px[i] + px[i + 1] + px[i + 2]) / 3; } F.warm = 0; return []; }
+    const sens = +$('inSens').value, dThr = 60 - sens * 0.35, minR = 160 - sens * 0.5;
+    const mask = new Uint8Array(N); let nW = 0, nMove = 0;
+    const warming = F.warm < 8;
+    for (let p = 0, i = 0; p < N; p++, i += 4) {
+      const r = px[i], gg = px[i + 1], b = px[i + 2], L = (r + gg + b) / 3;
+      if (Math.abs(L - F.bgL[p]) > 20) nMove++;
+      // 흰/크림색 공 (살색처럼 R만 높은 건 제외)
+      if (!warming && r - F.bgR[p] > dThr && r > minR && Math.abs(r - gg) < 45 && b > r * 0.5) { mask[p] = 1; nW++; }
+      const a = mask[p] ? 0.02 : (warming ? 0.3 : 0.07);
+      F.bgR[p] += a * (r - F.bgR[p]); F.bgL[p] += a * (L - F.bgL[p]);
+    }
+    if (warming) { F.warm++; return []; }
+    if (nMove > N * 0.5 || nW > N * 0.05) return [];
+    const rExp = g.ballR * k, out = [];
+    const seen = new Uint8Array(N), q = new Int32Array(nW + 4);
+    for (let s0 = 0; s0 < N && nW; s0++) {
+      if (!mask[s0] || seen[s0]) continue;
+      let hd = 0, tl = 0; q[tl++] = s0; seen[s0] = 1;
+      let sx = 0, sy = 0, x0 = ww, x1 = 0, y0 = wh, y1 = 0;
+      while (hd < tl) {
+        const p = q[hd++], x = p % ww, y = (p / ww) | 0;
+        sx += x; sy += y; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+        for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+          const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= ww || ny >= wh) continue;
+          const np = ny * ww + nx; if (mask[np] && !seen[np] && tl < q.length) { seen[np] = 1; q[tl++] = np; }
+        }
+      }
+      const n = tl, bw = x1 - x0 + 1, bh = y1 - y0 + 1;
+      const r = Math.max(Math.sqrt(n / Math.PI), Math.min(bw, bh) / 2), rel = r / rExp;
+      if (n < 2 || rel < 0.08 || rel > 2 || (n > 6 && Math.max(bw, bh) / Math.min(bw, bh) > 3.2) || n / (bw * bh) < 0.3) continue;
+      out.push({ x: W0 + (sx / n) / k, y: T0 + (sy / n) / k, r: r / k, rel });
+    }
+    return out;
+  }
+
+  // ───────── 투수 손에서 출발한 공 추적 ─────────
+  // 투수 영역(몸 위쪽)에서 작게 나타난 공부터 시작해, 커지며 다가오는 동안 계속 따라감
+  function trackFar(t, dt, g, cands) {
+    const P = g.pbox, tracks = S.ftracks;
+    const pairs = [];
+    tracks.forEach((tr, ti) => {
+      const last = tr[tr.length - 1];
+      const gapF = Math.max(1, Math.round((t - last.t) / Math.max(16, dt)));
+      let px = last.x, py = last.y;
+      if (tr.length >= 2) { const pv = tr[tr.length - 2], f = Math.max(1, Math.round((last.t - pv.t) / Math.max(16, dt))); px += (last.x - pv.x) / f * gapF; py += (last.y - pv.y) / f * gapF; }
+      cands.forEach((c, ci) => {
+        const d = Math.hypot(c.x - last.x, c.y - last.y);
+        const reach = g.ballR * (1.5 + 10 * Math.min(1.2, last.rel));
+        if (d > reach * gapF || c.r < last.r * 0.5 || c.r > last.r * (1 + 0.45 * gapF) + 1.5) return;
+        const dp = Math.hypot(c.x - px, c.y - py);
+        if (tr.length >= 2 && dp > g.ballR * (1 + 5 * Math.min(1.2, last.rel)) * (1 + 0.6 * gapF)) return;
+        pairs.push({ ti, ci, cost: dp / g.ballR + 2 * Math.abs(Math.log(c.rel / last.rel)) });
+      });
+    });
+    pairs.sort((a, b) => a.cost - b.cost);
+    const used = new Set(), usedT = new Set();
+    for (const pr of pairs) {
+      if (used.has(pr.ci) || usedT.has(pr.ti)) continue;
+      used.add(pr.ci); usedT.add(pr.ti);
+      tracks[pr.ti].push(Object.assign({ t }, cands[pr.ci]));
+    }
+    cands.forEach((c, i) => {
+      if (used.has(i)) return;
+      if (c.rel <= 0.42 && c.x >= P.l && c.x <= P.r && c.y >= P.t && c.y <= P.b) tracks.push([Object.assign({ t }, c)]);
+    });
+    for (let i = tracks.length - 1; i >= 0; i--) {
+      const tr = tracks[i], last = tr[tr.length - 1];
+      if (t - last.t > 220 || t - tr[0].t > 2000) { tracks.splice(i, 1); if (tr.length >= 3) S.fdone.push(tr); }
+    }
+    if (tracks.length > 40) { tracks.sort((a, b) => b.length - a.length); tracks.length = 40; }
+    S.fdone = S.fdone.filter(tr => t - tr[tr.length - 1].t < 2500 && t >= tr[0].t);
+  }
+
+  // 가까운 공 궤적이 '투수 손에서 출발해 따라온 공'과 같은 공인가 (같은 시각, 같은 위치를 공유)
+  function fromPitcher(obs, g) {
+    const all = S.ftracks.concat(S.fdone);
+    const head = obs.slice(0, 4);
+    return all.some(ft => ft.length >= 3 && ft.some(f => head.some(o => Math.abs(o.t - f.t) < 1 && Math.hypot(o.x - f.x, o.y - f.y) < g.ballR * 1.5)));
   }
 
   // 최소제곱 직선 y = a + b·x
@@ -440,7 +554,7 @@
     return r;
   }
   function finalizeInner(g, obs) {
-    const one = $('chkOneFrame').checked;
+    const one = false;
     if (obs.length < (one ? 1 : 3)) return false;
     if (!one && obs.length < 5) {
       // 3~4프레임 궤적: 홈플레이트를 확실히 지나갔고(크기 1.15배 이상) 매 프레임 꾸준히 커지며 한 방향으로 움직일 때만
@@ -463,6 +577,8 @@
     }
     // 투구는 멀리서(작게) 처음 보임. 처음부터 크게 보인 흰 물체(장갑·손)는 공이 아님
     if (!one && obs[0].rel > 0.68) { S.lastMsg = '처음부터 가까이 있던 물체(장갑 등) — 무시'; return false; }
+    // 핵심: 투수 손에서 출발한 공과 이어진 궤적만 인정
+    if (!fromPitcher(obs, g)) { S.lastMsg = '투수가 던진 공 아님 — 무시'; return false; }
     let pt = null;
     if (obs.length === 1) {
       if (obs[0].rel < 0.8) return false;
@@ -582,6 +698,14 @@
       // 홈플레이트 위치 공 크기 안내 원
       vctx.strokeStyle = 'rgba(255,255,255,.6)'; vctx.setLineDash([3, 3]);
       vctx.beginPath(); vctx.arc(g.cx * s, (Z.t + Z.b) / 2 * s, g.ballR * s, 0, Math.PI * 2); vctx.stroke(); vctx.setLineDash([]);
+      // 투수 영역 (투수 손 근처에서 출발한 공을 추적 중이면 분홍색으로 강조)
+      const P = g.pbox, live = S.ftracks.some(tr => tr.length >= 3);
+      vctx.setLineDash([4, 4]); vctx.lineWidth = live ? 2.2 : 1.2;
+      vctx.strokeStyle = S.pitcher ? (live ? '#f472b6' : 'rgba(244,114,182,.75)') : 'rgba(244,114,182,.4)';
+      vctx.strokeRect(P.l * s, P.t * s, (P.r - P.l) * s, (P.b - P.t) * s); vctx.setLineDash([]);
+      vctx.fillStyle = vctx.strokeStyle; vctx.font = 'bold 10px sans-serif';
+      vctx.fillText(S.pitcher ? '투수' : '투수 위치를 지정하세요', P.l * s + 3, P.t * s + 12);
+      if ($('chkDebug').checked) S.ftracks.forEach(tr => { if (tr.length > 2) { vctx.strokeStyle = '#f472b6'; vctx.lineWidth = 1; vctx.beginPath(); tr.forEach((o, i) => i ? vctx.lineTo(o.x * s, o.y * s) : vctx.moveTo(o.x * s, o.y * s)); vctx.stroke(); } });
       // 홈플레이트 탭 점
       const { w, h } = vidSize();
       vctx.fillStyle = '#38bdf8';
