@@ -62,19 +62,9 @@
     <span class="status" id="status">대기</span>
   </div>
 
-  <div class="card">
-    <div class="row" style="margin-top:0">
-      <div class="count">
-        <span>B <span class="dots b" id="dotsB"><span></span><span></span><span></span></span></span>
-        <span>S <span class="dots s" id="dotsS"><span></span><span></span></span></span>
-        <span>O <span class="dots o" id="dotsO"><span></span><span></span></span></span>
-      </div>
-      <button id="btnUndo" style="margin-left:auto">↩ 마지막 판정 취소</button>
-      <button id="btnResetCount">카운트 초기화</button>
-    </div>
-  </div>
-
   <div class="card grid">
+    <label>카메라 프레임 <select id="selFps" class="filebtn" style="padding:5px 8px">
+      <option value="30">30fps</option><option value="60">60fps</option></select></label>
     <label>타자 키 <span><input type="number" id="inHeight" value="175" min="130" max="210"> cm</span></label>
     <label>존 위아래 보정 <b id="lblShift">0 cm</b></label>
     <input type="range" id="inShift" min="-30" max="30" step="1" value="0">
@@ -86,13 +76,13 @@
   </div>
 
   <div class="card">
-    <div class="muted" style="margin-bottom:4px">판정 기록</div>
+    <div class="row" style="margin:0 0 4px"><span class="muted">판정 기록</span><button id="btnUndo" style="margin-left:auto;padding:5px 10px;font-size:12px">↩ 마지막 판정 취소</button></div>
     <div class="log" id="log"><div class="muted">아직 판정이 없습니다.</div></div>
   </div>
 
   <div class="card muted" style="line-height:1.6">
     <b style="color:var(--text)">사용법</b><br>
-    1. 휴대폰을 고정하고 카메라를 켭니다(가능하면 60fps).<br>
+    1. 휴대폰을 고정하고 카메라를 켭니다. [카메라 프레임]에서 30fps/60fps를 고를 수 있어요(60fps면 공을 더 잘 잡아요).<br>
     2. [투수 위치 맞추기]를 누르고 공을 던지는 사람의 배꼽(몸 가운데)을 탭합니다. 이 사람 손에서 출발한 공만 판정합니다.<br>
     3. [홈플레이트 맞추기]를 누르고, 화면에서 홈플레이트의 <b style="color:var(--text)">왼쪽 끝 → 오른쪽 끝</b>을 차례로 탭합니다. 홈플레이트 위에 스트라이크 존과 판정 박스(점선)가 생깁니다.<br>
     4. 공이 판정 박스 안에서 <b style="color:var(--text)">다가오며</b> 홈플레이트 위치의 공 크기로 찍히면 볼/스트라이크를 판정합니다. 타자·배트·바닥의 공·조명은 무시합니다.<br>
@@ -121,7 +111,7 @@
     pitcher: load('abs_simple_pitcher', null), // {x,y} 투수 몸 가운데 (영상 좌표 비율)
     ftracks: [], fdone: [],
     tapStep: 0, tapTmp: null,
-    balls: 0, strikes: 0, outs: 0, history: [],
+    history: [],
     banner: null, lastCall: null,
     // 검출 상태
     bgR: null, bgL: null, win: null, warm: 0, prevT: -1,
@@ -181,20 +171,28 @@
   function toCm(g, x, y) { return { x: (x - g.cx) / g.ppc, z: (g.gy - y) / g.ppc }; }
 
   // ───────── 소스 ─────────
-  $('btnCam').onclick = async () => {
+  // 카메라 프레임 (30/60fps) 선택 — 저장해두고, 카메라가 켜져 있으면 바로 다시 연결
+  $('selFps').value = String(load('abs_simple_fps', 30));
+  $('selFps').onchange = () => { save('abs_simple_fps', +$('selFps').value); if (S.source === 'camera') startCamera(); };
+  async function startCamera() {
     try {
       stopStream();
+      const fps = +$('selFps').value || 30;
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: false,
-        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 60 } }
+        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: fps, max: fps } }
       });
+      const real = stream.getVideoTracks()[0]?.getSettings?.().frameRate;
+      if (real && Math.abs(real - fps) > 5) setHint(`이 카메라는 ${fps}fps를 지원하지 않아 ${Math.round(real)}fps로 동작합니다.`);
       video.srcObject = stream; video.src = '';
       S.source = 'camera';
       await video.play();
       $('btnPlay').style.display = 'none'; $('selRate').style.display = 'none';
       onNewSource();
+      if (real && Math.abs(real - fps) > 5) setHint(`이 카메라는 ${fps}fps를 지원하지 않아 ${Math.round(real)}fps로 동작합니다.`);
     } catch (e) { setHint('카메라를 열 수 없습니다: ' + e.message); }
-  };
+  }
+  $('btnCam').onclick = startCamera;
   $('fileInput').onchange = e => {
     const f = e.target.files[0]; if (!f) return;
     stopStream();
@@ -621,32 +619,23 @@
     return true;
   }
 
-  // ───────── 판정 / 카운트 ─────────
+  // ───────── 판정 ─────────
   function call(isStrike, cm, pt, obs) {
-    const prev = { b: S.balls, s: S.strikes, o: S.outs };
-    let event = isStrike ? 'STRIKE' : 'BALL';
-    if (isStrike) { if (++S.strikes >= 3) { event = 'STRIKE OUT'; S.strikes = 0; S.balls = 0; S.outs = (S.outs + 1) % 3; } }
-    else { if (++S.balls >= 4) { event = 'BALL 4 (볼넷)'; S.balls = 0; S.strikes = 0; } }
-    const rec = { n: S.history.length + 1, isStrike, x: cm.x, z: cm.z, pt, obs, prev, event, time: performance.now() };
+    const event = isStrike ? 'STRIKE' : 'BALL';
+    const rec = { n: S.history.length + 1, isStrike, x: cm.x, z: cm.z, pt, obs, event, time: performance.now() };
     S.history.push(rec);
     S.lastCall = rec;
     S.lastMsg = `판정: ${event} (${obs.length}프레임)`;
     showBanner(rec);
     beep(isStrike);
-    renderCount(); renderLog();
+    renderLog();
   }
   $('btnUndo').onclick = () => {
-    const rec = S.history.pop(); if (!rec) return;
-    S.balls = rec.prev.b; S.strikes = rec.prev.s; S.outs = rec.prev.o;
+    if (!S.history.pop()) return;
     S.lastCall = S.history[S.history.length - 1] || null;
-    renderCount(); renderLog();
+    renderLog();
     $('banner').style.display = 'none';
   };
-  $('btnResetCount').onclick = () => { S.balls = S.strikes = S.outs = 0; renderCount(); };
-  function renderCount() {
-    const set = (id, n) => [...$(id).children].forEach((d, i) => d.classList.toggle('on', i < n));
-    set('dotsB', S.balls); set('dotsS', S.strikes); set('dotsO', S.outs);
-  }
   function renderLog() {
     if (!S.history.length) { $('log').innerHTML = '<div class="muted">아직 판정이 없습니다.</div>'; return; }
     $('log').innerHTML = S.history.slice().reverse().map(r =>
@@ -658,7 +647,7 @@
     b.style.display = 'block';
     b.style.color = rec.isStrike ? 'var(--strike)' : 'var(--ball)';
     b.style.borderColor = rec.isStrike ? 'var(--strike)' : 'var(--ball)';
-    b.innerHTML = `${rec.event}<small>높이 ${rec.z.toFixed(0)}cm · 좌우 ${rec.x >= 0 ? '+' : ''}${rec.x.toFixed(0)}cm</small>`;
+    b.textContent = rec.event;   // 우상단에 볼/스트라이크만
     clearTimeout(S.bannerTimer);
     S.bannerTimer = setTimeout(() => { b.style.display = 'none'; }, 2200);
   }
@@ -746,7 +735,6 @@
 
   // 테스트용 노출
   window.__abs = { S, geometry, detect, finalize, start: onNewSource };
-  renderCount();
 })();
 </script>
 </body>
