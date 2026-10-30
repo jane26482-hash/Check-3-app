@@ -16,8 +16,8 @@
   h1 small { font-size: 12px; color: var(--muted); font-weight: 500; }
   .stage { position: relative; width: 100%; background: #000; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); touch-action: none; }
   .stage canvas { display: block; width: 100%; height: auto; }
-  .banner { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); padding: 6px 18px; border-radius: 12px; background: rgba(6,10,16,.88); font-weight: 900; font-size: 34px; letter-spacing: 2px; display: none; text-align: center; border: 2px solid; }
-  .banner small { display: block; font-size: 12px; font-weight: 600; letter-spacing: 0; color: var(--text); }
+  .banner { position: absolute; top: 8px; right: 8px; padding: 3px 9px; border-radius: 8px; background: rgba(6,10,16,.72); font-weight: 800; font-size: 14px; letter-spacing: 1px; display: none; text-align: right; border: 1.5px solid; pointer-events: none; }
+  .banner small { display: block; font-size: 10px; font-weight: 600; letter-spacing: 0; color: var(--text); opacity: .85; }
   .hint { position: absolute; bottom: 10px; left: 10px; right: 10px; font-size: 13px; background: rgba(6,10,16,.82); padding: 6px 10px; border-radius: 8px; color: #cfe8ff; pointer-events: none; }
   .row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; align-items: center; }
   button, .filebtn { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; font-size: 14px; font-weight: 600; cursor: pointer; }
@@ -38,7 +38,7 @@
   .S { color: var(--strike); font-weight: 800; } .B { color: var(--ball); font-weight: 800; }
   .muted { color: var(--muted); font-size: 12px; }
   .status { font-size: 12px; color: var(--muted); margin-left: auto; }
-  @media (max-width: 520px) { .banner { font-size: 26px; } button, .filebtn { padding: 8px 10px; font-size: 13px; } }
+  @media (max-width: 520px) { .banner { font-size: 12px; } button, .filebtn { padding: 8px 10px; font-size: 13px; } }
 </style>
 </head>
 <body>
