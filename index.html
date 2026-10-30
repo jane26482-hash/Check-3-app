@@ -38,6 +38,13 @@
   .S { color: var(--strike); font-weight: 800; } .B { color: var(--ball); font-weight: 800; }
   .muted { color: var(--muted); font-size: 12px; }
   .status { font-size: 12px; color: var(--muted); margin-left: auto; }
+  .rec-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #f43f5e; margin-right: 5px; animation: blink 1.2s infinite; }
+  @keyframes blink { 50% { opacity: .25; } }
+  .review { margin-top: 10px; display: none; }
+  .review video { width: 100%; border-radius: 12px; background: #000; border: 1px solid var(--line); display: block; }
+  .log div.play { cursor: pointer; }
+  .log div.play:hover { background: #1b2632; }
+  .log .replay { color: var(--accent); font-size: 12px; margin-left: 6px; }
   @media (max-width: 520px) { .banner { font-size: 12px; } button, .filebtn { padding: 8px 10px; font-size: 13px; } }
 </style>
 </head>
@@ -60,6 +67,23 @@
       <option value="1">1x</option><option value="0.5">0.5x</option><option value="0.25">0.25x</option>
     </select>
     <span class="status" id="status">대기</span>
+  </div>
+
+  <div class="row">
+    <button id="btnRec">⏺ 녹화: 켜짐</button>
+    <button id="btnBack">⏪ 되돌려 보기</button>
+    <span class="muted" id="recInfo"></span>
+  </div>
+  <div class="review card" id="reviewBox">
+    <div class="row" style="margin:0 0 6px">
+      <b id="reviewTitle" style="font-size:14px">녹화 다시 보기</b>
+      <button id="btnBack5" style="margin-left:auto;padding:5px 10px;font-size:12px">⏪ 5초</button>
+      <button id="btnFwd5" style="padding:5px 10px;font-size:12px">5초 ⏩</button>
+      <a id="btnSave" class="filebtn" style="padding:5px 10px;font-size:12px;text-decoration:none" download>💾 저장</a>
+      <button id="btnCloseReview" style="padding:5px 10px;font-size:12px">✕ 닫기</button>
+    </div>
+    <video id="review" controls playsinline></video>
+    <div class="muted" style="margin-top:4px">판정은 계속 진행 중이에요. 아래 판정 기록을 누르면 그 투구 장면으로 이동해요.</div>
   </div>
 
   <div class="card grid">
@@ -88,7 +112,8 @@
     2. [투수 위치 맞추기]를 누르고 공을 던지는 사람의 배꼽(몸 가운데)을 탭합니다. 이 사람 손에서 출발한 공만 판정합니다.<br>
     3. [홈플레이트 맞추기]를 누르고, 화면에서 홈플레이트의 <b style="color:var(--text)">왼쪽 끝 → 오른쪽 끝</b>을 차례로 탭합니다. 홈플레이트 위에 스트라이크 존과 판정 박스(점선)가 생깁니다.<br>
     4. 공이 판정 박스 안에서 <b style="color:var(--text)">다가오며</b> 홈플레이트 위치의 공 크기로 찍히면 볼/스트라이크를 판정합니다. 타자·배트·바닥의 공·조명은 무시합니다.<br>
-    5. 잘못 판정되면 [마지막 판정 취소]를 누르세요. 공을 못 잡으면 감도를 올리고, 엉뚱한 걸 잡으면 내리세요.
+    5. 화면은 판정 표시와 함께 자동 녹화돼요(최근 약 6분 보관). [⏪ 되돌려 보기]나 판정 기록을 누르면 지난 장면을 다시 볼 수 있어요.<br>
+    6. 잘못 판정되면 [마지막 판정 취소]를 누르세요. 공을 못 잡으면 감도를 올리고, 엉뚱한 걸 잡으면 내리세요.
   </div>
 
   <video id="video" playsinline muted style="display:none"></video>
@@ -183,7 +208,7 @@
   // ───────── 소스 ─────────
   // 카메라 프레임 (30/60fps) 선택 — 저장해두고, 카메라가 켜져 있으면 바로 다시 연결
   $('selFps').value = String(load('abs_simple_fps', 30));
-  $('selFps').onchange = () => { save('abs_simple_fps', +$('selFps').value); if (S.source === 'camera') startCamera(); };
+  $('selFps').onchange = () => { save('abs_simple_fps', +$('selFps').value); if (S.source === 'camera') startCamera(); else if (REC.recorder) startRecording(); };
   async function startCamera() {
     try {
       stopStream();
@@ -220,6 +245,7 @@
     fitCanvas(); resetDetector();
     setHint(S.plate ? '판정 대기 중 — 공을 던지세요.' : '[홈플레이트 맞추기]를 누르고 홈플레이트 왼쪽 끝 → 오른쪽 끝을 탭하세요.');
     startFrameLoop();
+    setTimeout(startRecording, 300);
   }
   function resetDetector() { F.bgR = null; S.bgR = null; S.bgL = null; S.warm = 0; S.pending = []; S.tracks = []; S.spots = []; S.ftracks = []; S.fdone = []; S.prevT = -1; }
 
@@ -629,6 +655,97 @@
     return true;
   }
 
+  // ───────── 녹화 (판정 화면 그대로) & 되돌려 보기 ─────────
+  // 휴대폰 메모리를 아끼려고 2분짜리 조각으로 나눠 녹화하고 최근 3조각(약 6분)만 보관
+  const REC = { on: load('abs_simple_rec', true), recorder: null, seg: null, segs: [], nextId: 1, timer: null, mime: '' };
+  const SEG_MS = 120000, MAX_SEGS = 3;
+  function pickMime() {
+    if (typeof MediaRecorder === 'undefined') return null;
+    for (const m of ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4;codecs=avc1', 'video/mp4'])
+      if (MediaRecorder.isTypeSupported(m)) return m;
+    return '';
+  }
+  function startRecording() {
+    stopRecording();
+    if (!REC.on || !S.source) return updateRecUI();
+    const mime = pickMime();
+    if (mime === null || !view.captureStream) { REC.on = false; setHint('이 브라우저는 녹화를 지원하지 않아요.'); return updateRecUI(); }
+    const fps = +$('selFps').value || 30;
+    const stream = view.captureStream(fps);
+    let recorder;
+    try { recorder = new MediaRecorder(stream, mime ? { mimeType: mime, videoBitsPerSecond: 2000000 } : { videoBitsPerSecond: 2000000 }); }
+    catch (e) { REC.on = false; setHint('녹화를 시작할 수 없어요: ' + e.message); return updateRecUI(); }
+    const seg = { id: REC.nextId++, parts: [], start: performance.now(), end: null, mime: recorder.mimeType || mime || 'video/webm', waiters: [] };
+    recorder.ondataavailable = e => { if (e.data && e.data.size) seg.parts.push(e.data); seg.waiters.splice(0).forEach(f => f()); };
+    recorder.onstop = () => { seg.end = performance.now(); seg.waiters.splice(0).forEach(f => f()); };
+    recorder.start(1000);
+    REC.recorder = recorder; REC.seg = seg; REC.segs.push(seg);
+    while (REC.segs.length > MAX_SEGS) { const old = REC.segs.shift(); old.parts = []; }
+    REC.timer = setTimeout(startRecording, SEG_MS);   // 다음 조각으로 교체
+    updateRecUI();
+  }
+  function stopRecording() {
+    clearTimeout(REC.timer); REC.timer = null;
+    if (REC.recorder && REC.recorder.state !== 'inactive') REC.recorder.stop();
+    REC.recorder = null;
+  }
+  function updateRecUI() {
+    $('btnRec').innerHTML = REC.on ? (REC.recorder ? '<span class="rec-dot"></span>녹화 중' : '⏺ 녹화: 켜짐') : '⏺ 녹화: 꺼짐';
+    const kept = REC.segs.filter(sg => sg.parts.length);
+    if (kept.length) {
+      const secs = Math.round((performance.now() - kept[0].start) / 1000);
+      $('recInfo').textContent = `최근 ${Math.min(secs, 360) >= 60 ? Math.floor(Math.min(secs, 360) / 60) + '분 ' : ''}${Math.min(secs, 360) % 60}초 보관 중`;
+    } else $('recInfo').textContent = '';
+  }
+  setInterval(updateRecUI, 1000);
+  $('btnRec').onclick = () => { REC.on = !REC.on; save('abs_simple_rec', REC.on); REC.on ? startRecording() : stopRecording(); updateRecUI(); };
+
+  // 녹화 시각(performance.now) → 어느 조각의 몇 초인지
+  function locate(tAbs) {
+    for (let i = REC.segs.length - 1; i >= 0; i--) {
+      const sg = REC.segs[i];
+      if (sg.parts.length && tAbs >= sg.start - 500) return { seg: sg, off: Math.max(0, (tAbs - sg.start) / 1000) };
+    }
+    const first = REC.segs.find(sg => sg.parts.length);
+    return first ? { seg: first, off: 0 } : null;
+  }
+  async function openReview(tAbs, title) {
+    const loc = locate(tAbs);
+    if (!loc) { setHint('아직 녹화된 장면이 없어요.'); return; }
+    const { seg, off } = loc;
+    // 지금 녹화 중인 조각이면 방금까지의 영상도 포함되도록 한 번 비움
+    if (seg === REC.seg && REC.recorder && REC.recorder.state === 'recording') {
+      await new Promise(res => { seg.waiters.push(res); try { REC.recorder.requestData(); } catch (e) { res(); } setTimeout(res, 800); });
+    }
+    const blob = new Blob(seg.parts, { type: seg.mime });
+    const rv = $('review');
+    if (rv.dataset.url) URL.revokeObjectURL(rv.dataset.url);
+    const url = URL.createObjectURL(blob);
+    rv.dataset.url = url; rv.src = url;
+    const ext = seg.mime.includes('mp4') ? 'mp4' : 'webm';
+    $('btnSave').href = url; $('btnSave').download = `abs-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.${ext}`;
+    $('reviewTitle').textContent = title || '녹화 다시 보기';
+    $('reviewBox').style.display = 'block';
+    const target = Math.max(0, off);
+    rv.onloadedmetadata = () => {
+      // 녹화 중 만든 webm은 길이 정보가 없어 한 번 끝으로 보냈다가 돌아와야 이동이 됨
+      if (!isFinite(rv.duration)) {
+        rv.ontimeupdate = () => { rv.ontimeupdate = null; rv.currentTime = Math.min(target, rv.duration || target); rv.play().catch(() => {}); };
+        rv.currentTime = 1e9;
+      } else { rv.currentTime = Math.min(target, rv.duration); rv.play().catch(() => {}); }
+    };
+    $('reviewBox').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+  $('btnBack').onclick = () => openReview(performance.now() - 10000, '10초 전부터 다시 보기');
+  $('btnBack5').onclick = () => { const rv = $('review'); rv.currentTime = Math.max(0, rv.currentTime - 5); };
+  $('btnFwd5').onclick = () => { const rv = $('review'); rv.currentTime = Math.min(rv.duration || 1e9, rv.currentTime + 5); };
+  $('btnCloseReview').onclick = () => { const rv = $('review'); rv.pause(); $('reviewBox').style.display = 'none'; };
+  $('log').addEventListener('click', e => {
+    const row = e.target.closest('[data-n]'); if (!row) return;
+    const r = S.history.find(h => h.n === +row.dataset.n);
+    if (r) openReview(r.time - 2500, `#${r.n} ${r.event} 다시 보기`);
+  });
+
   // ───────── 판정 ─────────
   function call(isStrike, cm, pt, obs) {
     const event = isStrike ? 'STRIKE' : 'BALL';
@@ -644,23 +761,15 @@
     if (!S.history.pop()) return;
     S.lastCall = S.history[S.history.length - 1] || null;
     renderLog();
-    $('banner').style.display = 'none';
+    S.bannerUntil = 0;
   };
   function renderLog() {
     if (!S.history.length) { $('log').innerHTML = '<div class="muted">아직 판정이 없습니다.</div>'; return; }
     $('log').innerHTML = S.history.slice().reverse().map(r =>
-      `<div><span>#${r.n} <span class="${r.isStrike ? 'S' : 'B'}">${r.isStrike ? 'STRIKE' : 'BALL'}</span></span>` +
+      `<div class="play" data-n="${r.n}"><span>#${r.n} <span class="${r.isStrike ? 'S' : 'B'}">${r.isStrike ? 'STRIKE' : 'BALL'}</span>${REC.segs.some(sg => sg.parts.length) ? '<span class="replay">▶ 다시 보기</span>' : ''}</span>` +
       `<span class="muted">높이 ${r.z.toFixed(0)}cm · 좌우 ${r.x >= 0 ? '+' : ''}${r.x.toFixed(0)}cm</span></div>`).join('');
   }
-  function showBanner(rec) {
-    const b = $('banner');
-    b.style.display = 'block';
-    b.style.color = rec.isStrike ? 'var(--strike)' : 'var(--ball)';
-    b.style.borderColor = rec.isStrike ? 'var(--strike)' : 'var(--ball)';
-    b.textContent = rec.event;   // 우상단에 볼/스트라이크만
-    clearTimeout(S.bannerTimer);
-    S.bannerTimer = setTimeout(() => { b.style.display = 'none'; }, 2200);
-  }
+  function showBanner(rec) { S.bannerRec = rec; S.bannerUntil = performance.now() + 2200; }   // 우상단 표시는 캔버스에 그림(녹화에도 남도록)
   let actx = null;
   function beep(strike) {
     try {
@@ -738,6 +847,18 @@
         vctx.beginPath(); vctx.arc(x, y, Math.max(4, g.ballR * s * 0.8), 0, Math.PI * 2); vctx.stroke();
         vctx.fillStyle = '#fff'; vctx.font = 'bold 10px sans-serif'; vctx.fillText(r.n, x - 3, y + 3);
       });
+    }
+    // 우상단 볼/스트라이크 표시
+    if (S.bannerRec && performance.now() < S.bannerUntil) {
+      const txt = S.bannerRec.event, col = S.bannerRec.isStrike ? '#ffb020' : '#22d17a';
+      const fs = Math.max(13, Math.round(W * 0.03));
+      vctx.font = `800 ${fs}px sans-serif`;
+      const tw = vctx.measureText(txt).width, pad = fs * 0.5, bw = tw + pad * 2, bh = fs * 1.6;
+      const bx = W - bw - 8, by = 8;
+      vctx.fillStyle = 'rgba(6,10,16,.72)'; vctx.strokeStyle = col; vctx.lineWidth = 1.5;
+      vctx.beginPath(); vctx.roundRect ? vctx.roundRect(bx, by, bw, bh, 7) : vctx.rect(bx, by, bw, bh); vctx.fill(); vctx.stroke();
+      vctx.fillStyle = col; vctx.textAlign = 'left'; vctx.textBaseline = 'middle';
+      vctx.fillText(txt, bx + pad, by + bh / 2 + 1); vctx.textBaseline = 'alphabetic';
     }
     $('status').textContent = S.source ? (S.lastMsg || (S.warm < 8 ? '배경 학습 중' : '판정 대기')) : '대기';
   }
