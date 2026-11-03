@@ -89,6 +89,8 @@
   <div class="card grid">
     <label>카메라 프레임 <select id="selFps" class="filebtn" style="padding:5px 8px">
       <option value="30">30fps</option><option value="60">60fps</option></select></label>
+    <label>카메라 높이 (지면에서 렌즈까지) <span><input type="number" id="inCamH" value="0.8" min="0.1" max="3" step="0.05"> m</span></label>
+    <label>카메라 ~ 홈플레이트 거리 (뒤쪽 꼭짓점까지) <span><input type="number" id="inCamD" value="2.9" min="0.3" max="10" step="0.05"> m</span></label>
     <label>타자 키 <span><input type="number" id="inHeight" value="175" min="130" max="210"> cm</span></label>
     <label>존 위아래 보정 <b id="lblShift">0 cm</b></label>
     <input type="range" id="inShift" min="-30" max="30" step="1" value="0">
@@ -109,11 +111,12 @@
   <div class="card muted" style="line-height:1.6">
     <b style="color:var(--text)">사용법</b><br>
     1. 휴대폰을 고정하고 카메라를 켭니다. [카메라 프레임]에서 30fps/60fps를 고를 수 있어요(60fps면 공을 더 잘 잡아요).<br>
-    2. [투수 위치 맞추기]를 누르고 공을 던지는 사람의 배꼽(몸 가운데)을 탭합니다. 이 사람 손에서 출발한 공만 판정합니다.<br>
-    3. [홈플레이트 맞추기]를 누르고, 화면에서 홈플레이트의 <b style="color:var(--text)">왼쪽 끝 → 오른쪽 끝</b>을 차례로 탭합니다. 홈플레이트 위에 스트라이크 존과 판정 박스(점선)가 생깁니다.<br>
-    4. 공이 판정 박스 안에서 <b style="color:var(--text)">다가오며</b> 홈플레이트 위치의 공 크기로 찍히면 볼/스트라이크를 판정합니다. 타자·배트·바닥의 공·조명은 무시합니다.<br>
-    5. 화면은 판정 표시와 함께 자동 녹화돼요(최근 약 6분 보관). [⏪ 되돌려 보기]나 판정 기록을 누르면 지난 장면을 다시 볼 수 있어요.<br>
-    6. 잘못 판정되면 [마지막 판정 취소]를 누르세요. 공을 못 잡으면 감도를 올리고, 엉뚱한 걸 잡으면 내리세요.
+    2. 줄자로 <b style="color:var(--text)">카메라 높이(지면~렌즈)</b>와 <b style="color:var(--text)">카메라~홈플레이트 뒤쪽 꼭짓점 거리</b>를 재서 설정에 넣어요. 존 위치·크기가 더 정확해져요.<br>
+    3. [투수 위치 맞추기]를 누르고 공을 던지는 사람의 배꼽(몸 가운데)을 탭합니다. 이 사람 손에서 출발한 공만 판정합니다.<br>
+    4. [홈플레이트 맞추기]를 누르고, 화면에서 홈플레이트 <b style="color:var(--text)">투수 쪽 넓은 변의 왼쪽 끝 → 오른쪽 끝</b>을 차례로 탭합니다. 스트라이크 존과 판정 박스(점선)가 생깁니다.<br>
+    5. 공이 판정 박스 안에서 <b style="color:var(--text)">다가오며</b> 홈플레이트 위치의 공 크기로 찍히면 볼/스트라이크를 판정합니다.<br>
+    6. 화면은 판정 표시와 함께 자동 녹화돼요(최근 약 6분 보관). [⏪ 되돌려 보기]나 판정 기록을 누르면 지난 장면을 다시 볼 수 있어요.<br>
+    7. 잘못 판정되면 [마지막 판정 취소]를 누르세요. 공을 못 잡으면 감도를 올리고, 엉뚱한 걸 잡으면 내리세요.
   </div>
 
   <video id="video" playsinline muted style="display:none"></video>
@@ -150,18 +153,20 @@
   // 설정 복원
   const saved = load('abs_simple_settings', {});
   if (saved.h) $('inHeight').value = saved.h;
+  if (saved.camH) $('inCamH').value = saved.camH;
+  if (saved.camD) $('inCamD').value = saved.camD;
   if (saved.shift != null) $('inShift').value = saved.shift;
   if (saved.zs) $('inZoneScale').value = saved.zs;
   if (saved.sens != null) $('inSens').value = saved.sens;
   if (saved.ball) $('inBall').value = saved.ball;
-  function saveSettings() { save('abs_simple_settings', { h: +$('inHeight').value, shift: +$('inShift').value, sens: +$('inSens').value, ball: +$('inBall').value, zs: +$('inZoneScale').value }); }
+  function saveSettings() { save('abs_simple_settings', { h: +$('inHeight').value, camH: +$('inCamH').value, camD: +$('inCamD').value, shift: +$('inShift').value, sens: +$('inSens').value, ball: +$('inBall').value, zs: +$('inZoneScale').value }); }
   function syncLabels() {
     $('lblZoneScale').textContent = `${$('inZoneScale').value}%`;
     $('lblShift').textContent = `${$('inShift').value > 0 ? '+' : ''}${$('inShift').value} cm`;
     $('lblSens').textContent = $('inSens').value;
     $('lblBall').textContent = `${$('inBall').value}%`;
   }
-  ['inHeight', 'inShift', 'inSens', 'inBall'].forEach(id => $(id).addEventListener('input', () => { syncLabels(); saveSettings(); S.bgR = null; }));
+  ['inHeight', 'inShift', 'inSens', 'inBall', 'inCamH', 'inCamD'].forEach(id => $(id).addEventListener('input', () => { syncLabels(); saveSettings(); S.bgR = null; }));
   $('inZoneScale').addEventListener('input', () => { syncLabels(); saveSettings(); });
   syncLabels();
 
@@ -179,31 +184,40 @@
     if (!S.plate) return null;
     const { w, h } = vidSize();
     const x1 = S.plate.x1 * w, y1 = S.plate.y1 * h, x2 = S.plate.x2 * w, y2 = S.plate.y2 * h;
-    const ppc = Math.hypot(x2 - x1, y2 - y1) / PLATE_CM;      // 홈플레이트 위치에서 1cm당 픽셀
-    const cx = (x1 + x2) / 2, gy = (y1 + y2) / 2;               // 홈플레이트 중심 / 지면 높이
+    // 원근 계산: 탭한 곳은 홈플레이트 앞쪽 넓은 변(투수 쪽). 판정은 홈플레이트 중간면에서 함
+    const ppcF = Math.hypot(x2 - x1, y2 - y1) / PLATE_CM;      // 탭한 앞쪽 변 위치에서 1cm당 픽셀
+    const cx = (x1 + x2) / 2, gy = (y1 + y2) / 2;               // 홈플레이트 중심 / 앞쪽 변의 지면 높이
+    const camH = Math.max(1, (+$('inCamH').value || 0.8) * 100);         // 카메라 높이 (cm)
+    const camD = Math.max(10, (+$('inCamD').value || 2.9) * 100);        // 카메라 ~ 홈플레이트 뒤쪽 꼭짓점 (cm)
+    const dF = camD + PLATE_CM, dM = camD + PLATE_CM / 2;                // 앞쪽 변 / 중간면까지 거리
+    const ppc = ppcF * dF / dM;                                          // 중간면에서 1cm당 픽셀 (더 가까우니 더 큼)
+    const yh = gy - ppcF * camH;                                         // 카메라 높이(지평선)의 화면 위치
+    const Y = z => yh + ppc * (camH - z);                                // 중간면에서 높이 z(cm)의 화면 y
     const height = +$('inHeight').value || 175;
     const shift = +$('inShift').value || 0;
     const top = height * TOP_RATIO + shift, btm = height * BTM_RATIO + shift;
-    const ballR = BALL_R * ppc * (+$('inBall').value / 100);
-    const zone0 = { l: cx - ZONE_HALF_W * ppc, r: cx + ZONE_HALF_W * ppc, t: gy - top * ppc, b: gy - btm * ppc };   // 원래 KBO 존
+    const ballR = BALL_R * ppcF * (+$('inBall').value / 100);           // 공 검출 기준 크기 (탭한 앞쪽 변 위치)
+    const relMid = dF / dM;                                              // 중간면에서의 공 크기 (기준 대비)
+    // 공 찾는 영역(판정 박스·투수 기본 위치)은 카메라 설정과 무관하게 탭한 홈플레이트 기준으로 고정
+    const zone0 = { l: cx - ZONE_HALF_W * ppcF, r: cx + ZONE_HALF_W * ppcF, t: gy - top * ppcF, b: gy - btm * ppcF };
     // 스트라이크 존 크기 배율: 존 가운데를 기준으로 가로·세로를 같은 비율로 키움 (공 검출 영역은 그대로)
     const zs = (+$('inZoneScale').value || 150) / 100;
     const halfW = ZONE_HALF_W * zs, mid = (top + btm) / 2, halfH = (top - btm) / 2 * zs;
     const topS = mid + halfH, btmS = Math.max(0, mid - halfH);
-    const zone = { l: cx - halfW * ppc, r: cx + halfW * ppc, t: gy - topS * ppc, b: gy - btmS * ppc };
+    const zone = { l: cx - halfW * ppc, r: cx + halfW * ppc, t: Y(topS), b: Y(btmS) };
     // 판정 박스: 바깥으로 크게 빠지는 볼·높은 볼도 잡도록 존보다 좌우 각 1.3배, 위 1.6배 넓게 (지면 아래는 제외)
     const zw = zone0.r - zone0.l, zh = zone0.b - zone0.t;
     const win = {
       l: Math.max(0, Math.min(zone.l, zone0.l - zw * 1.3)), r: Math.min(w, Math.max(zone.r, zone0.r + zw * 1.3)),
-      t: Math.max(0, Math.min(zone.t, zone0.t - zh * 1.6)), b: Math.min(h, Math.min(gy - 4 * ppc, zone0.b + zh * 0.45))
+      t: Math.max(0, Math.min(zone.t, zone0.t - zh * 1.6)), b: Math.min(h, Math.min(gy - 4 * ppcF, zone0.b + zh * 0.45))
     };
     // 투수 영역: 투수 몸 위쪽(손이 공을 놓는 높이). 투수를 탭하지 않았으면 존 뒤쪽 기본 위치
     const pw = (x2 - x1) * 2.4;
     const pcx = S.pitcher ? S.pitcher.x * w : cx, pcy = S.pitcher ? S.pitcher.y * h : zone0.t + (zone0.b - zone0.t) * 0.3;
     const pbox = { l: Math.max(0, pcx - pw * 0.45), r: Math.min(w, pcx + pw * 0.45), t: Math.max(0, pcy - pw * 0.6), b: Math.min(h, pcy + pw * 0.05) };
-    return { ppc, cx, gy, top: topS, btm: btmS, halfW, zone, zone0, win, ballR, pbox };
+    return { ppc, cx, gy, yh, camH, Y, relMid, top: topS, btm: btmS, halfW, zone, zone0, win, ballR, pbox };
   }
-  function toCm(g, x, y) { return { x: (x - g.cx) / g.ppc, z: (g.gy - y) / g.ppc }; }
+  function toCm(g, x, y) { return { x: (x - g.cx) / g.ppc, z: g.camH - (y - g.yh) / g.ppc }; }
 
   // ───────── 소스 ─────────
   // 카메라 프레임 (30/60fps) 선택 — 저장해두고, 카메라가 켜져 있으면 바로 다시 연결
@@ -645,7 +659,7 @@
       const fx = lfit(relFit, obs.map(o => o.x)), fy = lfit(relFit, obs.map(o => o.y));
       if (fx.rms > g.ballR * 2.5 || fy.rms > g.ballR * 2.5) { S.lastMsg = '궤적이 불규칙 — 무시'; return false; }
       if (1 - relEnd > 0.45) { S.lastMsg = '홈플레이트까지 오지 않음 — 무시'; return false; }
-      pt = { x: fx.a + fx.b * 1, y: fy.a + fy.b * 1 };
+      pt = { x: fx.a + fx.b * g.relMid, y: fy.a + fy.b * g.relMid };   // 공이 홈플레이트 중간면에 왔을 때 위치
     }
     const cm = toCm(g, pt.x, pt.y);
     if (Math.abs(cm.x) > 90 || cm.z < -10 || cm.z > g.top + 60) { S.lastMsg = '판정 박스 밖 — 무시'; return false; }
@@ -842,7 +856,7 @@
     // 지난 판정 위치 (최근 10개)
     if (g) {
       S.history.slice(-10).forEach(r => {
-        const x = (g.cx + r.x * g.ppc) * s, y = (g.gy - r.z * g.ppc) * s;
+        const x = (g.cx + r.x * g.ppc) * s, y = g.Y(r.z) * s;
         vctx.strokeStyle = r.isStrike ? '#ffb020' : '#22d17a'; vctx.lineWidth = 2;
         vctx.beginPath(); vctx.arc(x, y, Math.max(4, g.ballR * s * 0.8), 0, Math.PI * 2); vctx.stroke();
         vctx.fillStyle = '#fff'; vctx.font = 'bold 10px sans-serif'; vctx.fillText(r.n, x - 3, y + 3);
