@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>청라돔 이전 & 구단 인프라 업무관리</title>
+<title>청라돔 이전 & 구단 인프라 조성 업무관리</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -357,13 +357,39 @@ tr.pdone td input[type=text]{text-decoration:line-through;color:var(--mute)}
 .lane.room .pt span{top:11px;left:9px}
 .gc.rl{white-space:normal!important;line-height:1.2;word-break:keep-all}
 .gc.rl.room{font-size:11px}
+
+/* 워크플로우 픽토그램 */
+.fp-wrap{display:grid;grid-template-columns:1fr 34px 1fr 34px 1fr 40px 1.05fr;grid-template-rows:auto auto;gap:6px 0;padding:14px 16px 16px;align-items:center}
+.fp-phase{grid-row:1;text-align:center;font-size:11px;font-weight:800;color:var(--ink2);border-bottom:2px solid;padding-bottom:3px;margin:0 4px}
+.fp-phase.ph-d{grid-column:1/6;color:#2f5bea;border-color:#c7d5fb}
+.fp-phase.ph-c{grid-column:7/8;color:#b4401f;border-color:#f3cfc2}
+.fp-step{grid-row:2;border:1px solid var(--line);background:#fff;border-radius:14px;padding:12px 12px 10px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:2px;transition:.12s;min-width:0}
+.fp-step:hover{border-color:#9db3ea;transform:translateY(-2px);box-shadow:0 6px 16px rgba(30,50,100,.08)}
+.fp-ic{width:52px;height:52px;border-radius:50%;background:#eaf0ff;color:#2f5bea;display:flex;align-items:center;justify-content:center;margin-bottom:4px}
+.fp-ic svg{width:28px;height:28px}
+.fp-step.c .fp-ic{background:#fff0ea;color:#c4511c}.fp-step.m .fp-ic{background:#eaf7ef;color:#14834a}
+.fp-no{font-size:10px;font-weight:800;color:var(--mute);letter-spacing:.5px}
+.fp-t{font-size:14.5px;font-weight:800}
+.fp-s{font-size:11px;color:var(--mute);margin-bottom:6px}
+.fp-l{width:100%;border-top:1px dashed var(--line);padding-top:6px;display:flex;flex-direction:column;gap:2px}
+.fp-l div{display:flex;justify-content:space-between;font-size:11.5px;color:var(--ink2)}
+.fp-l b{color:var(--ink)}
+.fp-arr{grid-row:2;text-align:center;font-size:20px;color:#9aa8c4;font-weight:800}
+.fp-fork{grid-row:2;display:flex;flex-direction:column;justify-content:space-around;height:100%}
+.fp-arr.fk:first-child{transform:rotate(-28deg)}.fp-arr.fk:last-child{transform:rotate(28deg)}
+.fp-end{grid-row:2;display:flex;flex-direction:column;gap:8px}
+.fp-end .fp-step{flex-direction:row;text-align:left;gap:10px;padding:8px 12px;align-items:center;flex-wrap:wrap}
+.fp-end .fp-ic{width:40px;height:40px;margin:0}.fp-end .fp-ic svg{width:22px;height:22px}
+.fp-end .fp-no{width:100%;display:none}
+.fp-end .fp-t{font-size:13.5px}.fp-end .fp-s{margin:0;width:100%;display:none}
+.fp-end .fp-l{border-top:none;padding:0;flex:1;min-width:120px}
+@media (max-width:1100px){.fp-wrap{grid-template-columns:1fr}.fp-phase,.fp-step,.fp-arr,.fp-fork,.fp-end{grid-column:1!important;grid-row:auto!important}.fp-arr{transform:rotate(90deg)}.fp-fork{display:none}}
 </style>
 </head>
 <body>
 <header class="top"><div class="in">
   <div>
-    <h1>청라돔 이전 & 구단 인프라 업무관리</h1>
-    <div class="sub">마일스톤 · 프로젝트 관리 · 실별 의사결정 · 도면 DB · 집기배치 · 인테리어</div>
+    <h1>청라돔 이전 & 구단 인프라 조성 업무관리</h1>
   </div>
   <nav class="pnav"><button data-p="ms" onclick="goPage('ms')">마일스톤</button><button data-p="rr" onclick="goPage('rr')">R&amp;R</button></nav>
   <div class="sp"></div>
@@ -677,6 +703,41 @@ function allProg(){ const ts = liveTasks(); return ts.length ? ts.reduce((s,t) =
 const pct = v => Math.round(v * 100);
 const sortTasks = (a,b) => (a.roomId?1:0) - (b.roomId?1:0) || (a.roomId ? roomOrder(a.roomId) - roomOrder(b.roomId) : (Number(a.row)||0) - (Number(b.row)||0)) || taskAbs(a) - taskAbs(b) || (a.kind==='point') - (b.kind==='point');
 
+const ICO = {
+  req: '<path d="M9 4h6v3H9z"/><path d="M7 5H5v16h14V5h-2"/><path d="M8 11h8M8 15h8M8 19h5"/>',
+  list: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M3 14h18M9 4v16"/>',
+  dwg: '<path d="M3 5l6-2 6 2 6-2v16l-6 2-6-2-6 2z"/><path d="M9 3v16M15 5v16"/>',
+  build: '<path d="M4 18h16"/><path d="M6 18v-3a6 6 0 0 1 12 0v3"/><path d="M12 9V5"/><path d="M9.5 6.5h5"/>',
+  move: '<rect x="2" y="7" width="12" height="9" rx="1"/><path d="M14 10h4l3 3v3h-7"/><circle cx="6" cy="18" r="2"/><circle cx="17" cy="18" r="2"/>'
+};
+const ico = k => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICO[k]}</svg>`;
+function goFlow(tab, extra){
+  const c = cats().find(x => x.type === 'space' && x.div !== 'moving') || cats().find(x => x.type === 'space'); if (!c) return;
+  if (tab === 'cross') { const m = cats().find(x => x.type === 'space' && x.div === 'moving'); if (m) return selectFlowCat(m, 'cross'); }
+  selectFlowCat(c, tab, extra);
+}
+function selectFlowCat(c, tab, extra){ Object.assign(ui, { page: 'ms', cat: c.id, tab }, extra || {}); saveUi(); render(); setTimeout(()=>{ const w = $('#ws'); if (w) w.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 50); }
+function renderFlowPicto(){
+  const dec = S.decisions, ir = S.interior_reqs, fx = S.fixtures, items = [...ir, ...fx], mv = fx.filter(f=>f.source==='문학 이전');
+  const n = (a,f) => a.filter(f).length;
+  const st = (no, key, title, sub, lines, tab, extra, cls='') => `<button class="fp-step ${cls}" onclick='goFlow("${tab}", ${JSON.stringify(extra||{})})'>
+      <div class="fp-ic">${ico(key)}</div><div class="fp-no">STEP ${no}</div><div class="fp-t">${title}</div><div class="fp-s">${sub}</div>
+      <div class="fp-l">${lines.map(([k,v])=>`<div><span>${k}</span><b>${v}</b></div>`).join('')}</div></button>`;
+  return `<section class="card fp"><div class="card-h"><h2>공간 조성 워크플로우</h2><span class="hint">클럽하우스·사무실·이사 공간 전체 기준 · 단계를 누르면 해당 화면으로 이동</span></div>
+    <div class="fp-wrap">
+      <div class="fp-phase ph-d"><span>설계 단계</span></div><div class="fp-phase ph-c"><span>실행 단계</span></div>
+      ${st(1,'req','실별 요청사항','요청 → 피드백 → 미결/완결',[['안건',dec.length],['미결',n(dec,d=>d.status!=='완결')]],'decision')}
+      <div class="fp-arr">➜</div>
+      ${st(2,'list','리스트업','인테리어 상세내역 · 집기배치 (엑셀)',[['인테리어 반영',`${n(ir,x=>x.status==='반영완료')}/${ir.length}`],['집기 반영',`${n(fx,x=>x.reflected==='반영완료')}/${fx.length}`]],'fixture',{fxTab:'list'})}
+      <div class="fp-arr">➜</div>
+      ${st(3,'dwg','도면 DB','일자별 도면 · 배치도 · 렌더링',[['도면',S.drawings.length],['도면 반영',`${n(items,x=>x.drawing)}/${items.length}`]],'drawing')}
+      <div class="fp-fork"><div class="fp-arr fk">➜</div><div class="fp-arr fk">➜</div></div>
+      <div class="fp-end">
+        ${st(4,'build','공사 구현','도면 기준 시공 · 구현 확인',[['구현 확인',`${n(items,x=>x.built)}/${items.length}`]],'flow',{},'c')}
+        ${st(5,'move','이사 크로스체크','문학 자산 크로스체크 & 구현',[['문학 이전 집기 확인',`${n(mv,x=>x.moveChecked)}/${mv.length}`]],'cross',{},'m')}
+      </div>
+    </div></section>`;
+}
 function renderSummary(){
   const list = cats(), all = allProg(), ts = liveTasks();
   const cur = ts.filter(t => msStatus(t) === 'now'), late = ts.filter(t => msStatus(t) === 'late');
@@ -1766,7 +1827,7 @@ function render(){
   let html = banner;
   if (ui.page === 'rr') html += renderRR();
   else {
-    html += renderSummary() + renderMilestone() + renderCats();
+    html += renderSummary() + renderFlowPicto() + renderMilestone() + renderCats();
     if (c) html += `<section class="card ws" id="ws">${c.type === 'space' ? renderCheongna(c) : renderGeneral(c)}</section>`;
   }
   $('#app').innerHTML = html;
